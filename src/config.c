@@ -80,6 +80,9 @@ bool loadConfig(char *pszFilePath, Config *pConf) {
 	fetch2Str(entry, pConf->szDataDir, "qhttpd.DataDir");
 	fetch2Str(entry, pConf->szTmpDir, "qhttpd.TmpDir");
 
+	fetch2Str(entry, pConf->szMimeFile, "qhttpd.MimeFile");
+	fetch2Str(entry, pConf->szMimeDefault, "qhttpd.MimeDefault");
+
 	fetch2Str(entry, pConf->szPidfile, "qhttpd.PidFile");
 	fetch2Int(entry, pConf->nPort, "qhttpd.Port");
 	fetch2Int(entry, pConf->nMaxpending, "qhttpd.MaxPending");

@@ -53,7 +53,7 @@ int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
 	// 파일 전송
 	char szFilePath[SYSPATH_SIZE];
 	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestUrl);
-	return httpProcessGetNormalFile(req, res, szFilePath, "application/octet-stream");
+	return httpProcessGetNormalFile(req, res, szFilePath, mimeDetect(szFilePath));
 }
 
 int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, char *pszFilePath, char *pszContentType) {
@@ -69,7 +69,7 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	//
 
 	// 파일 오픈
-	nFileFd = open(pszFilePath, O_RDONLY|O_LARGEFILE , 0);
+	nFileFd = open(pszFilePath, O_RDONLY , 0);
 	if(nFileFd < 0) {
 		LOG_INFO("File open failed. %s", pszFilePath);
 		return response404(req, res);
@@ -89,6 +89,9 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 		close(nFileFd);
 		return response403(req, res);
 	}
+
+	// 파일 닫기
+	close(nFileFd);
 
 	//
 	// 헤더 처리 부분
@@ -142,31 +145,15 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	//
 	// 파일 전송
 	//
-
 	if(nFilesize > 0) {
 		off_t nOffset = (off_t)nRangeOffset1;	// 시작 오프셋
-		uint64_t nSent = 0;		// 보낸 총 사이즈
-
-		while(nSent < nRangeSize) {
-			size_t nSendSize;	// 한번에 보낼 사이즈
-			if(nRangeSize - nSent > MAX_SENDFILE_CHUNK_SIZE) nSendSize = MAX_SENDFILE_CHUNK_SIZE;
-			else nSendSize = (size_t)(nRangeSize - nSent);
-
-			ssize_t nRet = sendfile(req->nSockFd, nFileFd, &nOffset, nSendSize);
-			if(nRet <= 0) {
-				LOG_INFO("Connection closed by peer. (errno:%d)", errno);
-				break;
-			}
-
-			nSent += nRet;
-			DEBUG("[TX] (file %s, req range %ju-%ju, sent range %ju-%ju, sent bytes %ju/%ju)"
-				, pszFilePath
-				, nRangeOffset1, nRangeOffset2
-				, (uint64_t)(nOffset-nRet), (uint64_t)(nOffset-1)
-				, nSent, nRangeSize);
+		uint64_t nSent = qSocketSendFile(req->nSockFd, pszFilePath, nOffset, nRangeSize);
+		if(nSent != nRangeSize) {
+			LOG_INFO("Connection closed by foreign host. (%j/%j)", nSent, nRangeSize);
 		}
-		close(nFileFd);
+
 	}
+
 
 	return HTTP_RESCODE_OK;
 }

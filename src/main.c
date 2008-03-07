@@ -57,18 +57,18 @@ int main(int argc, char *argv[]) {
 		switch (nOpt) {
 			case 'd': {
 				#ifndef BUILD_DEBUG
-				printf("ERROR: Sorry, does not support debugging mode. Please re-compile with -DBUILD_DEBUG\n");
+				fprintf(stderr, "ERROR: Sorry, does not support debugging mode. Please re-compile with -DBUILD_DEBUG\n");
 				return EXIT_FAILURE;
 				#endif
 
-				printf("Entering debugging mode.\n");
+				fprintf(stderr, "Entering debugging mode.\n");
 				g_debug = true; // common 소스의 디버깅을 켬
 				g_loglevel  = MAX_LOGLEVEL;
 				nDaemonize = false;
 				break;
 			}
 			case 'D': {
-				printf("Entering console mode.\n");
+				fprintf(stderr, "Entering console mode.\n");
 				nDaemonize = false;
 				break;
 			}
@@ -93,15 +93,15 @@ int main(int argc, char *argv[]) {
 
 	// parse configuration
 	if (loadConfig(szConfigFile, &g_conf)) {
-		//printf("Configuration loaded.\n");
+		//fprintf(stderr, "Configuration loaded.\n");
 
 		// config hook
 		if(hookAfterConfigLoaded() == false) {
-			printf("Hook failed.\n");
+			fprintf(stderr, "Hook failed.\n");
 			return EXIT_FAILURE;
 		}
 	} else {
-		printf("ERROR: Can't load configuration file %s\n", szConfigFile);
+		fprintf(stderr, "ERROR: Can't load configuration file %s\n", szConfigFile);
 		printUsages();
 		return EXIT_FAILURE;
 	}

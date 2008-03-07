@@ -51,6 +51,12 @@ void daemonStart(bool nDaemonize) {
 
 	LOG_INFO("Initializing %s...", PRG_NAME);
 
+	// load mime
+	if(mimeInit(g_conf.szMimeFile, g_conf.szMimeDefault) == false) {
+		LOG_WARN("Can't load mimetypes from %s", g_conf.szMimeFile);
+	}
+
+	// init socket
 	if ((nSockFd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		LOG_ERR("Can't create socket.");
 		daemonEnd(EXIT_FAILURE);
@@ -120,7 +126,7 @@ void daemonStart(bool nDaemonize) {
 	}
 
 	// starting.
-	LOG_SYS("%s %s is ready on the port %d.", PRG_NAME, PRG_VERSION, g_conf.nPort);
+	LOG_INFO("%s %s is ready on the port %d.", PRG_NAME, PRG_VERSION, g_conf.nPort);
 
 	// prefork management
 	while (true) {
@@ -258,11 +264,19 @@ void daemonEnd(int nStatus) {
 	}
 	//sleep(1);
 
+	// hook
+	if(hookBeforeDaemonEnd() == false) {
+		LOG_ERR("Hook failed.\n");
+	}
+
+	// destroy mime
+	if (mimeFree() == false) {
+		LOG_WARN("Can't destroy mime types.");
+	}
+
 	// destroy shared memory
 	if (poolFree() == false) {
 		LOG_WARN("Can't destroy child management pool .");
-	} else {
-		LOG_INFO("Child management pool destroied.");
 	}
 
 	// destroy semaphore
@@ -270,13 +284,6 @@ void daemonEnd(int nStatus) {
 	for(i = 0; i < MAX_SEMAPHORES; i++) qSemLeave(g_semid, i);	// force to unlock every semaphores
 	if (qSemFree(g_semid) == false) {
 		LOG_WARN("Can't destroy semaphore.");
-	} else {
-		LOG_INFO("Semaphore destroied.");
-	}
-
-	// hook
-	if(hookBeforeDaemonEnd() == false) {
-		LOG_ERR("Hook failed.\n");
 	}
 
 	// remove pid file
@@ -285,7 +292,7 @@ void daemonEnd(int nStatus) {
 	}
 
 	// final
-	LOG_SYS("%s Terminated.", PRG_NAME);
+	LOG_INFO("%s Terminated.", PRG_NAME);
 
 	// close log
 	if(g_acclog != NULL) qLogClose(g_acclog);

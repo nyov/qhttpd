@@ -7,8 +7,13 @@ qhttpd.BinDir			= ${qhttpd.BaseDir}/bin
 qhttpd.SbinDir			= ${qhttpd.BaseDir}/sbin
 qhttpd.RunDir			= ${qhttpd.BaseDir}/run
 qhttpd.LogDir			= ${qhttpd.BaseDir}/logs
+qhttpd.ConfDir			= ${qhttpd.BaseDir}/conf
 qhttpd.DataDir			= ${qhttpd.BaseDir}/htdocs
 qhttpd.TmpDir			= /tmp
+
+## the mimetype file
+qhttpd.MimeFile			= ${qhttpd.ConfDir}/mimetypes.conf
+qhttpd.MimeDefault		= application/octet-stream
 
 ## the pid file which is recorded by egisdavd when it starts
 qhttpd.PidFile			= ${qhttpd.RunDir}/qhttpd.pid

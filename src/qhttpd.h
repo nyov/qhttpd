@@ -43,14 +43,13 @@
 #include <sys/sem.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/sendfile.h>
 #include "qDecoder.h"
 
 //
 // PROGRAM SPECIFIC DEFINITIONS
 //
 #define PRG_NAME				"qhttpd"
-#define PRG_VERSION				"1.0.0"
+#define PRG_VERSION				"1.0.1"
 
 //
 // MAXIMUM INTERNAL LIMITATIONS
@@ -106,6 +105,9 @@ typedef struct {
 	char	szLogDir[MAX_PATH_LEN+1];
 	char	szDataDir[MAX_PATH_LEN+1];
 	char	szTmpDir[MAX_PATH_LEN+1];
+
+	char	szMimeFile[MAX_PATH_LEN+1];
+	char	szMimeDefault[MAX_PATH_LEN+1];
 
 	char	szPidfile[MAX_PATH_LEN+1];
 	int	nPort;
@@ -366,6 +368,11 @@ Q_OBSTACK *httpGetStatusHtml(void);
 
 // http_accesslog.c
 bool	httpAccessLog(struct HttpRequest *req, struct HttpResponse *res);
+
+// mime.c
+bool	mimeInit(char *pszFilepath, char *pszMimeDefault);
+bool	mimeFree(void);
+char	*mimeDetect(char *pszFilename);
 
 // util.c
 unsigned int convIp2Uint(char *szIp);

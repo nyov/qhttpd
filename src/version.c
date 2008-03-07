@@ -21,12 +21,12 @@
 
 void printUsages(void) {
 	printVersion();
-	printf("Usage: %s [-h] [-d] [-D] -c configfile\n", PRG_NAME);
-	printf("  -h            Display this help message and exit.\n");
-	printf("  -v            Version info.\n");
-	printf("  -d            Run as debugging mode.\n");
-	printf("  -D            Do not daemonize.\n");
-	printf("  -c configfile Set configuration file.\n");
+	fprintf(stderr, "Usage: %s [-h] [-d] [-D] -c configfile\n", PRG_NAME);
+	fprintf(stderr, "  -h            Display this help message and exit.\n");
+	fprintf(stderr, "  -v            Version info.\n");
+	fprintf(stderr, "  -d            Run as debugging mode.\n");
+	fprintf(stderr, "  -D            Do not daemonize.\n");
+	fprintf(stderr, "  -c configfile Set configuration file.\n");
 }
 
 void printVersion(void) {
@@ -35,7 +35,7 @@ void printVersion(void) {
 	pszBuildMode = "DEBUG";
 #endif
 
-	printf("%s v%s (%s; %s; %s)\n",
+	fprintf(stderr, "%s v%s (%s; %s; %s)\n",
 	    PRG_NAME, PRG_VERSION, __DATE__, __TIME__,
 	    pszBuildMode);
 }
