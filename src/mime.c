@@ -36,6 +36,7 @@ bool mimeInit(char *pszFilepath, char *pszMimeDefault) {
 bool mimeFree(void) {
 	if(m_mimelist == NULL) return false;
 	qEntryFree(m_mimelist);
+	m_mimelist = NULL;
 	return true;
 }
 

@@ -216,7 +216,7 @@ void daemonStart(bool nDaemonize) {
 			// 훅
 			int nJobCnt = hookWhileDaemonIdle();
 			if(nJobCnt < 0) {
-				LOG_ERR("Hook failed.\n");
+				LOG_ERR("Hook failed.");
 			} else if(nJobCnt == 0) {
 				// 아무 작업도 하지 않은 경우 잠시 쉼
 				microSleep(1 * 1000);
@@ -266,7 +266,7 @@ void daemonEnd(int nStatus) {
 
 	// hook
 	if(hookBeforeDaemonEnd() == false) {
-		LOG_ERR("Hook failed.\n");
+		LOG_ERR("Hook failed.");
 	}
 
 	// destroy mime
@@ -315,21 +315,27 @@ void daemonSignal(int signo) {
 		}
 		case SIGHUP : {
 			LOG_INFO("Caughted SIGHUP");
-			if (loadConfig(g_conf.szConfigFile, &g_conf)) {
-				LOG_INFO("Configuration reloaded.");
-			} else {
-				LOG_ERR("Can't reload configuration file %s\n", g_conf.szConfigFile);
+
+			// reload config
+			if(loadConfig(g_conf.szConfigFile, &g_conf) == false) {
+				LOG_ERR("Can't reload configuration file %s", g_conf.szConfigFile);
+			}
+
+			// reload mime
+			mimeFree();
+			if(mimeInit(g_conf.szMimeFile, g_conf.szMimeDefault) == false) {
+				LOG_ERR("Can't load mimetypes from %s", g_conf.szConfigFile);
 			}
 
 			// config hook
 			if(hookAfterConfigLoaded() == false || hookAfterDaemonSIGHUP() == false) {
-				LOG_ERR("Hook failed.\n");
+				LOG_ERR("Hook failed.");
 			}
 
 			// re-launch childs
 			poolSetExitReqeustAll();
-			LOG_INFO("Set exit request to all childs.");
 
+			LOG_INFO("Re-loaded.");
 			break;
 		}
 		case SIGCHLD : {
