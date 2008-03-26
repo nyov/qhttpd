@@ -149,11 +149,10 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 		off_t nOffset = (off_t)nRangeOffset1;	// 시작 오프셋
 		uint64_t nSent = qSocketSendFile(req->nSockFd, pszFilePath, nOffset, nRangeSize);
 		if(nSent != nRangeSize) {
-			LOG_INFO("Connection closed by foreign host. (%j/%j)", nSent, nRangeSize);
+			LOG_INFO("Connection closed by foreign host. (%ju/%ju)", nSent, nRangeSize);
 		}
 
 	}
-
 
 	return HTTP_RESCODE_OK;
 }

@@ -23,6 +23,28 @@
 // PUBLIC FUNCTIONS
 /////////////////////////////////////////////////////////////////////////
 
+int qSocketWaitWriteDone(int sockfd, int timeoutms) {
+	struct timeval tv;
+	fd_set readfds;
+
+	// time to wait
+	FD_ZERO(&readfds);
+	FD_SET(sockfd, &readfds);
+	if (timeoutms > 0) {
+		tv.tv_sec = (timeoutms / 1000), tv.tv_usec = ((timeoutms % 1000) * 1000);
+		if (select(FD_SETSIZE, &readfds, NULL, NULL, &tv) < 0) return -1;
+	} else if (timeoutms == 0) { // just poll
+		tv.tv_sec = 0, tv.tv_usec = 0;
+		if (select(FD_SETSIZE, &readfds, NULL, NULL, &tv) < 0) return -1;
+	} else { //  blocks indefinitely
+		if (select(FD_SETSIZE, &readfds, NULL, NULL, NULL) < 0) return -1;
+	}
+
+	if (!FD_ISSET(sockfd, &readfds)) return 0; // timeout
+
+	return 1;
+}
+
 int childMain(int nSockFd) {
 	bool bKeepAlive = false;
 
@@ -45,7 +67,7 @@ int childMain(int nSockFd) {
 		req = httpRequestParse(nSockFd, g_conf.nConnectionTimeout);
 		if(req == NULL) {
 			LOG_ERR("System Error #1.");
-			return 0;
+			break;
 		}
 
 		if(req->nReqStatus >= 0) {
@@ -53,9 +75,9 @@ int childMain(int nSockFd) {
 
 			// handle request
 			res = httpHandler(req);
-			if(req == NULL) {
+			if(res == NULL) {
 				LOG_ERR("System Error #2.");
-				return 0;
+				break;
 			}
 			poolSetConnResponse(res); // set response information
 

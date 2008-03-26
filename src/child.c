@@ -37,13 +37,13 @@ void childStart(int nSockFd) {
 	// register at pool.
 	if(poolChildReg() == false) {
 		LOG_ERR("Can't register myself at the pool.");
-		childEnd();
+		childEnd(EXIT_FAILURE);
 	}
 
 	// hook
 	if(hookAfterChildInit() == false) {
 		LOG_ERR("Hook failed.\n");
-		childEnd();
+		childEnd(EXIT_FAILURE);
 	}
 
 	// init random
@@ -130,10 +130,10 @@ void childStart(int nSockFd) {
 	}
 
 	// ending connection
-	childEnd();
+	childEnd(EXIT_SUCCESS);
 }
 
-void childEnd(void) {
+void childEnd(int nStatus) {
 	static bool bAlready = false;
 
 	if(bAlready == true) return;
@@ -152,7 +152,7 @@ void childEnd(void) {
 	// quit
 	LOG_INFO("Child terminated.");
 	//microSleep(10); // 1/100000 sec
-	exit(0);
+	exit(nStatus);
 }
 
 void childSignal(int signo) {
@@ -163,7 +163,7 @@ void childSignal(int signo) {
 		}
 		case SIGTERM : {
 			LOG_INFO("Child : Caughted SIGTERM");
-			childEnd();
+			childEnd(EXIT_SUCCESS);
 			break;
 		}
 		case SIGHUP : {

@@ -281,7 +281,7 @@ void	daemonSignalInit(void *func);
 
 // child.c
 void	childStart(int nSockFd);
-void	childEnd(void);
+void	childEnd(int nStatus);
 void	childSignal(int signo);
 
 // child_main.c
