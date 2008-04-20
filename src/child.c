@@ -20,11 +20,6 @@
 #include "qhttpd.h"
 
 /////////////////////////////////////////////////////////////////////////
-// PRIVATE FUNCTION PROTOTYPES
-/////////////////////////////////////////////////////////////////////////
-void childSignalInit(void *func);
-
-/////////////////////////////////////////////////////////////////////////
 // PUBLIC FUNCTIONS
 /////////////////////////////////////////////////////////////////////////
 
@@ -54,7 +49,6 @@ void childStart(int nSockFd) {
                 struct sockaddr_in connAddr;     // client address information
                 int nConnLen = sizeof(connAddr);
                 int nNewSockFd;
-
 
 		//
 		// 컨넥션 대기 영역
@@ -155,6 +149,19 @@ void childEnd(int nStatus) {
 	exit(nStatus);
 }
 
+void childSignalInit(void *func) {
+	signal(SIGINT, func);
+	signal(SIGTERM, func);
+	signal(SIGHUP, func);
+	signal(SIGPIPE, func);
+
+	signal(SIGUSR1, func);
+	signal(SIGUSR2, func);
+
+	// 무시할 시그널들
+	//signal(SIGPIPE, func);
+}
+
 void childSignal(int signo) {
 	switch (signo) {
 		case SIGINT : {
@@ -187,17 +194,4 @@ void childSignal(int signo) {
 			break;
 		}
 	}
-}
-
-void childSignalInit(void *func) {
-	signal(SIGINT, func);
-	signal(SIGTERM, func);
-	signal(SIGHUP, func);
-	signal(SIGPIPE, func);
-
-	signal(SIGUSR1, func);
-	signal(SIGUSR2, func);
-
-	// 무시할 시그널들
-	//signal(SIGPIPE, func);
 }

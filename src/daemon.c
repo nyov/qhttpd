@@ -20,11 +20,6 @@
 #include "qhttpd.h"
 
 /////////////////////////////////////////////////////////////////////////
-// PRIVATE FUNCTION PROTOTYPES
-/////////////////////////////////////////////////////////////////////////
-void daemonSignalInit(void *func);
-
-/////////////////////////////////////////////////////////////////////////
 // PUBLIC FUNCTIONS
 /////////////////////////////////////////////////////////////////////////
 
@@ -140,7 +135,7 @@ void daemonStart(bool nDaemonize) {
 		if(nCurrentChilds < g_conf.nMaxClients) {
 			if(nCurrentChilds < g_conf.nStartServers) {
 				nChildFlag = 1;
-			} else if(nCurrentChilds >= g_conf.nStartServers) {
+			} else {
 				if(nIdleChilds < g_conf.nMinSpareServers) nChildFlag = 1;
 				else if(nCurrentChilds > g_conf.nStartServers
 					&& nIdleChilds > g_conf.nMaxSpareServers) nChildFlag = -1;
@@ -193,8 +188,8 @@ void daemonStart(bool nDaemonize) {
 		} else { // 스페어 증감이 필요치 않을경우
 			static time_t nLastSec = 0;
 
-			// 세마포 데드락 체크
 			if(nLastSec != time(NULL)) {
+				// 세마포 데드락 체크
 				static int nSemLockCnt[MAX_SEMAPHORES];
 				int i;
 				for(i = 0; i < MAX_SEMAPHORES; i++) {
@@ -210,17 +205,19 @@ void daemonStart(bool nDaemonize) {
 					}
 				}
 
-				nLastSec = time(NULL);
-			}
+				// 훅
+				int nJobCnt = hookWhileDaemonIdle();
+				if(nJobCnt < 0) {
+					LOG_ERR("Hook failed.");
+				}
 
-			// 훅
-			int nJobCnt = hookWhileDaemonIdle();
-			if(nJobCnt < 0) {
-				LOG_ERR("Hook failed.");
-			} else if(nJobCnt == 0) {
-				// 아무 작업도 하지 않은 경우 잠시 쉼
+				// 실행시간 갱신
+				nLastSec = time(NULL);
+			} else {
 				microSleep(1 * 1000);
 			}
+
+
 		}
 	}
 
@@ -233,20 +230,6 @@ void daemonEnd(int nStatus) {
 	if(bAlready == true) return;
 	bAlready = true;
 
-	// send termination signal to every childs
-	/*
-	if (poolGetCurrentChilds() > 0) {
-		int nSigSent = poolSendSignal(SIGTERM);
-		//LOG_INFO("Sending termination signal to childs %d/%d", nSigSent, poolGetCurrentChilds());
-
-		int nWait;
-		for (nWait = 0; nWait < 10 && poolGetCurrentChilds() > 0; nWait++) {
-			LOG_INFO("Waiting childs. %d actives.", poolGetCurrentChilds());
-			if(nWait == 5) poolSendSignal(SIGTERM);
-			sleep(1);
-		}
-	}
-	*/
 	int nCurrentChilds, nWait;
 	for(nWait = 0; nWait < 15 && (nCurrentChilds = poolGetCurrentChilds()) > 0; nWait++) {
 		LOG_INFO("Waiting childs. %d actives.", nCurrentChilds);
@@ -296,9 +279,22 @@ void daemonEnd(int nStatus) {
 
 	// close log
 	if(g_acclog != NULL) qLogClose(g_acclog);
-	if(g_errlog != NULL) qLogClose(g_errlog);
+if(g_errlog != NULL) qLogClose(g_errlog);
 
 	exit(nStatus);
+}
+
+void daemonSignalInit(void *func) {
+	signal(SIGINT, func);
+	signal(SIGTERM, func);
+	signal(SIGHUP, func);
+	signal(SIGCHLD, func);
+
+	signal(SIGUSR1, func);
+	signal(SIGUSR2, func);
+
+	// 무시할 시그널들
+	signal(SIGPIPE, func);
 }
 
 void daemonSignal(int signo) {
@@ -368,17 +364,4 @@ void daemonSignal(int signo) {
 			break;
 		}
 	}
-}
-
-void daemonSignalInit(void *func) {
-	signal(SIGINT, func);
-	signal(SIGTERM, func);
-	signal(SIGHUP, func);
-	signal(SIGCHLD, func);
-
-	signal(SIGUSR1, func);
-	signal(SIGUSR2, func);
-
-	// 무시할 시그널들
-	signal(SIGPIPE, func);
 }

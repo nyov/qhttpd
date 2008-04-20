@@ -276,12 +276,13 @@ void	signalInit(void *func);
 // daemon.c
 void	daemonStart(bool nDaemonize);
 void	daemonEnd(int nStatus);
-void	daemonSignal(int signo);
 void	daemonSignalInit(void *func);
+void	daemonSignal(int signo);
 
 // child.c
 void	childStart(int nSockFd);
 void	childEnd(int nStatus);
+void	childSignalInit(void *func);
 void	childSignal(int signo);
 
 // child_main.c
