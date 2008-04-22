@@ -162,7 +162,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		}
 		req->pszHttpVersion = strdup(pszHttpVer);
 
-		//DEBUG("%s %d %s %s", req->pszRequestUri, req->nServiceId, req->pszRequestPath, req->pszQueryString);
+		//DEBUG("%s %d %s", req->pszRequestUri, req->nServiceId, req->pszQueryString);
 	}
 
 	// Parse parameter headers : "key: value"
@@ -235,8 +235,6 @@ void httpRequestFree(struct HttpRequest *req) {
 	if(req->pszRequestUrl != NULL) free(req->pszRequestUrl);
 	if(req->pszQueryString != NULL) free(req->pszQueryString);
 	if(req->pszHttpVersion != NULL) free(req->pszHttpVersion);
-
-	if(req->pszRequestPath != NULL) free(req->pszRequestPath);
 
 	if(req->pHeaders != NULL) qEntryFree(req->pHeaders);
 	if(req->pContents != NULL) free(req->pContents);
