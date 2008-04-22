@@ -199,9 +199,6 @@ struct HttpRequest {
 	char	*pszQueryString;	// query string			ex) query=the%20value
 	char	*pszHttpVersion;	// HTTP/?.?
 
-	int	nServiceId;		// service id			ex) 100
-	char	*pszRequestPath;	// decoded url(no sid)		ex) /my data/my.gif
-
 	// request header
 	Q_ENTRY *pHeaders;		// 요청 헤더들
 
