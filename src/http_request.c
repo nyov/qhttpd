@@ -151,21 +151,6 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		}
 		correctPath(req->pszRequestUrl);
 
-		// divide url to service id & path
-		pszTmp = strstr(req->pszRequestUrl + 1, "/");
-		if(pszTmp == NULL) {
-			req->nServiceId = atoi(req->pszRequestUrl + 1);
-			if(req->nServiceId == 0) req->pszRequestPath = strdup(req->pszRequestUrl); // 일반 URL ex) /abc
-			else req->pszRequestPath = strdup("/"); // 서비스ID만 온경우 ex) /100
-		} else {
-			*pszTmp = '\0';
-			req->nServiceId = atoi(req->pszRequestUrl + 1);
-			*pszTmp = '/';
-
-			if(req->nServiceId == 0) req->pszRequestPath = strdup(req->pszRequestUrl); // 일반 URL ex) /abc/def
-			else req->pszRequestPath = strdup(pszTmp); // 서비스ID+URL ex) /100/def
-		}
-
 		// http version
 		qStrupr(pszHttpVer);
 		if(strcmp(pszHttpVer, HTTP_PROTOCOL_09)
