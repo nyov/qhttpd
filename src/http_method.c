@@ -35,22 +35,6 @@ int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
  */
 #define MAX_SENDFILE_CHUNK_SIZE		(1024 * 1024)
 int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
-
-	// 특수 URI 체크
-	if(g_conf.bStatusEnable == true) {
-		if(!strcmp(req->pszRequestUrl, g_conf.szStatusUrl)) {
-			Q_OBSTACK *obHtml = httpGetStatusHtml();
-			if(obHtml == NULL) return response500(req, res);
-
-			httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
-			httpResponseSetContent(res, "text/html; charset=\"utf-8\"", qObstackGetSize(obHtml), (char *)qObstackFinish(obHtml));
-			qObstackFree(obHtml);
-
-			return HTTP_RESCODE_OK;
-		}
-	}
-
-	// 파일 전송
 	char szFilePath[SYSPATH_SIZE];
 	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestUrl);
 	return httpProcessGetNormalFile(req, res, szFilePath, mimeDetect(szFilePath));

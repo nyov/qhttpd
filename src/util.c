@@ -105,7 +105,7 @@ uint64_t convStr2Uint64(char *szNumStr) {
  *
  * @note 리턴 문자열은 사용자가 free 해 줘야함.
  */
-char *getExtestionFromFilename(char *szFilename, bool bIncludeDot) {
+char *getExtentionFromFilename(char *szFilename, bool bIncludeDot) {
 	int i;
 
 	for(i = strlen(szFilename) - 1; i >= 0; i--) {

@@ -43,7 +43,7 @@ bool mimeFree(void) {
 char *mimeDetect(char *pszFilename) {
 	if(pszFilename == NULL || m_mimelist == NULL) return m_mimedefault;
 
-	char *pszExt = getExtestionFromFilename(pszFilename, false);
+	char *pszExt = getExtentionFromFilename(pszFilename, false);
 	char *mimetype = qEntryGetValueNoCase(m_mimelist, pszExt);
 	free(pszExt);
 

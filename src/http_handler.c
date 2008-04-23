@@ -43,6 +43,23 @@ struct HttpResponse *httpHandler(struct HttpRequest *req) {
 		return res;
 	}
 
+	// check server-status request
+	if(g_conf.bEgisdatadStatusEnable == true
+	&& !strcmp(req->pszRequestMethod, "GET")
+	&& !strcmp(req->pszRequestUrl, g_conf.szEgisdatadStatusUrl)) {
+		Q_OBSTACK *obHtml = httpGetStatusHtml();
+		if(obHtml == NULL) {
+			response500(req, res);
+			return res;
+		}
+
+		httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
+		httpResponseSetContent(res, "text/html; charset=\"utf-8\"", qObstackGetSize(obHtml), (char *)qObstackFinish(obHtml));
+		qObstackFree(obHtml);
+
+		return res;
+	}
+
 	// handle method
 	int nResCode = 0;
 

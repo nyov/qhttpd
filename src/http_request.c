@@ -77,28 +77,6 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 
 		// request method
 		qStrupr(pszReqMethod);
-		/*
-		if(strcmp(pszReqMethod, "GET")
-			&& strcmp(pszReqMethod, "HEAD")
-			&& strcmp(pszReqMethod, "POST")
-			&& strcmp(pszReqMethod, "PUT")
-			&& strcmp(pszReqMethod, "DELETE")
-			&& strcmp(pszReqMethod, "LINK")
-			&& strcmp(pszReqMethod, "UNLINK")
-			&& strcmp(pszReqMethod, "OPTIONS")
-			// DAV method
-			&& strcmp(pszReqMethod, "PROPFIND")
-			&& strcmp(pszReqMethod, "PROPPATCH")
-			&& strcmp(pszReqMethod, "COPY")
-			&& strcmp(pszReqMethod, "MOVE")
-			&& strcmp(pszReqMethod, "MKCOL")
-			&& strcmp(pszReqMethod, "LOCK")
-			&& strcmp(pszReqMethod, "UNLOCK")
-		) {
-			DEBUG("WARNING: Unknown request: %s", pszReqMethod);
-			return req;
-		}
-		*/
 		req->pszRequestMethod = strdup(pszReqMethod);
 
 		// request uri
@@ -161,8 +139,6 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 			return req;
 		}
 		req->pszHttpVersion = strdup(pszHttpVer);
-
-		//DEBUG("%s %d %s", req->pszRequestUri, req->nServiceId, req->pszQueryString);
 	}
 
 	// Parse parameter headers : "key: value"

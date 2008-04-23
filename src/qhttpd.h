@@ -200,7 +200,7 @@ struct HttpRequest {
 	char	*pszHttpVersion;	// HTTP/?.?
 
 	// request header
-	Q_ENTRY *pHeaders;		// 요청 헤더들
+	Q_ENTRY *pHeaders;		// request headers
 
 	// contents
 	uint64_t nContentsLength;	// 컨텐츠 유무 및 사이즈. 0:컨텐츠 없음, n>0 컨텐츠 있음
@@ -376,7 +376,7 @@ char	*mimeDetect(char *pszFilename);
 unsigned int convIp2Uint(char *szIp);
 unsigned long int microSleep(unsigned long microsec);
 uint64_t convStr2Uint64(char *szNumStr);
-char	*getExtestionFromFilename(char *szFilename, bool bIncludeDot);
+char	*getExtentionFromFilename(char *szFilename, bool bIncludeDot);
 float	diffTimeval(struct timeval *t1, struct timeval *t0);
 
 bool	isCorrectFilename(char *pszPath);
