@@ -44,9 +44,9 @@ struct HttpResponse *httpHandler(struct HttpRequest *req) {
 	}
 
 	// check server-status request
-	if(g_conf.bEgisdatadStatusEnable == true
+	if(g_conf.bStatusEnable == true
 	&& !strcmp(req->pszRequestMethod, "GET")
-	&& !strcmp(req->pszRequestUrl, g_conf.szEgisdatadStatusUrl)) {
+	&& !strcmp(req->pszRequestUrl, g_conf.szStatusUrl)) {
 		Q_OBSTACK *obHtml = httpGetStatusHtml();
 		if(obHtml == NULL) {
 			response500(req, res);
