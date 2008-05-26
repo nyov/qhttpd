@@ -267,7 +267,7 @@ bool poolSetConnInfo(int nSockFd) {
 
 	// get client info
 	if (getpeername(nSockFd, (struct sockaddr *)&sockAddr, &sockSize) != 0) {
-		LOG_WARN("getpeername() failed.");
+		LOG_WARN("getpeername() failed. (errno:%d)", errno);
 		return false;
 	}
 

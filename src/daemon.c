@@ -72,7 +72,7 @@ void daemonStart(bool nDaemonize) {
 	svrAddr.sin_family = AF_INET;         // host byte order
 	svrAddr.sin_port = htons(g_conf.nPort);  // short, network byte order
 	svrAddr.sin_addr.s_addr = INADDR_ANY; // auto-fill with my IP
-	bzero(&(svrAddr.sin_zero), 8);        // zero the rest of the struct
+	memset((void *)&(svrAddr.sin_zero), 0, sizeof(svrAddr.sin_zero)); // zero the rest of the struct
 
 	// bind
 	if (bind(nSockFd, (struct sockaddr *)&svrAddr, sizeof(struct sockaddr)) == -1) {
@@ -125,20 +125,20 @@ void daemonStart(bool nDaemonize) {
 
 	// prefork management
 	while (true) {
-		int nChildFlag = 0;
-
 		int nTotalLaunched = poolGetTotalLaunched();
 		int nCurrentChilds = poolGetCurrentChilds();
 		int nWorkingChilds = poolGetWorkingChilds();
 		int nIdleChilds = nCurrentChilds - nWorkingChilds;
 
-		if(nCurrentChilds < g_conf.nMaxClients) {
-			if(nCurrentChilds < g_conf.nStartServers) {
-				nChildFlag = 1;
-			} else {
-				if(nIdleChilds < g_conf.nMinSpareServers) nChildFlag = 1;
-				else if(nCurrentChilds > g_conf.nStartServers
-					&& nIdleChilds > g_conf.nMaxSpareServers) nChildFlag = -1;
+		// increase or decrease childs
+		int nChildFlag = 0;
+		if(nCurrentChilds < g_conf.nStartServers) { // should be launched at least start servers
+			nChildFlag = 1;
+		} else {
+			if(nIdleChilds < g_conf.nMinSpareServers) { // not enough idle childs
+				if(nCurrentChilds < g_conf.nMaxClients) nChildFlag = 1;
+			} else if(nIdleChilds > g_conf.nMaxSpareServers) { // too much idle childs
+				if(nCurrentChilds > g_conf.nStartServers) nChildFlag = -1;
 			}
 		}
 
@@ -189,6 +189,7 @@ void daemonStart(bool nDaemonize) {
 			static time_t nLastSec = 0;
 
 			if(nLastSec != time(NULL)) {
+				/*
 				// 세마포 데드락 체크
 				static int nSemLockCnt[MAX_SEMAPHORES];
 				int i;
@@ -204,6 +205,7 @@ void daemonStart(bool nDaemonize) {
 						nSemLockCnt[i] = 0;
 					}
 				}
+				*/
 
 				// 훅
 				int nJobCnt = hookWhileDaemonIdle();
@@ -216,8 +218,18 @@ void daemonStart(bool nDaemonize) {
 			} else {
 				microSleep(1 * 1000);
 			}
+		}
 
+		// wait childs
+		int nChildPid;
+		int nChildStatus = 0;
+		while((nChildPid = waitpid((pid_t)-1, &nChildStatus, WNOHANG)) > 0) {
+			DEBUG("Detecting child(%d) terminated. Status : %d", nChildPid, nChildStatus);
 
+			// if child is killed unexpectly such like SIGKILL, we remove child info here
+			if (poolChildDel(nChildPid) == true) {
+				LOG_WARN("Child %d killed unexpectly.", nChildPid);
+			}
 		}
 	}
 
@@ -285,16 +297,28 @@ if(g_errlog != NULL) qLogClose(g_errlog);
 }
 
 void daemonSignalInit(void *func) {
-	signal(SIGINT, func);
-	signal(SIGTERM, func);
-	signal(SIGHUP, func);
-	signal(SIGCHLD, func);
+	// init sigaction
+	struct sigaction sa;
+	sa.sa_handler = func;
+	sa.sa_flags = 0;
+	sigemptyset (&sa.sa_mask);
 
-	signal(SIGUSR1, func);
-	signal(SIGUSR2, func);
+	// add block mask
+	sigaddset(&sa.sa_mask, SIGINT);
+	sigaddset(&sa.sa_mask, SIGTERM);
+	sigaddset(&sa.sa_mask, SIGHUP);
 
-	// 무시할 시그널들
-	signal(SIGPIPE, func);
+	// to handle
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
+
+	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
+
+	// to ignore
+	signal(SIGCHLD, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
 }
 
 void daemonSignal(int signo) {
@@ -331,24 +355,7 @@ void daemonSignal(int signo) {
 			// re-launch childs
 			poolSetExitReqeustAll();
 
-			LOG_INFO("Re-loaded.");
-			break;
-		}
-		case SIGCHLD : {
-			int nChildPid;
-			int nChildStatus;
-
-			DEBUG("Caughted SIGCHLD");
-
-			while((nChildPid = waitpid((pid_t)-1, &nChildStatus, WNOHANG)) > 0) {
-				DEBUG("Detecting child(%d) terminated. Status : %d", nChildPid, nChildStatus);
-
-				// if child is killed unexpectly such like SIGKILL, we remove child info here
-				if (poolChildDel(nChildPid) == true) {
-					LOG_WARN("Child %d killed unexpectly.", nChildPid);
-				}
-			}
-
+			LOG_SYS("Reloaded.");
 			break;
 		}
 		case SIGUSR1 : {

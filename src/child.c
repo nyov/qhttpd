@@ -154,7 +154,7 @@ void childEnd(int nStatus) {
 	}
 
 	// remove child info
-	if (poolChildDel(getpid()) == false) {
+	if(poolChildDel(getpid()) == false) {
 		LOG_WARN("Can't find pid %d from connection list", getpid());
 	}
 
@@ -165,22 +165,34 @@ void childEnd(int nStatus) {
 }
 
 void childSignalInit(void *func) {
-	signal(SIGINT, func);
-	signal(SIGTERM, func);
-	signal(SIGHUP, func);
-	signal(SIGPIPE, func);
+	// init sigaction
+	struct sigaction sa;
+	sa.sa_handler = func;
+	sa.sa_flags = 0;
+	sigemptyset (&sa.sa_mask);
 
-	signal(SIGUSR1, func);
-	signal(SIGUSR2, func);
+	// add block mask
+	sigaddset(&sa.sa_mask, SIGINT);
+	sigaddset(&sa.sa_mask, SIGTERM);
+	sigaddset(&sa.sa_mask, SIGHUP);
 
-	// 무시할 시그널들
-	//signal(SIGPIPE, func);
+	// to handle
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
+
+	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
+
+	// to ignore
+	signal(SIGPIPE, SIG_IGN);
 }
 
 void childSignal(int signo) {
 	switch (signo) {
 		case SIGINT : {
 			LOG_INFO("Child : Caughted SIGINT ");
+			childEnd(EXIT_SUCCESS);
 			break;
 		}
 		case SIGTERM : {
