@@ -106,6 +106,12 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
+	// check pid file
+	if(qCheckFile(g_conf.szPidfile) == true) {
+		fprintf(stderr, "ERROR: pid file(%s) exists. already running?\n", g_conf.szPidfile);
+		return EXIT_FAILURE;
+	}
+
 	// set log level
 	if(g_loglevel == 0) g_loglevel = g_conf.nLogLevel;
 
