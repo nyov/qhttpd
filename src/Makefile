@@ -20,7 +20,12 @@
 # Compiler arguments
 CC	= gcc
 CFLAGS  = -Wall
-DEFS	= -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DBUILD_DEBUG
+DEFS	= -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+
+ifeq ($(BUILD), debug)
+	CFLAGS	+= -g -O
+	DEFS	+= -DBUILD_DEBUG
+endif
 
 INCLUDE = -I./				\
 	  -I/usr/include		\
