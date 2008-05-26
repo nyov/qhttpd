@@ -102,6 +102,16 @@ void childStart(int nSockFd) {
 		// connection accepted
 		DEBUG("Connection established.");
 
+		// set socket option
+		if(MAX_LINGER_TIMEOUT > 0) {
+			struct linger li;
+			li.l_onoff = 1;
+			li.l_linger = MAX_LINGER_TIMEOUT;
+			if(setsockopt(nNewSockFd, SOL_SOCKET, SO_LINGER, &li, sizeof(struct linger)) < 0) {
+				LOG_WARN("Socket option(SO_LINGER) set failed.");
+			}
+		}
+
 		// connection hook
 		if(hookAfterConnEstablished() == true) {
 			// register client information
