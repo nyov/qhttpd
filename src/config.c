@@ -67,7 +67,7 @@ bool loadConfig(char *pszFilePath, Config *pConf) {
 	}
 
 	// 설정 파일 로드
-	Q_ENTRY *entry = qfDecoder(pszFilePath);
+	Q_ENTRY *entry = qfDecoder(pszFilePath, '=');
 	if (entry == NULL) {
 		return false;
 	}

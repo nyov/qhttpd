@@ -26,7 +26,7 @@ bool mimeInit(char *pszFilepath, char *pszMimeDefault) {
 	if(m_mimelist != NULL) return false;
 
 	m_mimedefault = pszMimeDefault;
-	m_mimelist = qEntryLoad(pszFilepath, false);
+	m_mimelist = qEntryLoad(pszFilepath, '=', false);
 
 
 	if(m_mimelist == NULL) return false;
