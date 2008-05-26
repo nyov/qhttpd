@@ -180,7 +180,7 @@ bool poolChildReg(void) {
 	// find empty slot
 	int nSlot = poolFindSlot(0);
 	if (nSlot < 0) {
-		DEBUG("WARNING: Slot FULL.");
+		LOG_WARN("Shared Pool FULL. Maximum connection reached.");
 
 		// set global info
 		m_pShm->nTotalLaunched++;

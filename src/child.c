@@ -102,18 +102,23 @@ void childStart(int nSockFd) {
 		// connection accepted
 		DEBUG("Connection established.");
 
-
-		// namespace connection check
-		if(hookAfterConnEstablished() == false) {
-			LOG_ERR("Can't connect to namespace.");
-			close(nNewSockFd);
-			continue;
+		// connection hook
+		if(hookAfterConnEstablished() == true) {
+			// register client information
+			if(poolSetConnInfo(nNewSockFd) == true) {;
+				// launch main logic
+				childMain(nNewSockFd);
+			}
+		} else {
+			LOG_ERR("Hook failed.");
 		}
 
-		// register client information
-		if(poolSetConnInfo(nNewSockFd) == true) {;
-			// launch main logic
-			childMain(nNewSockFd);
+		// close connection
+		if(shutdown(nNewSockFd, SHUT_WR) == 0) {
+			char szDummyBuf[64];
+			while(qSocketRead(nNewSockFd, szDummyBuf, sizeof(szDummyBuf), MAX_SHUTDOWN_WAIT) > 0) {;
+				DEBUG("Throw dummy input stream.");
+			}
 		}
 		close(nNewSockFd);
 

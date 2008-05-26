@@ -159,7 +159,7 @@ void daemonStart(bool nDaemonize) {
 				childStart(nSockFd);
 
 				// 이 코드는 안전장치로, 절대 수행되지 않음.
-				exit(0);
+				exit(EXIT_FAILURE);
 
 			} else { // 부모
 				int nWait;

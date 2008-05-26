@@ -62,6 +62,7 @@
 #define SYSPATH_SIZE				MAX_PATH_LEN
 #define HTTP_MAX_MEMORY_CONTENTS		(1024*1024)	// if the contents size is less than this, do not use temporary file
 #define	MAX_USERCOUNTER				(10)		// amount of custom counter in shared memory for customizing purpose
+#define	MAX_SHUTDOWN_WAIT			(2000)		// maximum ms for waiting input stream after socket shutdown
 
 #define MAX_LOGLEVEL				(4)
 
