@@ -13,7 +13,6 @@ qhttpd.TmpDir			= /tmp
 
 ## the mimetype file
 qhttpd.MimeFile			= ${qhttpd.ConfDir}/mimetypes.conf
-qhttpd.MimeDefault		= application/octet-stream
 
 ## the pid file which is recorded by egisdavd when it starts
 qhttpd.PidFile			= ${qhttpd.RunDir}/qhttpd.pid
