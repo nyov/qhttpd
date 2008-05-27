@@ -109,7 +109,6 @@ typedef struct {
 	char	szTmpDir[MAX_PATH_LEN+1];
 
 	char	szMimeFile[MAX_PATH_LEN+1];
-	char	szMimeDefault[MAX_PATH_LEN+1];
 
 	char	szPidfile[MAX_PATH_LEN+1];
 	int	nPort;
@@ -372,7 +371,7 @@ Q_OBSTACK *httpGetStatusHtml(void);
 bool	httpAccessLog(struct HttpRequest *req, struct HttpResponse *res);
 
 // mime.c
-bool	mimeInit(char *pszFilepath, char *pszMimeDefault);
+bool	mimeInit(char *pszFilepath);
 bool	mimeFree(void);
 char	*mimeDetect(char *pszFilename);
 

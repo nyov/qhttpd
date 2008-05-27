@@ -47,7 +47,7 @@ void daemonStart(bool nDaemonize) {
 	LOG_INFO("Initializing %s...", PRG_NAME);
 
 	// load mime
-	if(mimeInit(g_conf.szMimeFile, g_conf.szMimeDefault) == false) {
+	if(mimeInit(g_conf.szMimeFile) == false) {
 		LOG_WARN("Can't load mimetypes from %s", g_conf.szMimeFile);
 	}
 
@@ -325,7 +325,7 @@ void daemonSignalHandler(void) {
 
 		// reload mime
 		mimeFree();
-		if(mimeInit(g_conf.szEgisdatadMimeFile, g_conf.szEgisdatadMimeDefault) == false) {
+		if(mimeInit(g_conf.szMimeFile) == false) {
 			LOG_ERR("Can't load mimetypes from %s", g_conf.szConfigFile);
 		}
 
