@@ -277,12 +277,14 @@ void	daemonStart(bool nDaemonize);
 void	daemonEnd(int nStatus);
 void	daemonSignalInit(void *func);
 void	daemonSignal(int signo);
+void	daemonSignalHandler(void);
 
 // child.c
 void	childStart(int nSockFd);
 void	childEnd(int nStatus);
 void	childSignalInit(void *func);
 void	childSignal(int signo);
+void	childSignalHandler(void);
 
 // child_main.c
 int	childMain(int nSockFd);
@@ -405,5 +407,6 @@ extern int	g_semid;
 extern Q_LOG	*g_errlog;
 extern Q_LOG	*g_acclog;
 extern int	g_loglevel;
+extern sigset_t	g_sigflags;
 
 #endif	// _QHTTPD_H

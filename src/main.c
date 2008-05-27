@@ -29,6 +29,7 @@ int	g_semid = -1;			// 세마포ID
 Q_LOG	*g_errlog = NULL;		// 에러로그 구조체 포인터
 Q_LOG	*g_acclog = NULL;		// 전송로그 구조체 포인터
 int	g_loglevel = 0;			// 로그 레벨
+sigset_t g_sigflags;			// 처리할 시그널 셋
 
 /////////////////////////////////////////////////////////////////////////
 // PUBLIC FUNCTIONS

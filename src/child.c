@@ -63,7 +63,14 @@ void childStart(int nSockFd) {
                 tv.tv_sec = 1, tv.tv_usec = 0; // wait 1 sec
 
                 if (select(FD_SETSIZE, &socklist, NULL, NULL, &tv) <= 0) {
+                        //
                         // periodic(1 sec) job here
+                        //
+
+                        // signal handling
+                        childSignalHandler();
+
+                        // check exit request
                         if(poolGetExitRequest() == true) {
                         	DEBUG("Caughted exit request.");
                         	break;
@@ -160,7 +167,6 @@ void childEnd(int nStatus) {
 
 	// quit
 	LOG_INFO("Child terminated.");
-	//microSleep(10); // 1/100000 sec
 	exit(nStatus);
 }
 
@@ -171,54 +177,54 @@ void childSignalInit(void *func) {
 	sa.sa_flags = 0;
 	sigemptyset (&sa.sa_mask);
 
-	// add block mask
-	sigaddset(&sa.sa_mask, SIGINT);
-	sigaddset(&sa.sa_mask, SIGTERM);
-	sigaddset(&sa.sa_mask, SIGHUP);
-
 	// to handle
-	sigaction(SIGINT, &sa, NULL);
-	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGINT, &sa, NULL);
 
 	sigaction(SIGUSR1, &sa, NULL);
 	sigaction(SIGUSR2, &sa, NULL);
 
 	// to ignore
 	signal(SIGPIPE, SIG_IGN);
+
+	// reset signal flags;
+	sigemptyset(&g_sigflags);
 }
 
 void childSignal(int signo) {
-	switch (signo) {
-		case SIGINT : {
-			LOG_INFO("Child : Caughted SIGINT ");
-			childEnd(EXIT_SUCCESS);
-			break;
-		}
-		case SIGTERM : {
-			LOG_INFO("Child : Caughted SIGTERM");
-			childEnd(EXIT_SUCCESS);
-			break;
-		}
-		case SIGHUP : {
-			LOG_INFO("Child : Caughted SIGHUP ");
-			break;
-		}
-		case SIGPIPE : {
-			LOG_INFO("Child : Caughted SIGPIPE ");
-			break;
-		}
-		case SIGUSR1 : {
-			LOG_INFO("Child : Caughted SIGUSR1 ");
-			break;
-		}
-		case SIGUSR2 : {
-			LOG_INFO("Child : Caughted SIGUSR2 ");
-			break;
-		}
-		default : {
-			LOG_WARN("Child : Unexpected signal caughted : signo=%d", signo);
-			break;
-		}
+	sigaddset(&g_sigflags, signo);
+	if(signo == SIGTERM || signo == SIGINT) childSignalHandler();
+}
+
+void childSignalHandler(void) {
+	if(sigismember(&g_sigflags, SIGHUP)) {
+		sigdelset(&g_sigflags, SIGHUP);
+		LOG_INFO("Child : Caughted SIGHUP ");
+
+		if(poolSetExitRequest() == false) childEnd(EXIT_FAILURE);
+	} else if(sigismember(&g_sigflags, SIGTERM)) {
+		sigdelset(&g_sigflags, SIGTERM);
+		LOG_INFO("Child : Caughted SIGTERM");
+
+		childEnd(EXIT_SUCCESS);
+	} else if(sigismember(&g_sigflags, SIGINT)) {
+		sigdelset(&g_sigflags, SIGINT);
+		LOG_INFO("Child : Caughted SIGINT");
+
+		childEnd(EXIT_SUCCESS);
+	} else if(sigismember(&g_sigflags, SIGUSR1)) {
+		sigdelset(&g_sigflags, SIGUSR1);
+		LOG_INFO("Child : Caughted SIGUSR1");
+
+		if(g_loglevel < MAX_LOGLEVEL) g_loglevel++;
+		LOG_INFO("Increasing log-level to %d.", g_loglevel);
+
+	} else if(sigismember(&g_sigflags, SIGUSR2)) {
+		sigdelset(&g_sigflags, SIGUSR2);
+		LOG_INFO("Child : Caughted SIGUSR2");
+
+		if(g_loglevel > 0) g_loglevel--;
+		LOG_INFO("Decreasing log-level to %d.", g_loglevel);
 	}
 }

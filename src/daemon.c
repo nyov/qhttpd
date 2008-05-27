@@ -169,7 +169,7 @@ void daemonStart(bool nDaemonize) {
 					//DEBUG("%d %d", nTotalLaunched, poolGetTotalLaunched());
 					if(nTotalLaunched != poolGetTotalLaunched()) break;
 					DEBUG("Waiting child registered at pool. [%d]", nWait+1);
-					microSleep(100);
+					microSleep(1000);
 				}
 				if(nWait == 1000) {
 					LOG_WARN("Delayed child launching.");
@@ -189,48 +189,21 @@ void daemonStart(bool nDaemonize) {
 			static time_t nLastSec = 0;
 
 			if(nLastSec != time(NULL)) {
-				/*
-				// 세마포 데드락 체크
-				static int nSemLockCnt[MAX_SEMAPHORES];
-				int i;
-				for(i = 0; i < MAX_SEMAPHORES; i++) {
-					if(qSemCheck(g_semid, i) == true) {
-						nSemLockCnt[i]++;
-						if(nSemLockCnt[i] > MAX_MAX_SEMAPHORES_LOCK_SECS) {
-							LOG_ERR("Force to unlock semaphore no %d", i);
-							qSemLeave(g_semid, i);	// force to unlock
-							nSemLockCnt[i] = 0;
-						}
-					} else {
-						nSemLockCnt[i] = 0;
-					}
-				}
-				*/
-
-				// 훅
+				// idle hook
 				int nJobCnt = hookWhileDaemonIdle();
 				if(nJobCnt < 0) {
 					LOG_ERR("Hook failed.");
 				}
 
-				// 실행시간 갱신
+				// update last called
 				nLastSec = time(NULL);
 			} else {
-				microSleep(1 * 1000);
+				microSleep(1 * 1000); // 1/1000 sec
 			}
 		}
 
-		// wait childs
-		int nChildPid;
-		int nChildStatus = 0;
-		while((nChildPid = waitpid((pid_t)-1, &nChildStatus, WNOHANG)) > 0) {
-			DEBUG("Detecting child(%d) terminated. Status : %d", nChildPid, nChildStatus);
-
-			// if child is killed unexpectly such like SIGKILL, we remove child info here
-			if (poolChildDel(nChildPid) == true) {
-				LOG_WARN("Child %d killed unexpectly.", nChildPid);
-			}
-		}
+		// signal handling
+		daemonSignalHandler();
 	}
 
 	daemonEnd(EXIT_SUCCESS);
@@ -243,21 +216,24 @@ void daemonEnd(int nStatus) {
 	bAlready = true;
 
 	int nCurrentChilds, nWait;
-	for(nWait = 0; nWait < 15 && (nCurrentChilds = poolGetCurrentChilds()) > 0; nWait++) {
-		LOG_INFO("Waiting childs. %d actives.", nCurrentChilds);
-		poolSetIdleExitReqeust(nCurrentChilds);
-		microSleep(500*1000);
+	for(nWait = 15; nWait >= 0 && (nCurrentChilds = poolGetCurrentChilds()) > 0; nWait--) {
+		if(nWait > 5) {
+			LOG_INFO("Soft shutting down [%d]. Waiting %d childs.", nWait-5, nCurrentChilds);
+			poolSetIdleExitReqeust(nCurrentChilds);
+		} else if(nWait > 0) {
+			LOG_INFO("Hard shutting down [%d]. Waiting %d childs.", nWait, nCurrentChilds);
+			kill(0, SIGTERM);
+		} else {
+			LOG_WARN("%d childs are still alive. Give up!", nCurrentChilds);
+		}
+
+		// sleep
+		unsigned long int nSleepLeft = 1 * 1000 * 1000;
+		while((nSleepLeft = microSleep(nSleepLeft)) > 0);
+
+		// waitpid
+		while(waitpid(-1, NULL, WNOHANG) > 0);
 	}
-	for(nWait = 0; nWait < 3 && (nCurrentChilds = poolGetCurrentChilds()) > 0; nWait++) {
-		LOG_WARN("%d childs are still alive. Sending termination signal.", nCurrentChilds);
-		int nSigSent = poolSendSignal(SIGTERM);
-		LOG_INFO("Sending termination signal to childs %d/%d", nSigSent, nCurrentChilds);
-		sleep(1);
-	}
-	if((nCurrentChilds = poolGetCurrentChilds()) > 0) {
-		LOG_WARN("%d childs are still alive. Give up!", nCurrentChilds);
-	}
-	//sleep(1);
 
 	// hook
 	if(hookBeforeDaemonEnd() == false) {
@@ -303,72 +279,89 @@ void daemonSignalInit(void *func) {
 	sa.sa_flags = 0;
 	sigemptyset (&sa.sa_mask);
 
-	// add block mask
-	sigaddset(&sa.sa_mask, SIGINT);
-	sigaddset(&sa.sa_mask, SIGTERM);
-	sigaddset(&sa.sa_mask, SIGHUP);
-
 	// to handle
-	sigaction(SIGINT, &sa, NULL);
-	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGINT, &sa, NULL);
 
 	sigaction(SIGUSR1, &sa, NULL);
 	sigaction(SIGUSR2, &sa, NULL);
 
 	// to ignore
-	signal(SIGCHLD, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
+
+	// reset signal flags;
+	sigemptyset(&g_sigflags);
 }
 
 void daemonSignal(int signo) {
-	switch (signo) {
-		case SIGINT : {
-			LOG_INFO("Caughted SIGINT ");
-			daemonEnd(EXIT_SUCCESS);
-			break;
-		}
-		case SIGTERM : {
-			LOG_INFO("Caughted SIGTERM ");
-			daemonEnd(EXIT_SUCCESS);
-			break;
-		}
-		case SIGHUP : {
-			LOG_INFO("Caughted SIGHUP");
+	sigaddset(&g_sigflags, signo);
+}
 
-			// reload config
-			if(loadConfig(g_conf.szConfigFile, &g_conf) == false) {
-				LOG_ERR("Can't reload configuration file %s", g_conf.szConfigFile);
+void daemonSignalHandler(void) {
+	if(sigismember(&g_sigflags, SIGCHLD)) {
+		sigdelset(&g_sigflags, SIGCHLD);
+		DEBUG("Caughted SIGCHLD");
+
+		int nChildPid;
+		int nChildStatus = 0;
+		while((nChildPid = waitpid(-1, &nChildStatus, WNOHANG)) > 0) {
+			DEBUG("Detecting child(%d) terminated. Status : %d", nChildPid, nChildStatus);
+
+			// if child is killed unexpectly such like SIGKILL, we remove child info here
+			if (poolChildDel(nChildPid) == true) {
+				LOG_WARN("Child %d killed unexpectly.", nChildPid);
 			}
-
-			// reload mime
-			mimeFree();
-			if(mimeInit(g_conf.szMimeFile, g_conf.szMimeDefault) == false) {
-				LOG_ERR("Can't load mimetypes from %s", g_conf.szConfigFile);
-			}
-
-			// config hook
-			if(hookAfterConfigLoaded() == false || hookAfterDaemonSIGHUP() == false) {
-				LOG_ERR("Hook failed.");
-			}
-
-			// re-launch childs
-			poolSetExitReqeustAll();
-
-			LOG_SYS("Reloaded.");
-			break;
 		}
-		case SIGUSR1 : {
-			LOG_INFO("Caughted SIGUSR1");
-			break;
+	} else if(sigismember(&g_sigflags, SIGHUP)) {
+		sigdelset(&g_sigflags, SIGHUP);
+		LOG_INFO("Caughted SIGHUP");
+
+		// reload config
+		if(loadConfig(g_conf.szConfigFile, &g_conf) == false) {
+			LOG_ERR("Can't reload configuration file %s", g_conf.szConfigFile);
 		}
-		case SIGUSR2 : {
-			LOG_INFO("Caughted SIGUSR2");
-			break;
+
+		// reload mime
+		mimeFree();
+		if(mimeInit(g_conf.szEgisdatadMimeFile, g_conf.szEgisdatadMimeDefault) == false) {
+			LOG_ERR("Can't load mimetypes from %s", g_conf.szConfigFile);
 		}
-		default : {
-			LOG_WARN("Unexpected signal caughted : signo=%d", signo);
-			break;
+
+		// config hook
+		if(hookAfterConfigLoaded() == false || hookAfterDaemonSIGHUP() == false) {
+			LOG_ERR("Hook failed.");
 		}
+
+		// re-launch childs
+		poolSetExitReqeustAll();
+
+		LOG_SYS("Reloaded.");
+	} else if(sigismember(&g_sigflags, SIGTERM)) {
+		sigdelset(&g_sigflags, SIGTERM);
+		LOG_INFO("Caughted SIGTERM");
+
+		daemonEnd(EXIT_SUCCESS);
+	} else if(sigismember(&g_sigflags, SIGINT)) {
+		sigdelset(&g_sigflags, SIGINT);
+		LOG_INFO("Caughted SIGINT");
+
+		daemonEnd(EXIT_SUCCESS);
+	} else if(sigismember(&g_sigflags, SIGUSR1)) {
+		sigdelset(&g_sigflags, SIGUSR1);
+		LOG_INFO("Caughted SIGUSR1");
+
+		if(g_loglevel < MAX_LOGLEVEL) g_loglevel++;
+		poolSendSignal(SIGUSR1);
+		LOG_SYS("Increasing log-level to %d.", g_loglevel);
+
+	} else if(sigismember(&g_sigflags, SIGUSR2)) {
+		sigdelset(&g_sigflags, SIGUSR2);
+		LOG_INFO("Caughted SIGUSR2");
+
+		if(g_loglevel > 0) g_loglevel--;
+		poolSendSignal(SIGUSR2);
+		LOG_SYS("Decreasing log-level to %d.", g_loglevel);
 	}
 }
