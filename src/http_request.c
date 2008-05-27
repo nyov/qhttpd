@@ -19,6 +19,8 @@
 
 #include "qhttpd.h"
 
+static char *_getCorrectedHostname(char *pszRequestHost);
+
 /*
  * @return	HttpRequest pointer
  *		NULL : system error
@@ -165,6 +167,11 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		if(req->pHeaders == NULL) req->pHeaders = entry;
 	}
 
+	// parse host
+	req->pszRequestHost = _getCorrectedHostname(httpHeaderGetValue(req->pHeaders, "HOST"));
+	if(req->pszRequestHost == NULL) return req;
+	qEntryAdd(req->pHeaders, "Host", req->pszRequestHost, 1);
+
 	// Parse Contents
 	if(httpHeaderGetValue(req->pHeaders, "CONTENT-LENGTH") != NULL) {
 		req->nContentsLength = convStr2Uint64(httpHeaderGetValue(req->pHeaders, "CONTENT-LENGTH"));
@@ -206,6 +213,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 
 void httpRequestFree(struct HttpRequest *req) {
 	if(req == NULL) return;
+	if(req->pszRequestHost != NULL) free(req->pszRequestHost);
 	if(req->pszRequestMethod != NULL) free(req->pszRequestMethod);
 	if(req->pszRequestUri != NULL) free(req->pszRequestUri);
 	if(req->pszRequestUrl != NULL) free(req->pszRequestUrl);
@@ -215,4 +223,19 @@ void httpRequestFree(struct HttpRequest *req) {
 	if(req->pHeaders != NULL) qEntryFree(req->pHeaders);
 	if(req->pContents != NULL) free(req->pContents);
 	free(req);
+}
+
+static char *_getCorrectedHostname(char *pszRequestHost) {
+	char *pszHost = NULL;
+
+	if(pszRequestHost != NULL) {
+		pszHost = strdup(pszRequestHost);
+		qStrlwr(pszHost);
+
+		// 디폴트 포트 80이 붙어온 경우엔 제거
+		char *pszTmp = strstr(pszHost, ":");
+		if(pszTmp != NULL && !strcmp(pszTmp, ":80")) *pszTmp = '\0';
+	}
+
+	return pszHost;
 }

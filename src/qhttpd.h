@@ -194,7 +194,8 @@ struct HttpRequest {
 	int	nReqStatus;		// 1:정상, 0: bad request, -1:timeout, -2: connection closed
 
 	// request line
-	char	*pszRequestMethod;
+	char	*pszRequestHost;	// host				ex) www.cdnetwork.co.kr
+	char	*pszRequestMethod;	// request method		ex) GET
 	char	*pszRequestUri;		// url+query.			ex) /100/my%20data/my.gif?query=the%20value
 	char	*pszRequestUrl;		// decoded url			ex) /100/my data/my.gif
 	char	*pszQueryString;	// query string			ex) query=the%20value
