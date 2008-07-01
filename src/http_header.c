@@ -47,18 +47,18 @@ bool httpHeaderParseRange(const char *pszRangeHeader, size_t nFilesize, off_t *p
 	p2 = strstr(pszRange, "-");
 	p3 = strstr(pszRange, ",");
 
-	// Î¨∏Î≤ï Ï≤¥ÌÅ¨
+	// πÆπ˝ √º≈©
 	if(p1 == NULL || p2 == NULL || p2 < p1) {
 		free(pszRange);
 		return false;
 	}
 
-	// Î©ÄÌã∞Î†àÏù∏ÏßÄÎäî ÏßÄÏõêÏπò ÏïäÏùå
+	// ∏÷∆º∑π¿Œ¡ˆ¥¬ ¡ˆø¯ƒ° æ ¿Ω
 	if(p3 == NULL) p3 = pszRange + strlen(pszRange);
 	else *p3 = '\0';
 
 
-	// Ìï¥ÏÑù
+	// «ÿºÆ
 	p1 += 1;
 	*p2 = '\0';
 

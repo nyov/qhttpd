@@ -22,14 +22,14 @@
 /////////////////////////////////////////////////////////////////////////
 // GLOBAL VARIABLES
 /////////////////////////////////////////////////////////////////////////
-bool	g_debug = false;		// common ì†ŒìŠ¤ì˜ ë””ë²„ê¹…ì„ ì¼œê³  ë”
+bool	g_debug = false;		// common ¼Ò½ºÀÇ µğ¹ö±ëÀ» ÄÑ°í ²û
 
-Config	g_conf;				// ì„¤ì •íŒŒì¼ êµ¬ì¡°ì²´
-int	g_semid = -1;			// ì„¸ë§ˆí¬ID
-Q_LOG	*g_errlog = NULL;		// ì—ëŸ¬ë¡œê·¸ êµ¬ì¡°ì²´ í¬ì¸í„°
-Q_LOG	*g_acclog = NULL;		// ì „ì†¡ë¡œê·¸ êµ¬ì¡°ì²´ í¬ì¸í„°
-int	g_loglevel = 0;			// ë¡œê·¸ ë ˆë²¨
-sigset_t g_sigflags;			// ì²˜ë¦¬í•  ì‹œê·¸ë„ ì…‹
+Config	g_conf;				// ¼³Á¤ÆÄÀÏ ±¸Á¶Ã¼
+int	g_semid = -1;			// ¼¼¸¶Æ÷ID
+Q_LOG	*g_errlog = NULL;		// ¿¡·¯·Î±× ±¸Á¶Ã¼ Æ÷ÀÎÅÍ
+Q_LOG	*g_acclog = NULL;		// Àü¼Û·Î±× ±¸Á¶Ã¼ Æ÷ÀÎÅÍ
+int	g_loglevel = 0;			// ·Î±× ·¹º§
+sigset_t g_sigflags;			// Ã³¸®ÇÒ ½Ã±×³Î ¼Â
 
 /////////////////////////////////////////////////////////////////////////
 // PUBLIC FUNCTIONS
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 				#endif
 
 				fprintf(stderr, "Entering debugging mode.\n");
-				g_debug = true; // common ì†ŒìŠ¤ì˜ ë””ë²„ê¹…ì„ ì¼¬
+				g_debug = true; // common ¼Ò½ºÀÇ µğ¹ö±ëÀ» ÄÔ
 				g_loglevel  = MAX_LOGLEVEL;
 				nDaemonize = false;
 				break;

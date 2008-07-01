@@ -46,7 +46,7 @@ struct HttpResponse *httpHandler(struct HttpRequest *req) {
 	// handle method
 	int nResCode = 0;
 
-	// 특수 URI 체크
+	// Ư�� URI üũ
 	if(g_conf.bStatusEnable == true
 	&& !strcmp(req->pszRequestMethod, "GET")
 	&& !strcmp(req->pszRequestUrl, g_conf.szStatusUrl)) {

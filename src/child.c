@@ -50,7 +50,7 @@ void childStart(int nSockFd) {
 
 
 		//
-		// ì»¨ë„¥ì…˜ ëŒ€ê¸° ì˜ì—­
+		// ÄÁ³Ø¼Ç ´ë±â ¿µ¿ª
 		//
 
                 // wait connection, for non-block accept
@@ -96,13 +96,13 @@ void childStart(int nSockFd) {
                 // new connection arrived
                 nIdleCnt = 0;
                 if ((nNewSockFd = accept(nSockFd, (struct sockaddr *) & connAddr, &nConnLen)) == -1) {
-                        // ë‹¤ë¥¸ í”„ë¡œì„¸ìŠ¤ì— ì˜í•´ ì²˜ë¦¬ë˜ì—ˆìŒ
+                        // ´Ù¸¥ ÇÁ·Î¼¼½º¿¡ ÀÇÇØ Ã³¸®µÇ¾úÀ½
                         //DEBUG("I'm late...");
                         continue;
                 }
 
 		//
-		// ì»¨ë„¥ì…˜ ì™„ë£Œ ì˜ì—­
+		// ÄÁ³Ø¼Ç ¿Ï·á ¿µ¿ª
 		//
 
 		// connection accepted

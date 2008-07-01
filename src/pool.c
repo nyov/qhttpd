@@ -95,7 +95,7 @@ int poolSendSignal(int signo) {
 /*
  * Pool Checking
  *
- * @return ì„œë¹„ìŠ¤ì¤‘ì¸ í”„ë¡œì„¸ìŠ¤ ìˆ˜
+ * @return ¼­ºñ½ºÁßÀÎ ÇÁ·Î¼¼½º ¼ö
  */
 bool poolCheck(void) {
 	if(m_pShm == NULL) return false;
@@ -122,9 +122,9 @@ bool poolCheck(void) {
 }
 
 /*
- * ì°¨ì¼ë“œ ëˆ„ì  êµ¬ë™ ìˆ˜ë¥¼ ì–»ìŒ
+ * Â÷ÀÏµå ´©Àû ±¸µ¿ ¼ö¸¦ ¾òÀ½
  *
- * @return ì°¨ì¼ë“œ ëˆ„ì  êµ¬ë™ ìˆ˜
+ * @return Â÷ÀÏµå ´©Àû ±¸µ¿ ¼ö
  */
 int poolGetTotalLaunched(void) {
 	if(m_pShm == NULL) return 0;
@@ -132,9 +132,9 @@ int poolGetTotalLaunched(void) {
 }
 
 /*
- * êµ¬ë™ì¤‘ì¸ í”„ë¡œì„¸ìŠ¤ ìˆ˜ë¥¼ ì–»ìŒ
+ * ±¸µ¿ÁßÀÎ ÇÁ·Î¼¼½º ¼ö¸¦ ¾òÀ½
  *
- * @return êµ¬ë™ì¤‘ì¸ í”„ë¡œì„¸ìŠ¤ ìˆ˜
+ * @return ±¸µ¿ÁßÀÎ ÇÁ·Î¼¼½º ¼ö
  */
 int poolGetCurrentChilds(void) {
 	if(m_pShm == NULL) return 0;
@@ -143,9 +143,9 @@ int poolGetCurrentChilds(void) {
 }
 
 /*
- * ì„œë¹„ìŠ¤ì¤‘ì¸ í”„ë¡œì„¸ìŠ¤ ìˆ˜ë¥¼ ì–»ìŒ
+ * ¼­ºñ½ºÁßÀÎ ÇÁ·Î¼¼½º ¼ö¸¦ ¾òÀ½
  *
- * @return ì„œë¹„ìŠ¤ì¤‘ì¸ í”„ë¡œì„¸ìŠ¤ ìˆ˜
+ * @return ¼­ºñ½ºÁßÀÎ ÇÁ·Î¼¼½º ¼ö
  */
 int poolGetWorkingChilds(void) {
 	if(m_pShm == NULL) return 0;
@@ -159,9 +159,9 @@ int poolGetWorkingChilds(void) {
 }
 
 /*
- * IDLE í”„ë¡œì„¸ìŠ¤ì—ê²Œ ì¢…ë£Œ í”„ë ˆê·¸ë¥¼ ì„¤ì •
+ * IDLE ÇÁ·Î¼¼½º¿¡°Ô Á¾·á ÇÁ·¹±×¸¦ ¼³Á¤
  *
- * @return ì¢…ë£Œ í”„ë ˆê·¸ë¥¼ ì„¤ì •í•œ í”„ë¡œì„¸ìŠ¤ ìˆ˜
+ * @return Á¾·á ÇÁ·¹±×¸¦ ¼³Á¤ÇÑ ÇÁ·Î¼¼½º ¼ö
  */
 int poolSetIdleExitReqeust(int nNum) {
 	int i, nCnt = 0;
@@ -177,9 +177,9 @@ int poolSetIdleExitReqeust(int nNum) {
 }
 
 /*
- * ëª¨ë“  í”„ë¡œì„¸ìŠ¤ì—ê²Œ ì¢…ë£Œ í”„ë ˆê·¸ë¥¼ ì„¤ì •
+ * ¸ðµç ÇÁ·Î¼¼½º¿¡°Ô Á¾·á ÇÁ·¹±×¸¦ ¼³Á¤
  *
- * @return ì¢…ë£Œ í”„ë ˆê·¸ë¥¼ ì„¤ì •í•œ í”„ë¡œì„¸ìŠ¤ ìˆ˜
+ * @return Á¾·á ÇÁ·¹±×¸¦ ¼³Á¤ÇÑ ÇÁ·Î¼¼½º ¼ö
  */
 int poolSetExitReqeustAll(void) {
 	int i, nCnt = 0;
@@ -200,7 +200,7 @@ int poolSetExitReqeustAll(void) {
 /*
  * called by child
  * @note
- * ì„±ê³µì—¬ë¶€ì™€ ìƒê´€ì—†ì´ nTotalLaunchedëŠ” í•­ìƒ 1 ì¦ê°€
+ * ¼º°ø¿©ºÎ¿Í »ó°ü¾øÀÌ nTotalLaunched´Â Ç×»ó 1 Áõ°¡
  */
 bool poolChildReg(void) {
 	if (m_nMySlotId >= 0) {
@@ -254,7 +254,7 @@ bool poolChildDel(int nPid) {
 
 	// clear rest of all
 	//poolInitSlot(nSlot);
-	m_pShm->child[nSlot].nPid = 0; // ì„¸ë¶€ ë°ì´í„°ì˜ í¬ë¦¬ì–´ ì—¬ë¶€ëŠ” ìž¬ ì‚¬ìš©ì‹œì— í–‰í•¨
+	m_pShm->child[nSlot].nPid = 0; // ¼¼ºÎ µ¥ÀÌÅÍÀÇ Å©¸®¾î ¿©ºÎ´Â Àç »ç¿ë½Ã¿¡ ÇàÇÔ
 	m_pShm->nCurrentChilds--;
 
 	qSemLeave(g_semid, POOL_SEM_ID);

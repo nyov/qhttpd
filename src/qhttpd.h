@@ -144,40 +144,40 @@ typedef struct {
 struct SharedData {
 	// daemon info
 	time_t	nStartTime;
-	int	nTotalLaunched;			// ìƒì„±í•œ ì°¨ì¼ë“œ í”„ë¡œì„¸ìŠ¤ ìˆ˜
-	int	nCurrentChilds;			// í˜„ì¬ êµ¬ë™ë˜ëŠ” ì°¨ì¼ë“œ í”„ë¡œì„¸ìŠ¤ ìˆ˜
+	int	nTotalLaunched;			// »ı¼ºÇÑ Â÷ÀÏµå ÇÁ·Î¼¼½º ¼ö
+	int	nCurrentChilds;			// ÇöÀç ±¸µ¿µÇ´Â Â÷ÀÏµå ÇÁ·Î¼¼½º ¼ö
 
-	int	nTotalConnected;		// ì ‘ì†í•œ ì´ í´ë¼ì´ì–¸íŠ¸ ìˆ˜
-	int	nTotalRequests;			// ì²˜ë¦¬í•œ ì´ ìš”ì²­ìˆ˜
+	int	nTotalConnected;		// Á¢¼ÓÇÑ ÃÑ Å¬¶óÀÌ¾ğÆ® ¼ö
+	int	nTotalRequests;			// Ã³¸®ÇÑ ÃÑ ¿äÃ»¼ö
 
 	// child info
 	struct child {
-		int     nPid;			// í”„ë¡œì„¸ìŠ¤ID, 0ì€ empty slot
-		int	nTotalConnected;	// ì ‘ì†í•œ í´ë¼ì´ì–¸íŠ¸ ìˆ˜
-		int	nTotalRequests;		// ì²˜ë¦¬í•œ ìš”ì²­ìˆ˜
-		time_t  nStartTime;		// í”„ë¡œì„¸ìŠ¤ ì‹œì‘ ì‹œê°„
-		bool	bExit;			// ì´ í”Œë ˆê·¸ê°€ ì„¤ì •ë˜ì–´ ìˆìœ¼ë©´, ì²˜ë¦¬ë¥¼ ë§ˆì¹˜ê³  ì¢…ë£Œ
+		int     nPid;			// ÇÁ·Î¼¼½ºID, 0Àº empty slot
+		int	nTotalConnected;	// Á¢¼ÓÇÑ Å¬¶óÀÌ¾ğÆ® ¼ö
+		int	nTotalRequests;		// Ã³¸®ÇÑ ¿äÃ»¼ö
+		time_t  nStartTime;		// ÇÁ·Î¼¼½º ½ÃÀÛ ½Ã°£
+		bool	bExit;			// ÀÌ ÇÃ·¹±×°¡ ¼³Á¤µÇ¾î ÀÖÀ¸¸é, Ã³¸®¸¦ ¸¶Ä¡°í Á¾·á
 
-		struct {		// ì ‘ì†ëœ í´ë¼ì´ì–¸íŠ¸ ì •ë³´
-			bool	bConnected;	// í´ë¼ì´ì–¸íŠ¸ ì ‘ì† ì—¬ë¶€
-			time_t  nStartTime;	// í´ë¼ì´ì–¸íŠ¸ ì ‘ì† ì‹œê°„
-			time_t  nEndTime;	// í´ë¼ì´ì–¸íŠ¸ ì¢…ë£Œ ì‹œê°„
-			int	nTotalRequests; // Keep Alive ì‹œ í´ë¼ì´ì–¸íŠ¸ê°€ ë³´ë‚¸ ìš”ì²­ìˆ˜
+		struct {		// Á¢¼ÓµÈ Å¬¶óÀÌ¾ğÆ® Á¤º¸
+			bool	bConnected;	// Å¬¶óÀÌ¾ğÆ® Á¢¼Ó ¿©ºÎ
+			time_t  nStartTime;	// Å¬¶óÀÌ¾ğÆ® Á¢¼Ó ½Ã°£
+			time_t  nEndTime;	// Å¬¶óÀÌ¾ğÆ® Á¾·á ½Ã°£
+			int	nTotalRequests; // Keep Alive ½Ã Å¬¶óÀÌ¾ğÆ®°¡ º¸³½ ¿äÃ»¼ö
 
-			int     nSockFd;	// í´ë¼ì´ì–¸íŠ¸ì™€ì˜ ì†Œì¼“
-			char    szAddr[15+1];	// í´ë¼ì´ì–¸íŠ¸ IP ì£¼ì†Œ
-			unsigned int nAddr;	// í´ë¼ì´ì–¸íŠ¸ IP ì£¼ì†Œ(ìˆ«ì)
-			int     nPort;		// í´ë¼ì´ì–¸íŠ¸ í¬íŠ¸
+			int     nSockFd;	// Å¬¶óÀÌ¾ğÆ®¿ÍÀÇ ¼ÒÄÏ
+			char    szAddr[15+1];	// Å¬¶óÀÌ¾ğÆ® IP ÁÖ¼Ò
+			unsigned int nAddr;	// Å¬¶óÀÌ¾ğÆ® IP ÁÖ¼Ò(¼ıÀÚ)
+			int     nPort;		// Å¬¶óÀÌ¾ğÆ® Æ÷Æ®
 
-			bool	bRun;			// ìš”ì²­ ì²˜ë¦¬ì¤‘
-			struct	timeval tvReqTime;	// ìš”ì²­ ì‹œê°„
-			struct	timeval tvResTime;	// ì‘ë‹µ ì‹œê°„
-			char	szReqInfo[1024+1];	// ì ‘ì† ì •ë³´
-			int	nResponseCode;		// ì‘ë‹µ ì½”ë“œ
+			bool	bRun;			// ¿äÃ» Ã³¸®Áß
+			struct	timeval tvReqTime;	// ¿äÃ» ½Ã°£
+			struct	timeval tvResTime;	// ÀÀ´ä ½Ã°£
+			char	szReqInfo[1024+1];	// Á¢¼Ó Á¤º¸
+			int	nResponseCode;		// ÀÀ´ä ÄÚµå
 
 		} conn;
 
-		//time_t  nLastUpdated;		// ë§ˆì§€ë§‰ ê°±ì‹  ì‹œê°„
+		//time_t  nLastUpdated;		// ¸¶Áö¸· °»½Å ½Ã°£
 	} child[MAX_CHILDS];
 
 	// extra info
@@ -189,11 +189,11 @@ struct SharedData {
 //
 struct HttpRequest {
 	// connection info
-	int	nSockFd;		// ì—°ê²°ì†Œì¼“
-	int	nTimeout;		// íƒ€ì„ì•„ì›ƒê°’
+	int	nSockFd;		// ¿¬°á¼ÒÄÏ
+	int	nTimeout;		// Å¸ÀÓ¾Æ¿ô°ª
 
 	// request status
-	int	nReqStatus;		// 1:ì •ìƒ, 0: bad request, -1:timeout, -2: connection closed
+	int	nReqStatus;		// 1:Á¤»ó, 0: bad request, -1:timeout, -2: connection closed
 
 	// request line
 	char*	pszRequestHost;	// host				ex) www.cdnetwork.co.kr
@@ -207,18 +207,18 @@ struct HttpRequest {
 	Q_ENTRY *pHeaders;		// request headers
 
 	// contents
-	size_t	nContentsLength;	// ì»¨í…ì¸  ìœ ë¬´ ë° ì‚¬ì´ì¦ˆ. 0:ì»¨í…ì¸  ì—†ìŒ, n>0 ì»¨í…ì¸  ìˆìŒ
-	char*	pContents;		// ì»´í…ì¸ ê°€ íŒŒì‹±ëœ ê²½ìš° NULL ì´ ì•„ë‹˜.
-					// nContentsLength > 0 ë©´ì„œ pContentsê°€ NULL ì¼ ìˆ˜ ìˆìŒ
+	size_t	nContentsLength;	// ÄÁÅÙÃ÷ À¯¹« ¹× »çÀÌÁî. 0:ÄÁÅÙÃ÷ ¾øÀ½, n>0 ÄÁÅÙÃ÷ ÀÖÀ½
+	char*	pContents;		// ÄÄÅÙÃ÷°¡ ÆÄ½ÌµÈ °æ¿ì NULL ÀÌ ¾Æ´Ô.
+					// nContentsLength > 0 ¸é¼­ pContents°¡ NULL ÀÏ ¼ö ÀÖÀ½
 };
 
 struct HttpResponse {
-	bool	bOut;			// ì‘ë‹µì„ í–ˆëŠ”ì§€ ì—¬ë¶€
+	bool	bOut;			// ÀÀ´äÀ» Çß´ÂÁö ¿©ºÎ
 
-	char*	pszHttpVersion;		// ì‘ë‹µ í”„ë¡œí† ì½œ
-	int	nResponseCode;		// ì‘ë‹µ ì½”ë“œ
+	char*	pszHttpVersion;		// ÀÀ´ä ÇÁ·ÎÅäÄİ
+	int	nResponseCode;		// ÀÀ´ä ÄÚµå
 
-	Q_ENTRY* pHeaders;		// ì‘ë‹µ í—¤ë”ë“¤
+	Q_ENTRY* pHeaders;		// ÀÀ´ä Çì´õµé
 
 	char*	pszContentType;
 	size_t	nContentLength;

@@ -34,7 +34,7 @@ int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
  * http method - GET
  */
 int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
-	// íŒŒì¼ ì „ì†¡
+	// ÆÄÀÏ Àü¼Û
 	char szFilePath[MAX_PATH_LEN];
 	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestUrl);
 	return httpProcessGetNormalFile(req, res, szFilePath, mimeDetect(szFilePath));
@@ -50,54 +50,54 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	bool bRangeRequest = false;
 
 	//
-	// íŒŒì¼ ì˜¤í”ˆ ë° ì •ë³´ í™•ì¸
+	// ÆÄÀÏ ¿ÀÇÂ ¹× Á¤º¸ È®ÀÎ
 	//
 
-	// íŒŒì¼ ì˜¤í”ˆ
+	// ÆÄÀÏ ¿ÀÇÂ
 	nFileFd = open(pszFilePath, O_RDONLY , 0);
 	if(nFileFd < 0) {
 		LOG_INFO("File open failed. %s", pszFilePath);
 		return response404(req, res);
 	}
 
-	// íŒŒì¼ ì •ë³´
+	// ÆÄÀÏ Á¤º¸
 	if (fstat(nFileFd, &filestat) < 0) {
 		LOG_INFO("File stat failed. %s", pszFilePath);
 		return response404(req, res);
 	}
 
-	// íŒŒì¼ ì‚¬ì´ì¦ˆ
+	// ÆÄÀÏ »çÀÌÁî
 	nFilesize = (uint64_t)filestat.st_size;
 
-	// ì¼ë°˜ íŒŒì¼ì¸ì§€ ì²´í¬
+	// ÀÏ¹İ ÆÄÀÏÀÎÁö Ã¼Å©
 	if(S_ISREG(filestat.st_mode) == 0) {
 		close(nFileFd);
 		return response403(req, res);
 	}
 
-	// íŒŒì¼ ë‹«ê¸°
+	// ÆÄÀÏ ´İ±â
 	close(nFileFd);
 
 	//
-	// í—¤ë” ì²˜ë¦¬ ë¶€ë¶„
+	// Çì´õ Ã³¸® ºÎºĞ
 	//
 
-	// If-Modified-Since í—¤ë”
+	// If-Modified-Since Çì´õ
 	const char *pszIfModifiedSince = httpHeaderGetValue(req->pHeaders, "IF-MODIFIED-SINCE");
 	if(pszIfModifiedSince != NULL) {
 		time_t nUnivTime = qTimeParseGmtStr(pszIfModifiedSince);
-		if(nUnivTime >= 0 && nUnivTime > filestat.st_mtime) { // í•´ì„ ì„±ê³µ && íŒŒì¼ì´ ë³€ê²½ì´ ì—†ìŒ
+		if(nUnivTime >= 0 && nUnivTime > filestat.st_mtime) { // ÇØ¼® ¼º°ø && ÆÄÀÏÀÌ º¯°æÀÌ ¾øÀ½
 			return response304(req, res); // Not modified
 		}
 	}
 
-	// Range í—¤ë”
+	// Range Çì´õ
 	const char *pszRange = httpHeaderGetValue(req->pHeaders, "RANGE");
 	if(pszRange != NULL) {
 		bRangeRequest = httpHeaderParseRange(pszRange, nFilesize, &nRangeOffset1, &nRangeOffset2, &nRangeSize);
 	}
 
-	// Rangeê°€ ì—†ê±°ë‚˜, íŒŒì‹± ì˜¤ë¥˜ì‹œ
+	// Range°¡ ¾ø°Å³ª, ÆÄ½Ì ¿À·ù½Ã
 	if(bRangeRequest == false) {
 		nRangeOffset1 = 0;
 		nRangeOffset2 = nFilesize - 1;
@@ -105,7 +105,7 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	}
 
 	//
-	// ì‘ë‹µ í—¤ë” ì¶œë ¥
+	// ÀÀ´ä Çì´õ Ãâ·Â
 	//
 
 	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
@@ -127,7 +127,7 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	httpResponseOut(res, req->nSockFd);
 
 	//
-	// íŒŒì¼ ì „ì†¡
+	// ÆÄÀÏ Àü¼Û
 	//
 
 	if(nFilesize > 0) {
@@ -147,10 +147,10 @@ int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
 	struct stat filestat;
 	char szFilePath[MAX_PATH_LEN];
 
-	// íŒŒì¼ ê²½ë¡œ
+	// ÆÄÀÏ °æ·Î
 	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestUrl);
 
-	// íŒŒì¼ ì •ë³´
+	// ÆÄÀÏ Á¤º¸
 	if (stat(szFilePath, &filestat) < 0) return response404(req, res);
 
 	// @todo

@@ -38,7 +38,7 @@ unsigned int convIp2Uint(const char *szIp) {
 		else if (nTokenCnt == 3) nAddr += (unsigned int)(atoi(pszToken)) * 0x100;
 		else if (nTokenCnt == 4) nAddr += (unsigned int)(atoi(pszToken));
 		else return -1;
-		// unsignedë¡œ ë³€ê²½
+		// unsigned·Î º¯°æ
 	}
 	if (nTokenCnt != 4) return 0;
 
@@ -63,7 +63,7 @@ float diffTimeval(struct timeval *t1, struct timeval *t0) {
 }
 
 /**
- * ê²½ë¡œê°€ ì •í™•í•œì§€ ì²´í¬
+ * °æ·Î°¡ Á¤È®ÇÑÁö Ã¼Å©
  */
 bool isCorrectPath(const char *pszPath) {
 	if(pszPath == NULL) return false;
@@ -73,7 +73,7 @@ bool isCorrectPath(const char *pszPath) {
 	else if(pszPath[0] != '/') return false;
 	else if(strpbrk(pszPath, "\\:*?\"<>|") != NULL) return false;
 
-	// ìŠ¬ë˜ì‰¬ë¡œ êµ¬ë¶„ë˜ëŠ” ê° í´ë”ëª…ì˜ ìµœëŒ€ ê¸¸ì´ ì²´í¬
+	// ½½·¡½¬·Î ±¸ºĞµÇ´Â °¢ Æú´õ¸íÀÇ ÃÖ´ë ±æÀÌ Ã¼Å©
 	char *t;
 	int n;
 	for(n = 0, t = (char *)pszPath; *t != '\0'; t++) {
@@ -82,7 +82,7 @@ bool isCorrectPath(const char *pszPath) {
 			continue;
 		}
 
-		if(n == 0 && *t == '.') return false;	// í´ë”ëª…ì˜ ì²«ê¸€ìê°€ . ì´ë©´ ì˜¤ë¥˜
+		if(n == 0 && *t == '.') return false;	// Æú´õ¸íÀÇ Ã¹±ÛÀÚ°¡ . ÀÌ¸é ¿À·ù
 		else if(n >= MAX_FILENAME_LENGTH) {
 			DEBUG("Filename too long.");
 			return false;
@@ -94,17 +94,17 @@ bool isCorrectPath(const char *pszPath) {
 }
 
 /**
- * ê²½ë¡œ ì¡°ì •.
- * nsIsCorrectPath()ë¥¼ í•œë²ˆ í•˜ê³  í˜¸ì¶œí•œë‹¤ëŠ” ì „ì œ
+ * °æ·Î Á¶Á¤.
+ * nsIsCorrectPath()¸¦ ÇÑ¹ø ÇÏ°í È£ÃâÇÑ´Ù´Â ÀüÁ¦
  */
 void correctPath(char *pszPath) {
-	// ê³µë°± ì œê±°
+	// °ø¹é Á¦°Å
 	qStrTrim(pszPath);
 
-	// ì¤‘ë³µ ìŠ¬ë˜ì‰¬ ì œê±°
+	// Áßº¹ ½½·¡½¬ Á¦°Å
 	while(strstr(pszPath, "//") != NULL) qStrReplace("sr", pszPath, "//", "/");
 
-	// í…Œì¼ë§ ìŠ¬ë˜ì‰¬ ì œê±°
+	// Å×ÀÏ¸µ ½½·¡½¬ Á¦°Å
 	int nLen = strlen(pszPath);
 	if(nLen <= 1) return;
 	if(pszPath[nLen - 1] == '/') pszPath[nLen - 1] = '\0';
