@@ -292,7 +292,7 @@ void daemonEnd(int nStatus) {
   	}
 
 	// remove pid file
-	if (qFileExist(g_conf.szPidfile) == true && unlink(g_conf.szPidfile) == false) {
+	if (qFileExist(g_conf.szPidfile) == true && unlink(g_conf.szPidfile) != 0) {
 		LOG_WARN("Can't remove pid file %s", g_conf.szPidfile);
 	}
 
