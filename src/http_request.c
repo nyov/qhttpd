@@ -29,13 +29,13 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	struct HttpRequest *req;
 	char szLineBuf[LINEBUF_SIZE*4];
 
-	// Request ±¸Á¶Ã¼ »ı¼º
+	// Request êµ¬ì¡°ì²´ ìƒì„±
 	req = (struct HttpRequest*)malloc(sizeof(struct HttpRequest));
 	if(req == NULL) return NULL;
 
-	// Request ±¸Á¶Ã¼ ÃÊ±âÈ­
+	// Request êµ¬ì¡°ì²´ ì´ˆê¸°í™”
 	memset((void *)req, 0, sizeof(struct HttpRequest));
-	// 0°ú NULL ÀÌ¿ÜÀÇ ÃÊ±â°ªÀÌ µé¾î°¡¾ß ÇÏ´Â ºÎºĞ ÃÊ±âÈ­
+	// 0ê³¼ NULL ì´ì™¸ì˜ ì´ˆê¸°ê°’ì´ ë“¤ì–´ê°€ì•¼ í•˜ëŠ” ë¶€ë¶„ ì´ˆê¸°í™”
 
 	req->nSockFd = nSockFd;
 	req->nTimeout = nTimeout;
@@ -47,7 +47,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	if(req->pHeaders == NULL) return req;
 
 	//
-	// Çì´õ ÆÄ½Ì
+	// í—¤ë” íŒŒì‹±
 	//
 
 	// Parse request line : "method uri protocol"
@@ -125,12 +125,12 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 				return req;
 			}
 		} else if(!strncasecmp(pszReqUri, "HTTP://", 7)) {
-			// URIÀÇ È£½ºÆ®¸íÀº Host Çì´õ·Î ³Ö°í pszRequestUri¿¡´Â °æ·Î¸¸
+			// URIì˜ í˜¸ìŠ¤íŠ¸ëª…ì€ Host í—¤ë”ë¡œ ë„£ê³  pszRequestUriì—ëŠ” ê²½ë¡œë§Œ
 			pszTmp = strstr(pszReqUri + 8, "/");
-			if(pszTmp == NULL) {	// URLÀÌ ¾ø´Â°æ¿ì ex) http://a.b.c:80
+			if(pszTmp == NULL) {	// URLì´ ì—†ëŠ”ê²½ìš° ex) http://a.b.c:80
 				qEntryPutStr(req->pHeaders, "Host", pszReqUri+8, true);
 				req->pszRequestUri = strdup("/");
-			} else {		// URLÀÌ ÀÖ´Â°æ¿ì ex) http://a.b.c:80/100
+			} else {		// URLì´ ìˆëŠ”ê²½ìš° ex) http://a.b.c:80/100
 				*pszTmp = '\0';
 				qEntryPutStr(req->pHeaders, "Host", pszReqUri+8, true);
 				*pszTmp = '/';
@@ -182,7 +182,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		}
 
 		*tmp = '\0';
-		char *name = qStrUpper(qStrTrim(szLineBuf)); // Çì´õ ÇÊµå´Â ´ë¹®ÀÚ·Î ÀúÀå
+		char *name = qStrUpper(qStrTrim(szLineBuf)); // í—¤ë” í•„ë“œëŠ” ëŒ€ë¬¸ìë¡œ ì €ì¥
 		char *value = qStrTrim(tmp + 1);
 
 		// put
@@ -198,21 +198,21 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	if(httpHeaderGetValue(req->pHeaders, "CONTENT-LENGTH") != NULL) {
 		req->nContentsLength = (size_t)atoll(httpHeaderGetValue(req->pHeaders, "CONTENT-LENGTH"));
 
-		// PUT°ú POSTÀÎ °æ¿ì¿£ ¸Ş¸ğ¸® ·ÎµåÇÏÁö ¾ÊÀ½
+		// PUTê³¼ POSTì¸ ê²½ìš°ì—” ë©”ëª¨ë¦¬ ë¡œë“œí•˜ì§€ ì•ŠìŒ
 		if(req->nContentsLength <= MAX_HTTP_MEMORY_CONTENTS
 			&& strcmp(req->pszRequestMethod, "PUT")	&& strcmp(req->pszRequestMethod, "POST")) {
 
 			if(req->nContentsLength == 0) {
 				req->pContents = strdup("");
 			} else {
-				// ¸Ş¸ğ¸® ÇÒ´ç
+				// ë©”ëª¨ë¦¬ í• ë‹¹
 				req->pContents = (char *)malloc(req->nContentsLength + 1);
 				if(req->pContents == NULL) {
 					LOG_WARN("Memory allocation failed.");
 					return req;
 				}
 
-				// ¸Ş¸ğ¸®¿¡ ÀúÀå
+				// ë©”ëª¨ë¦¬ì— ì €ì¥
 				int nReaded = streamGetb(req->pContents, nSockFd, req->nContentsLength, nTimeout*1000);
 				if(nReaded >= 0) req->pContents[nReaded] = '\0';
 				DEBUG("[Contents] %s", req->pContents);
@@ -227,7 +227,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		}
 	}
 
-	// Á¤»ó ¿äÃ»À¸·Î ÇÃ·¡±× º¯°æ
+	// ì •ìƒ ìš”ì²­ìœ¼ë¡œ í”Œë˜ê·¸ ë³€ê²½
 	req->nReqStatus = 1;
 
 	return req;
@@ -256,7 +256,7 @@ static char *_getCorrectedHostname(const char *pszRequestHost) {
 		pszHost = strdup(pszRequestHost);
 		qStrLower(pszHost);
 
-		// µğÆúÆ® Æ÷Æ® 80ÀÌ ºÙ¾î¿Â °æ¿ì¿£ Á¦°Å
+		// ë””í´íŠ¸ í¬íŠ¸ 80ì´ ë¶™ì–´ì˜¨ ê²½ìš°ì—” ì œê±°
 		char *pszTmp = strstr(pszHost, ":");
 		if(pszTmp != NULL && !strcmp(pszTmp, ":80")) *pszTmp = '\0';
 	}

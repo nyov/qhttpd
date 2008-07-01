@@ -22,11 +22,11 @@
 struct HttpResponse *httpResponseCreate(void) {
 	struct HttpResponse *res;
 
-	// Response ±¸Á¶Ã¼ »ı¼º
+	// Response êµ¬ì¡°ì²´ ìƒì„±
 	res = (struct HttpResponse *)malloc(sizeof(struct HttpResponse));
 	if(res == NULL) return NULL;
 
-	// Response ±¸Á¶Ã¼ ÃÊ±âÈ­
+	// Response êµ¬ì¡°ì²´ ì´ˆê¸°í™”
 	memset((void *)res, 0, sizeof(struct HttpResponse));
 	res->bOut = false;
 	res->pHeaders = qEntryInit();
@@ -54,8 +54,8 @@ int httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int
 }
 
 /**
- * @param pszHttpVer ÀÀ´ä ÇÁ·ÎÅäÄİ ¹öÁ¯, NULL½Ã ¿äÃ» ÇÁ·ÎÅäÄİ ¹öÁ¯À¸·Î ¼³Á¤
- * @param bKeepAlive Keep-Alive ¿©ºÎ, true½Ã¿¡µµ ¿äÃ»ÀÌ HTTP/1.1ÀÌ ¾Æ´Ï°Å³ª, Keep-Alive ¿äÃ»ÀÌ ¾øÀ»°æ¿ì¿£ ÀÚµ¿ false µÊ
+ * @param pszHttpVer ì‘ë‹µ í”„ë¡œí† ì½œ ë²„ì ¼, NULLì‹œ ìš”ì²­ í”„ë¡œí† ì½œ ë²„ì ¼ìœ¼ë¡œ ì„¤ì •
+ * @param bKeepAlive Keep-Alive ì—¬ë¶€, trueì‹œì—ë„ ìš”ì²­ì´ HTTP/1.1ì´ ì•„ë‹ˆê±°ë‚˜, Keep-Alive ìš”ì²­ì´ ì—†ì„ê²½ìš°ì—” ìë™ false ë¨
  */
 bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequest *req, bool bKeepAlive) {
 	char *pszHttpVer;
@@ -70,9 +70,9 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 
 	// decide to turn on/off keep-alive
 	if(g_conf.bKeepAliveEnable == true && bKeepAlive == true) {
-		//if(strcmp(pszHttpVer, HTTP_PROTOCOL_11)) bKeepAlive = false; // HTTP/1.1ÀÌ ¾Æ´Ï¸é - Jaguar 5000 È£È¯¼º ¹®Á¦·Î Á¦°Å
+		//if(strcmp(pszHttpVer, HTTP_PROTOCOL_11)) bKeepAlive = false; // HTTP/1.1ì´ ì•„ë‹ˆë©´ - Jaguar 5000 í˜¸í™˜ì„± ë¬¸ì œë¡œ ì œê±°
 		if(httpHeaderHasString(req->pHeaders, "CONNECTION", "KEEP-ALIVE") == false
-		&& httpHeaderHasString(req->pHeaders, "CONNECTION", "TE") == false) bKeepAlive = false; // ¿äÃ»ÀÌ keep-alive°¡ ¾Æ´Ï¸é
+		&& httpHeaderHasString(req->pHeaders, "CONNECTION", "TE") == false) bKeepAlive = false; // ìš”ì²­ì´ keep-aliveê°€ ì•„ë‹ˆë©´
 	} else {
 		bKeepAlive = false;
 	}
@@ -160,7 +160,7 @@ bool httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg) {
 }
 
 /**
- * @param value NULLÀÏ °æ¿ì name¿¡ ÇØ´çÇÏ´Â Çì´õ¸¦ »èÁ¦
+ * @param value NULLì¼ ê²½ìš° nameì— í•´ë‹¹í•˜ëŠ” í—¤ë”ë¥¼ ì‚­ì œ
  */
 bool httpResponseSetHeader(struct HttpResponse *res, const char *pszName, const char *pszValue) {
 	if(pszValue != NULL) qEntryPutStr(res->pHeaders, pszName, pszValue, true);
@@ -185,7 +185,7 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	if(res->pszHttpVersion == NULL || res->nResponseCode == 0 || res->bOut == true) return false;
 
 	//
-	// Çì´õ ¼³Á¤ ¹× Á¶Á¤
+	// í—¤ë” ì„¤ì • ë° ì¡°ì •
 	//
 
 	if(res->bChunked == true) {
@@ -194,35 +194,35 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 		httpResponseSetHeaderf(res, "Content-Length", "%zu", res->nContentLength);
 	}
 
-	// Content-Type Çì´õ
+	// Content-Type í—¤ë”
 	if(res->pszContentType != NULL) {
 		httpResponseSetHeader(res, "Content-Type", res->pszContentType);
 	}
 
-	// Date Çì´õ - ¼­¹ö ½Ã°¢
+	// Date í—¤ë” - ì„œë²„ ì‹œê°
 	httpResponseSetHeader(res, "Date", qTimeGetGmtStaticStr(0));
 
 	//
-	// Ãâ·Â
+	// ì¶œë ¥
 	//
 
-	// Ã¹¹øÂ° ¶óÀÎÀº ÀÀ´ä ÄÚµå
+	// ì²«ë²ˆì§¸ ë¼ì¸ì€ ì‘ë‹µ ì½”ë“œ
 	streamPrintf(nSockFd, "%s %d %s\r\n",
 		res->pszHttpVersion,
 		res->nResponseCode,
 		httpResponseGetMsg(res->nResponseCode)
 	);
 
-	// ±âÅ¸ Çì´õ Ãâ·Â
+	// ê¸°íƒ€ í—¤ë” ì¶œë ¥
 	const Q_NLOBJ *obj;
 	for (obj = qEntryFirst(res->pHeaders); obj; obj = qEntryNext(res->pHeaders)) {
 		streamPrintf(nSockFd, "%s: %s\r\n", obj->name, (char*)obj->object);
 	}
 
-	// Çì´õ ³¡. °ø¹é ¶óÀÎ
+	// í—¤ë” ë. ê³µë°± ë¼ì¸
 	streamPrintf(nSockFd, "\r\n");
 
-	// ÄÁÅÙÃ÷ Ãâ·Â
+	// ì»¨í…ì¸  ì¶œë ¥
 	if(res->nContentLength > 0 && res->pContent != NULL) {
 		streamWrite(nSockFd, res->pContent, res->nContentLength);
 		//streamPrintf(nSockFd, "\r\n");
@@ -233,9 +233,9 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 }
 
 /*
- * chunk µ¥ÀÌÅÍ¸¦ ¸ğµÎ º¸³½ÈÄ¿£ nSize¸¦ 0À¸·Î ¼³Á¤ÇÏ¿© Äİ
+ * chunk ë°ì´í„°ë¥¼ ëª¨ë‘ ë³´ë‚¸í›„ì—” nSizeë¥¼ 0ìœ¼ë¡œ ì„¤ì •í•˜ì—¬ ì½œ
  *
- * @return	¿äÃ» µ¥ÀÌÅÍ Áß ½ºÆ®¸²À¸·Î ¹ß¼ÛÀ» ÇÑ ¿ÁÅİ ¼ö (¹ß¼ÛÇÑ Ã»Å© Çì´õ´Â Æ÷ÇÔÇÏÁö ¾ÊÀ½)
+ * @return	ìš”ì²­ ë°ì´í„° ì¤‘ ìŠ¤íŠ¸ë¦¼ìœ¼ë¡œ ë°œì†¡ì„ í•œ ì˜¥í…Ÿ ìˆ˜ (ë°œì†¡í•œ ì²­í¬ í—¤ë”ëŠ” í¬í•¨í•˜ì§€ ì•ŠìŒ)
  */
 int httpResponseOutChunk(int nSockFd, const char *pszData, int nSize) {
 	int nSent = 0;

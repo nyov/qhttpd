@@ -34,7 +34,6 @@ int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
  * http method - GET
  */
 int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
-	// 파일 전송
 	char szFilePath[MAX_PATH_LEN];
 	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestUrl);
 	return httpProcessGetNormalFile(req, res, szFilePath, mimeDetect(szFilePath));
@@ -50,54 +49,54 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	bool bRangeRequest = false;
 
 	//
-	// 파일 오픈 및 정보 확인
+	// file open section
 	//
 
-	// 파일 오픈
+	// open file
 	nFileFd = open(pszFilePath, O_RDONLY , 0);
 	if(nFileFd < 0) {
 		LOG_INFO("File open failed. %s", pszFilePath);
 		return response404(req, res);
 	}
 
-	// 파일 정보
+	// get info
 	if (fstat(nFileFd, &filestat) < 0) {
 		LOG_INFO("File stat failed. %s", pszFilePath);
 		return response404(req, res);
 	}
 
-	// 파일 사이즈
+	// get size
 	nFilesize = (uint64_t)filestat.st_size;
 
-	// 일반 파일인지 체크
+	// is normal file
 	if(S_ISREG(filestat.st_mode) == 0) {
 		close(nFileFd);
 		return response403(req, res);
 	}
 
-	// 파일 닫기
+	// close file
 	close(nFileFd);
 
 	//
-	// 헤더 처리 부분
+	// header handling section
 	//
 
-	// If-Modified-Since 헤더
+	// check If-Modified-Since header
 	const char *pszIfModifiedSince = httpHeaderGetValue(req->pHeaders, "IF-MODIFIED-SINCE");
 	if(pszIfModifiedSince != NULL) {
 		time_t nUnivTime = qTimeParseGmtStr(pszIfModifiedSince);
-		if(nUnivTime >= 0 && nUnivTime > filestat.st_mtime) { // 해석 성공 && 파일이 변경이 없음
+		if(nUnivTime >= 0 && nUnivTime > filestat.st_mtime) { // succeed to parsing header && file does not modified
 			return response304(req, res); // Not modified
 		}
 	}
 
-	// Range 헤더
+	// check Range header
 	const char *pszRange = httpHeaderGetValue(req->pHeaders, "RANGE");
 	if(pszRange != NULL) {
 		bRangeRequest = httpHeaderParseRange(pszRange, nFilesize, &nRangeOffset1, &nRangeOffset2, &nRangeSize);
 	}
 
-	// Range가 없거나, 파싱 오류시
+	// in case of no Range header or parsing failure
 	if(bRangeRequest == false) {
 		nRangeOffset1 = 0;
 		nRangeOffset2 = nFilesize - 1;
@@ -105,7 +104,7 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	}
 
 	//
-	// 응답 헤더 출력
+	// print out response headers
 	//
 
 	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
@@ -127,7 +126,7 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	httpResponseOut(res, req->nSockFd);
 
 	//
-	// 파일 전송
+	// send file
 	//
 
 	if(nFilesize > 0) {
@@ -147,13 +146,13 @@ int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
 	struct stat filestat;
 	char szFilePath[MAX_PATH_LEN];
 
-	// 파일 경로
+	// file path
 	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestUrl);
 
-	// 파일 정보
+	// file info
 	if (stat(szFilePath, &filestat) < 0) return response404(req, res);
 
-	// @todo
+	// print out response
 	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
 
 	httpResponseSetHeader(res, "Accept-Ranges", "bytes");
