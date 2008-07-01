@@ -22,14 +22,12 @@
 bool httpAccessLog(struct HttpRequest *req, struct HttpResponse *res) {
 	if(req->pszRequestMethod == NULL) return false;
 
-	char *pszReferer, *pszAgent, *pszLocation;
+	const char *pszReferer = httpHeaderGetValue(req->pHeaders, "REFERER");
+	const char *pszAgent = httpHeaderGetValue(req->pHeaders, "USER-AGENT");
+	const char *pszLocation = httpHeaderGetValue(res->pHeaders, "LOCATION");
 
-	pszReferer = httpHeaderGetValue(req->pHeaders, "REFERER");
-	pszAgent = httpHeaderGetValue(req->pHeaders, "USER-AGENT");
-	pszLocation = httpHeaderGetValue(res->pHeaders, "LOCATION");
-
-	qLog(g_acclog, "%s - - [%s] \"%s %s %s\" %d %ju \"%s\" \"%s\" \"%s\"",
-		poolGetConnAddr(), qGetLocaltimeStr(poolGetConnReqTime()),
+	qLog(g_acclog, "%s - - [%s] \"%s %s %s\" %d %zu \"%s\" \"%s\" \"%s\"",
+		poolGetConnAddr(),  qTimeGetLocalStaticStr(poolGetConnReqTime()),
 		req->pszRequestMethod, req->pszRequestUri, req->pszHttpVersion,
 		res->nResponseCode, res->nContentLength,
 		(pszReferer != NULL) ? pszReferer : "-",

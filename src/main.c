@@ -41,7 +41,7 @@ sigset_t g_sigflags;			// 처리할 시그널 셋
  * @author Seung-young Kim
  */
 int main(int argc, char *argv[]) {
-	char szConfigFile[SYSPATH_SIZE];
+	char szConfigFile[MAX_PATH_LEN];
 	bool nDaemonize = true;
 
 	// hook
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// parse configuration
-	if (loadConfig(szConfigFile, &g_conf)) {
+	if (loadConfig(&g_conf, szConfigFile)) {
 		//fprintf(stderr, "Configuration loaded.\n");
 
 		// config hook
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// check pid file
-	if(qCheckFile(g_conf.szPidfile) == true) {
+	if(qFileExist(g_conf.szPidfile) == true) {
 		fprintf(stderr, "ERROR: pid file(%s) exists. already running?\n", g_conf.szPidfile);
 		return EXIT_FAILURE;
 	}

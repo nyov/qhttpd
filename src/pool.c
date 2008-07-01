@@ -22,6 +22,9 @@
 /////////////////////////////////////////////////////////////////////////
 // PRIVATE VARIABLES
 /////////////////////////////////////////////////////////////////////////
+#define POOL_SEM_ID		(1)
+#define POOL_SEM_MAXWAIT	(3000)
+
 static struct SharedData *m_pShm = NULL;
 static int m_nShmId = -1;
 
@@ -90,6 +93,35 @@ int poolSendSignal(int signo) {
 }
 
 /*
+ * Pool Checking
+ *
+ * @return 서비스중인 프로세스 수
+ */
+bool poolCheck(void) {
+	if(m_pShm == NULL) return false;
+
+	if(qSemEnterNowait(g_semid, POOL_SEM_ID) == false) return false;
+
+	int i, nTotal;
+	for (i = nTotal = 0; i < m_nMaxChild; i++) {
+		if (m_pShm->child[i].nPid > 0) {
+			nTotal++;
+		}
+	}
+
+	// check current child
+	bool bFixed = false;
+	if(m_pShm->nCurrentChilds != nTotal) {
+		m_pShm->nCurrentChilds = nTotal;
+		bFixed = true;
+	}
+
+	qSemLeave(g_semid, POOL_SEM_ID);
+
+	return bFixed;
+}
+
+/*
  * 차일드 누적 구동 수를 얻음
  *
  * @return 차일드 누적 구동 수
@@ -106,6 +138,7 @@ int poolGetTotalLaunched(void) {
  */
 int poolGetCurrentChilds(void) {
 	if(m_pShm == NULL) return 0;
+
 	return m_pShm->nCurrentChilds;
 }
 
@@ -117,12 +150,12 @@ int poolGetCurrentChilds(void) {
 int poolGetWorkingChilds(void) {
 	if(m_pShm == NULL) return 0;
 
-	int i, working;
-	for (i = working = 0; i < m_nMaxChild; i++) {
-		if (m_pShm->child[i].nPid > 0 && m_pShm->child[i].conn.bConnected == true) working++;
+	int i, nWorking;
+	for (i = nWorking = 0; i < m_nMaxChild; i++) {
+		if (m_pShm->child[i].nPid > 0 && m_pShm->child[i].conn.bConnected == true) nWorking++;
 	}
 
-	return working;
+	return nWorking;
 }
 
 /*
@@ -175,7 +208,7 @@ bool poolChildReg(void) {
 		return false;
 	}
 
-	qSemEnter(g_semid, 1);
+	qSemEnterForce(g_semid, POOL_SEM_ID, POOL_SEM_MAXWAIT, NULL);
 
 	// find empty slot
 	int nSlot = poolFindSlot(0);
@@ -185,7 +218,7 @@ bool poolChildReg(void) {
 		// set global info
 		m_pShm->nTotalLaunched++;
 
-		qSemLeave(g_semid, 1);
+		qSemLeave(g_semid, POOL_SEM_ID);
 		return false;
 	}
 
@@ -202,7 +235,7 @@ bool poolChildReg(void) {
 	// set member variable
 	m_nMySlotId = nSlot;
 
-	qSemLeave(g_semid, 1);
+	qSemLeave(g_semid, POOL_SEM_ID);
 	return true;
 }
 
@@ -210,12 +243,12 @@ bool poolChildReg(void) {
 bool poolChildDel(int nPid) {
 	int nSlot;
 
-	qSemEnter(g_semid, 1);
+	qSemEnterForce(g_semid, POOL_SEM_ID, POOL_SEM_MAXWAIT, NULL);
 
 	nSlot = poolFindSlot(nPid);
 	if (nSlot < 0) {
 		//DEBUG("Can't find slot for pid %d.", nPid);
-		qSemLeave(g_semid, 1);
+		qSemLeave(g_semid, POOL_SEM_ID);
 		return false;
 	}
 
@@ -224,7 +257,7 @@ bool poolChildDel(int nPid) {
 	m_pShm->child[nSlot].nPid = 0; // 세부 데이터의 크리어 여부는 재 사용시에 행함
 	m_pShm->nCurrentChilds--;
 
-	qSemLeave(g_semid, 1);
+	qSemLeave(g_semid, POOL_SEM_ID);
 	return true;
 }
 
@@ -277,7 +310,7 @@ bool poolSetConnInfo(int nSockFd) {
 	m_pShm->child[m_nMySlotId].conn.nTotalRequests = 0;
 
 	m_pShm->child[m_nMySlotId].conn.nSockFd = nSockFd;
-	strcpy(m_pShm->child[m_nMySlotId].conn.szAddr, inet_ntoa(sockAddr.sin_addr));
+	qStrCpy(m_pShm->child[m_nMySlotId].conn.szAddr, sizeof(m_pShm->child[m_nMySlotId].conn.szAddr), inet_ntoa(sockAddr.sin_addr), sizeof(m_pShm->child[m_nMySlotId].conn.szAddr));
 	m_pShm->child[m_nMySlotId].conn.nAddr = convIp2Uint(m_pShm->child[m_nMySlotId].conn.szAddr);
 	m_pShm->child[m_nMySlotId].conn.nPort = (int)sockAddr.sin_port; // int is more convenience to use
 

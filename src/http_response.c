@@ -29,11 +29,13 @@ struct HttpResponse *httpResponseCreate(void) {
 	// Response 구조체 초기화
 	memset((void *)res, 0, sizeof(struct HttpResponse));
 	res->bOut = false;
+	res->pHeaders = qEntryInit();
+	if(res->pHeaders == NULL) return NULL;
 
 	return res;
 }
 
-int httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int nResCode, bool nKeepAlive, char *format, ...) {
+int httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int nResCode, bool nKeepAlive, const char *format, ...) {
 	httpResponseSetCode(res, nResCode, req, nKeepAlive);
 
 	if(format != NULL) {
@@ -63,8 +65,8 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 	if(pszHttpVer == NULL) pszHttpVer = HTTP_PROTOCOL_11;
 
 	// default headers
-	httpResponseSetHeader(res, "Date", qGetGmtimeStr(0));
-	httpResponseSetHeaderf(res, "Server", "%s/%s", PRG_NAME, PRG_VERSION);
+	httpResponseSetHeader(res, "Date", qTimeGetGmtStaticStr(0));
+	httpResponseSetHeaderf(res, "Server", "%s/%s (%s)", PRG_NAME, PRG_VERSION, PRG_INFO);
 
 	// decide to turn on/off keep-alive
 	if(g_conf.bKeepAliveEnable == true && bKeepAlive == true) {
@@ -96,10 +98,10 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 	return true;
 }
 
-bool httpResponseSetContent(struct HttpResponse *res, char *pszContentType, uint64_t nContentLength, char *pContent) {
+bool httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, size_t nContentLength, const char *pContent) {
 	// content-type
 	if(res->pszContentType != NULL) free(res->pszContentType);
-	res->pszContentType = (pszContentType != NULL) ? strdup(pszContentType) :  NULL;
+	res->pszContentType = (pszContentType != NULL) ? strdup(pszContentType) : NULL;
 
 	// content
 	if(res->pContent != NULL) free(res->pContent);
@@ -121,21 +123,20 @@ bool httpResponseSetContent(struct HttpResponse *res, char *pszContentType, uint
 bool httpResponseSetContentChunked(struct HttpResponse *res, bool bChunked) {
 	res->bChunked = bChunked;
 	if(bChunked == true) {
-		if(res->pszContentType != NULL) {
-			free(res->pszContentType);
-			res->pszContentType = NULL;
-		}
-
 		if(res->pContent != NULL) {
 			free(res->pContent);
 			res->pContent = NULL;
+		}
+
+		if(res->nContentLength != 0) {
+			res->nContentLength = 0;
 		}
 	}
 
 	return true;
 }
 
-bool httpResponseSetContentHtml(struct HttpResponse *res, char *pszMsg) {
+bool httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg) {
 	char szContent[1024];
 
 	snprintf(szContent, sizeof(szContent)-1,
@@ -146,12 +147,12 @@ bool httpResponseSetContentHtml(struct HttpResponse *res, char *pszMsg) {
 		"<h1>%d %s</h1>\r\n"
 		"<p>%s</p>\r\n"
 		"<hr>\r\n"
-		"<address>%s/%s</address>\r\n"
+		"<address>%s %s/%s</address>\r\n"
 		"</body></html>",
 		res->nResponseCode, httpResponseGetMsg(res->nResponseCode),
 		res->nResponseCode, httpResponseGetMsg(res->nResponseCode),
 		pszMsg,
-		PRG_NAME, PRG_VERSION
+		PRG_INFO, PRG_NAME, PRG_VERSION
 	);
 	//szContent[sizeof(szContent)-1] = '\0';
 
@@ -161,18 +162,14 @@ bool httpResponseSetContentHtml(struct HttpResponse *res, char *pszMsg) {
 /**
  * @param value NULL일 경우 name에 해당하는 헤더를 삭제
  */
-bool httpResponseSetHeader(struct HttpResponse *res, char *pszName, char *pszValue) {
-	if(res->pHeaders == NULL) {
-		if(pszValue != NULL) res->pHeaders = qEntryAdd(NULL, pszName, pszValue, 1);
-	} else {
-		if(pszValue != NULL) qEntryAdd(res->pHeaders, pszName, pszValue, 1);
-		else qEntryRemove(res->pHeaders, pszName);
-	}
+bool httpResponseSetHeader(struct HttpResponse *res, const char *pszName, const char *pszValue) {
+	if(pszValue != NULL) qEntryPutStr(res->pHeaders, pszName, pszValue, true);
+	else qEntryRemove(res->pHeaders, pszName);
 
 	return true;
 }
 
-bool httpResponseSetHeaderf(struct HttpResponse *res, char *pszName, char *format, ...) {
+bool httpResponseSetHeaderf(struct HttpResponse *res, const char *pszName, const char *format, ...) {
 	char szValue[1024];
 	va_list arglist;
 
@@ -185,8 +182,6 @@ bool httpResponseSetHeaderf(struct HttpResponse *res, char *pszName, char *forma
 }
 
 bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
-	Q_ENTRY *entries;
-
 	if(res->pszHttpVersion == NULL || res->nResponseCode == 0 || res->bOut == true) return false;
 
 	//
@@ -196,7 +191,7 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	if(res->bChunked == true) {
 		httpResponseSetHeader(res, "Transfer-Encoding", "chunked");
 	} else {
-		httpResponseSetHeaderf(res, "Content-Length", "%ju", res->nContentLength);
+		httpResponseSetHeaderf(res, "Content-Length", "%zu", res->nContentLength);
 	}
 
 	// Content-Type 헤더
@@ -205,31 +200,32 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	}
 
 	// Date 헤더 - 서버 시각
-	httpResponseSetHeaderf(res, "Date", "%s", qGetGmtimeStr(time(NULL)));
+	httpResponseSetHeader(res, "Date", qTimeGetGmtStaticStr(0));
 
 	//
 	// 출력
 	//
 
 	// 첫번째 라인은 응답 코드
-	qSocketPrintf(nSockFd, "%s %d %s\r\n",
+	streamPrintf(nSockFd, "%s %d %s\r\n",
 		res->pszHttpVersion,
 		res->nResponseCode,
 		httpResponseGetMsg(res->nResponseCode)
 	);
 
 	// 기타 헤더 출력
-	for (entries = res->pHeaders; entries != NULL; entries = entries->next) {
-		qSocketPrintf(nSockFd, "%s: %s\r\n", entries->name, entries->value);
+	const Q_NLOBJ *obj;
+	for (obj = qEntryFirst(res->pHeaders); obj; obj = qEntryNext(res->pHeaders)) {
+		streamPrintf(nSockFd, "%s: %s\r\n", obj->name, (char*)obj->object);
 	}
 
 	// 헤더 끝. 공백 라인
-	qSocketPrintf(nSockFd, "\r\n");
+	streamPrintf(nSockFd, "\r\n");
 
 	// 컨텐츠 출력
 	if(res->nContentLength > 0 && res->pContent != NULL) {
-		qSocketWrite(nSockFd, res->pContent, res->nContentLength);
-		//qSocketPrintf(nSockFd, "\r\n");
+		streamWrite(nSockFd, res->pContent, res->nContentLength);
+		//streamPrintf(nSockFd, "\r\n");
 	}
 
 	res->bOut = true;
@@ -241,13 +237,13 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
  *
  * @return	요청 데이터 중 스트림으로 발송을 한 옥텟 수 (발송한 청크 헤더는 포함하지 않음)
  */
-int httpResponseOutChunk(int nSockFd, char *pszData, int nSize) {
+int httpResponseOutChunk(int nSockFd, const char *pszData, int nSize) {
 	int nSent = 0;
-	qSocketPrintf(nSockFd, "%x\r\n", nSize);
+	streamPrintf(nSockFd, "%x\r\n", nSize);
 	if(nSize > 0) {
-		nSent = qSocketWrite(nSockFd, pszData, nSize);
+		nSent = streamWrite(nSockFd, pszData, nSize);
 	}
-	qSocketPrintf(nSockFd, "\r\n");
+	streamPrintf(nSockFd, "\r\n");
 
 	return nSent;
 }
@@ -262,7 +258,7 @@ void httpResponseFree(struct HttpResponse *res) {
 	free(res);
 }
 
-char *httpResponseGetMsg(int nResCode) {
+const char *httpResponseGetMsg(int nResCode) {
 	switch(nResCode) {
 		case HTTP_CONTINUE			: return "Continue";
 		case HTTP_RESCODE_OK			: return "Ok";

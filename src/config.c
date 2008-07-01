@@ -19,31 +19,23 @@
 
 #include "qhttpd.h"
 
-/**
- * configuration parser
- *
- * @param pszFilePath	egis.conf 파일 경로, NULL 입력시 디폴트로
- * @param pConf		Config 구조체 포인터
- * @return 성공시 true, 실패시 false
- */
-
 #define fetch2Str(e, d, n)	do {				\
-	char *t = qfGetValue(e, n);				\
+	const char *t = qEntryGetStr(e, n);			\
 	if(t == NULL) {						\
 		DEBUG("No such entry : %s", n);			\
-		qfFree(e);					\
+		qEntryFree(e);					\
 		return false;					\
 	}							\
-	qStrncpy(d, t, sizeof(d));				\
+	qStrCpy(d, sizeof(d), t, sizeof(d));			\
 } while (false)
 
 
 #define fetch2Int(e, d, n)					\
 do {								\
-	char *t = qfGetValue(e, n);				\
+	const char *t = qEntryGetStr(e, n);			\
 	if(t == NULL) {						\
 		DEBUG("No such entry : %s", n);			\
-		qfFree(e);					\
+		qEntryFree(e);					\
 		return false;					\
 	}							\
 	d = atoi(t);						\
@@ -51,29 +43,36 @@ do {								\
 
 #define fetch2Bool(e, d, n)					\
 do {								\
-	char *t = qfGetValue(e, n);				\
+	const char *t = qEntryGetStr(e, n);			\
 	if(t == NULL) {						\
 		DEBUG("No such entry : %s", n);			\
-		qfFree(e);					\
+		qEntryFree(e);					\
 		return false;					\
 	}							\
 	d = (!strcasecmp(t, "YES") || !strcasecmp(t, "TRUE") || \
 	    !strcasecmp(t, "ON") ) ? true : false;		\
 } while (false)
 
-bool loadConfig(char *pszFilePath, Config *pConf) {
+/**
+ * configuration parser
+ *
+ * @param pConf		Config structure
+ * @param pszFilePath	file path of egis.conf
+ * @return true if successful otherwise returns false
+ */
+bool loadConfig(Config *pConf, char *pszFilePath) {
 	if (pszFilePath == NULL || !strcmp(pszFilePath, "")) {
 		return false;
 	}
 
-	// 설정 파일 로드
-	Q_ENTRY *entry = qfDecoder(pszFilePath, '=');
+	// parse configuration file
+	Q_ENTRY *entry = qConfigParseFile(NULL, pszFilePath, '=');
 	if (entry == NULL) {
 		return false;
 	}
 
-	// 구조체에 저장
-	qStrncpy(pConf->szConfigFile, pszFilePath, sizeof(pConf->szConfigFile));
+	// copy to structure
+	qStrCpy(pConf->szConfigFile, sizeof(pConf->szConfigFile), pszFilePath, sizeof(pConf->szConfigFile));
 
 	fetch2Str(entry, pConf->szRunDir, "qhttpd.RunDir");
 	fetch2Str(entry, pConf->szLogDir, "qhttpd.LogDir");
@@ -107,9 +106,9 @@ bool loadConfig(char *pszFilePath, Config *pConf) {
 	fetch2Str(entry, pConf->szStatusUrl, "qhttpd.StatusUrl");
 
 	//
-	// 설정 파일 해제
+	// free resources
 	//
-	qfFree(entry);
+	qEntryFree(entry);
 
 	return true;
 }

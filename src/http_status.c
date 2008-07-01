@@ -41,11 +41,13 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 	qObstackGrowStr(obHtml, "</head>\r\n");
 	qObstackGrowStr(obHtml, "<body>\r\n");
 
+	char *pszCurrentTime = qTimeGetLocalStr(0);
+	char *pszStartTime = qTimeGetLocalStr(pShm->nStartTime);
 	qObstackGrowStrf(obHtml,"<h1>%s/%s Status</h1>\r\n", PRG_NAME, PRG_VERSION);
 	qObstackGrowStr(obHtml, "<dl>\r\n");
 	qObstackGrowStrf(obHtml,"  <dt>Server Version: %s v%s (%s; %s; %s)</dt>\r\n", PRG_NAME, PRG_VERSION, __DATE__, __TIME__, pszBuildMode);
-	qObstackGrowStrf(obHtml,"  <dt>Current Time: %s\r\n", qGetLocaltimeStr(0));
-	qObstackGrowStrf(obHtml,"  , Start Time: %s</dt>\r\n", qGetLocaltimeStr(pShm->nStartTime));
+	qObstackGrowStrf(obHtml,"  <dt>Current Time: %s\r\n", pszCurrentTime);
+	qObstackGrowStrf(obHtml,"  , Start Time: %s</dt>\r\n", pszStartTime);
 	qObstackGrowStrf(obHtml,"  <dt>Total Connections : %d\r\n", pShm->nTotalConnected);
 	qObstackGrowStrf(obHtml,"  , Total Requests : %d</dt>\r\n", pShm->nTotalRequests);
 	qObstackGrowStrf(obHtml,"  , Total Launched: %d\r\n", pShm->nTotalLaunched);
@@ -56,6 +58,8 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 	qObstackGrowStrf(obHtml,"  , Max Spare Servers: %d\r\n", g_conf.nMaxSpareServers);
 	qObstackGrowStrf(obHtml,"  , Max Clients: %d</dt>\r\n", g_conf.nMaxClients);
 	qObstackGrowStr(obHtml, "</dl>\r\n");
+	free(pszCurrentTime);
+	free(pszStartTime);
 
 	qObstackGrowStr(obHtml, "<table width='100%%' border=1 cellpadding=1 cellspacing=0>\r\n");
 	qObstackGrowStr(obHtml, "  <tr>\r\n");
@@ -103,30 +107,31 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 		if(pShm->child[i].conn.bRun == true) nReqRuns = diffTimeval(NULL, &pShm->child[i].conn.tvReqTime);
 		else nReqRuns = diffTimeval(&pShm->child[i].conn.tvResTime, &pShm->child[i].conn.tvReqTime);
 
+		char szTimeStr[sizeof(char) * (CONST_STRLEN("YYYYMMDDhhmmss")+1)];
 		qObstackGrowStr(obHtml, "  <tr align=center>\r\n");
 		qObstackGrowStrf(obHtml,"    <td>%d</td>\r\n", j);
 		qObstackGrowStrf(obHtml,"    <td>%d</td>\r\n", pShm->child[i].nPid);
-		qObstackGrowStrf(obHtml,"    <td>%s</td>\r\n", qGetTimeStr(pShm->child[i].nStartTime));
+		qObstackGrowStrf(obHtml,"    <td>%s</td>\r\n", qTimeGetGmtStrf(szTimeStr, sizeof(szTimeStr), pShm->child[i].nStartTime, "%Y%m%d%H%M%S"));
 		qObstackGrowStrf(obHtml,"    <td align=right>%d</td>\r\n", pShm->child[i].nTotalConnected);
 		qObstackGrowStrf(obHtml,"    <td align=right>%d</td>\r\n", pShm->child[i].nTotalRequests);
 
 		qObstackGrowStrf(obHtml,"    <td>%s</td>\r\n", pszStatus);
 		qObstackGrowStrf(obHtml,"    <td align=left>%s:%d</td>\r\n", pShm->child[i].conn.szAddr, pShm->child[i].conn.nPort);
-		qObstackGrowStrf(obHtml,"    <td>%s</td>\r\n", (pShm->child[i].conn.nStartTime > 0) ? qGetTimeStr(pShm->child[i].conn.nStartTime) : "&nbsp;");
+		qObstackGrowStrf(obHtml,"    <td>%s</td>\r\n", (pShm->child[i].conn.nStartTime > 0) ? qTimeGetGmtStrf(szTimeStr, sizeof(szTimeStr), pShm->child[i].conn.nStartTime, "%Y%m%d%H%M%S") : "&nbsp;");
 		qObstackGrowStrf(obHtml,"    <td align=right>%ds</td>\r\n", nConnRuns);
 		qObstackGrowStrf(obHtml,"    <td align=right>%d</td>\r\n", pShm->child[i].conn.nTotalRequests);
 
 		qObstackGrowStrf(obHtml,"    <td align=left>%s&nbsp;</td>\r\n", pShm->child[i].conn.szReqInfo);
 		if(pShm->child[i].conn.nResponseCode == 0) qObstackGrowStrf(obHtml,"    <td>&nbsp;</td>\r\n");
 		else qObstackGrowStrf(obHtml,"    <td>%d</td>\r\n", pShm->child[i].conn.nResponseCode);
-		qObstackGrowStrf(obHtml,"    <td>%s</td>\r\n", (pShm->child[i].conn.tvReqTime.tv_sec > 0) ? qGetTimeStr(pShm->child[i].conn.tvReqTime.tv_sec) : "&nbsp;");
+		qObstackGrowStrf(obHtml,"    <td>%s</td>\r\n", (pShm->child[i].conn.tvReqTime.tv_sec > 0) ? qTimeGetGmtStrf(szTimeStr, sizeof(szTimeStr), pShm->child[i].conn.tvReqTime.tv_sec, "%Y%m%d%H%M%S") : "&nbsp;");
 		qObstackGrowStrf(obHtml,"    <td align=right>%.1fms</td>\r\n", (nReqRuns * 1000));
 		qObstackGrowStr(obHtml, "  </tr>\r\n");
 	}
 	qObstackGrowStr(obHtml, "</table>\r\n");
 
 	qObstackGrowStr(obHtml, "<hr>\r\n");
-	qObstackGrowStrf(obHtml,"%s/%s\r\n", PRG_NAME, PRG_VERSION);
+	qObstackGrowStrf(obHtml,"%s v%s, %s\r\n", PRG_NAME, PRG_VERSION, PRG_INFO);
 	qObstackGrowStr(obHtml, "</body>\r\n");
 	qObstackGrowStr(obHtml, "</html>\r\n");
 

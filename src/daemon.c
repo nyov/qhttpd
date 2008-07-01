@@ -20,6 +20,11 @@
 #include "qhttpd.h"
 
 /////////////////////////////////////////////////////////////////////////
+// PRIVATE FUNCTION PROTOTYPES
+/////////////////////////////////////////////////////////////////////////
+static bool ignoreConnection(int nSockFd, long int nWaitUsec);
+
+/////////////////////////////////////////////////////////////////////////
 // PUBLIC FUNCTIONS
 /////////////////////////////////////////////////////////////////////////
 
@@ -33,14 +38,10 @@ void daemonStart(bool nDaemonize) {
 	// open log
 	g_errlog = qLogOpen(g_conf.szLogDir, g_conf.szErrorLog, g_conf.nLogRotate, true);
 	g_acclog = qLogOpen(g_conf.szLogDir, g_conf.szAccessLog, g_conf.nLogRotate, true);
-	if (g_errlog == NULL) {
-		printf("Can't open error log file %s/%s\n", g_conf.szLogDir, g_conf.szErrorLog);
-		daemonEnd(EXIT_FAILURE);
-	} else if (g_acclog == NULL) {
-		printf("Can't open access log file %s/%s\n", g_conf.szLogDir, g_conf.szAccessLog);
+	if (g_errlog == NULL || g_acclog == NULL) {
+		printf("Can't open log file.\n");
 		daemonEnd(EXIT_FAILURE);
 	}
-
 	qLogSetConsole(g_errlog, true);
 	qLogSetConsole(g_acclog, false);
 
@@ -60,7 +61,7 @@ void daemonStart(bool nDaemonize) {
 		int so_sndbufsize = 0;
 		int so_rcvbufsize = 0;
 
-		if (so_reuseaddr) setsockopt(nSockFd, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr, sizeof(so_reuseaddr));
+		if (so_reuseaddr > 0) setsockopt(nSockFd, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr, sizeof(so_reuseaddr));
 		if (so_sndbufsize > 0) setsockopt(nSockFd, SOL_SOCKET, SO_SNDBUF, &so_sndbufsize, sizeof(so_sndbufsize));
 		if (so_rcvbufsize > 0) setsockopt(nSockFd, SOL_SOCKET, SO_RCVBUF, &so_rcvbufsize, sizeof(so_rcvbufsize));
 
@@ -121,10 +122,15 @@ void daemonStart(bool nDaemonize) {
 	}
 
 	// starting.
-	LOG_INFO("%s %s is ready on the port %d.", PRG_NAME, PRG_VERSION, g_conf.nPort);
+	LOG_SYS("%s %s is ready on the port %d.", PRG_NAME, PRG_VERSION, g_conf.nPort);
 
 	// prefork management
+	int nIgnoredConn = 0;
 	while (true) {
+		// signal handling
+		daemonSignalHandler();
+
+		// get child count
 		int nTotalLaunched = poolGetTotalLaunched();
 		int nCurrentChilds = poolGetCurrentChilds();
 		int nWorkingChilds = poolGetWorkingChilds();
@@ -137,6 +143,12 @@ void daemonStart(bool nDaemonize) {
 		} else {
 			if(nIdleChilds < g_conf.nMinSpareServers) { // not enough idle childs
 				if(nCurrentChilds < g_conf.nMaxClients) nChildFlag = 1;
+				else if(nIdleChilds <= 0) { // ignore connectin
+					if(ignoreConnection(nSockFd, 1000) == true) {
+						nIgnoredConn++;
+						LOG_WARN("Maximum connection reached. Connection ignored. (%d)", nIgnoredConn);
+					}
+				}
 			} else if(nIdleChilds > g_conf.nMaxSpareServers) { // too much idle childs
 				if(nCurrentChilds > g_conf.nStartServers) nChildFlag = -1;
 			}
@@ -146,64 +158,83 @@ void daemonStart(bool nDaemonize) {
 
 		// launch or kill childs
 		if(nChildFlag > 0) {
-			// 예비 차일드를 생성
+			// launching  spare server
 			DEBUG("Launching spare server. (working:%d, total:%d)", nWorkingChilds, nCurrentChilds);
 			int nCpid = fork();
-			if (nCpid < 0) { // 오류
+			if (nCpid < 0) { // error
 				LOG_ERR("Can't create child.");
 				sleep(1);
-			} else if (nCpid == 0) { // 자식
+			} else if (nCpid == 0) { // this is child
 				DEBUG("Child %d launched", getpid());
 
-				// 차일드 메인
+				// main job
 				childStart(nSockFd);
 
-				// 이 코드는 안전장치로, 절대 수행되지 않음.
+				// safety code, never reached.
 				exit(EXIT_FAILURE);
 
-			} else { // 부모
+			} else { // this is parent
 				int nWait;
 
-				// 차일드가 공유슬롯에 등록되기를 기다림
+				// wait for the child register itself to shared pool.
 				for(nWait = 0; nWait < 1000; nWait++) {
 					//DEBUG("%d %d", nTotalLaunched, poolGetTotalLaunched());
 					if(nTotalLaunched != poolGetTotalLaunched()) break;
 					DEBUG("Waiting child registered at pool. [%d]", nWait+1);
-					microSleep(1000);
+					usleep(1000);
 				}
 				if(nWait == 1000) {
 					LOG_WARN("Delayed child launching.");
 				}
 			}
-		} else if(nChildFlag < 0) {	// 스페어 차일드 제거
+		} else if(nChildFlag < 0) { // removing child
 			static time_t nLastSec = 0;
 
-			// 차일드 제거는 1초에 한개씩만
+			// removing 1 child per sec
 			if(nLastSec != time(NULL)) {
 				if(poolSetIdleExitReqeust(1) != 1) {
 					LOG_WARN("Can't set exit flag.");
 				}
 				nLastSec = time(NULL);
 			}
-		} else { // 스페어 증감이 필요치 않을경우
+		} else { // no need to increase spare server
 			static time_t nLastSec = 0;
 
+			// periodic job here
 			if(nLastSec != time(NULL)) {
-				// idle hook
+				// safety code : check semaphore dead-lock bug
+				static int nSemLockCnt[MAX_SEMAPHORES];
+				int i;
+				for(i = 0; i < MAX_SEMAPHORES; i++) {
+					if(qSemCheck(g_semid, i) == true) {
+						nSemLockCnt[i]++;
+						if(nSemLockCnt[i] > MAX_MAX_SEMAPHORES_LOCK_SECS) {
+							LOG_ERR("Force to unlock semaphore no %d", i);
+							qSemLeave(g_semid, i);	// force to unlock
+							nSemLockCnt[i] = 0;
+						}
+					} else {
+						nSemLockCnt[i] = 0;
+					}
+				}
+
+				// check pool
+				if(poolCheck() == true) {
+					LOG_WARN("Child count mismatch. fixed.");
+				}
+
+				// hook
 				int nJobCnt = hookWhileDaemonIdle();
 				if(nJobCnt < 0) {
 					LOG_ERR("Hook failed.");
 				}
 
-				// update last called
+				// update running time
 				nLastSec = time(NULL);
 			} else {
-				microSleep(1 * 1000); // 1/1000 sec
+				usleep(1 * 1000);
 			}
 		}
-
-		// signal handling
-		daemonSignalHandler();
 	}
 
 	daemonEnd(EXIT_SUCCESS);
@@ -228,8 +259,7 @@ void daemonEnd(int nStatus) {
 		}
 
 		// sleep
-		unsigned long int nSleepLeft = 1 * 1000 * 1000;
-		while((nSleepLeft = microSleep(nSleepLeft)) > 0);
+		sleep(1);
 
 		// waitpid
 		while(waitpid(-1, NULL, WNOHANG) > 0);
@@ -240,34 +270,38 @@ void daemonEnd(int nStatus) {
 		LOG_ERR("Hook failed.");
 	}
 
-	// destroy mime
-	if (mimeFree() == false) {
-		LOG_WARN("Can't destroy mime types.");
-	}
-
-	// destroy shared memory
-	if (poolFree() == false) {
-		LOG_WARN("Can't destroy child management pool .");
-	}
-
 	// destroy semaphore
 	int i;
 	for(i = 0; i < MAX_SEMAPHORES; i++) qSemLeave(g_semid, i);	// force to unlock every semaphores
 	if (qSemFree(g_semid) == false) {
 		LOG_WARN("Can't destroy semaphore.");
+	} else {
+		LOG_INFO("Semaphore destroied.");
 	}
 
+	// destroy shared memory
+	if (poolFree() == false) {
+		LOG_WARN("Can't destroy child management pool .");
+	} else {
+		LOG_INFO("Child management pool destroied.");
+	}
+
+	// destroy mime
+  	if (mimeFree() == false) {
+  		LOG_WARN("Can't destroy mime types.");
+  	}
+
 	// remove pid file
-	if (qCheckFile(g_conf.szPidfile) == true) {
-		if(unlink(g_conf.szPidfile) != 0) LOG_WARN("Can't remove pid file %s", g_conf.szPidfile);
+	if (qFileExist(g_conf.szPidfile) == true && unlink(g_conf.szPidfile) == false) {
+		LOG_WARN("Can't remove pid file %s", g_conf.szPidfile);
 	}
 
 	// final
-	LOG_INFO("%s Terminated.", PRG_NAME);
+	LOG_SYS("%s Terminated.", PRG_NAME);
 
 	// close log
 	if(g_acclog != NULL) qLogClose(g_acclog);
-if(g_errlog != NULL) qLogClose(g_errlog);
+	if(g_errlog != NULL) qLogClose(g_errlog);
 
 	exit(nStatus);
 }
@@ -319,18 +353,23 @@ void daemonSignalHandler(void) {
 		LOG_INFO("Caughted SIGHUP");
 
 		// reload config
-		if(loadConfig(g_conf.szConfigFile, &g_conf) == false) {
+		if(loadConfig(&g_conf, g_conf.szConfigFile) == false) {
 			LOG_ERR("Can't reload configuration file %s", g_conf.szConfigFile);
+		}
+
+		// config hook
+		if(hookAfterConfigLoaded() == false) {
+			LOG_ERR("Hook failed.");
 		}
 
 		// reload mime
 		mimeFree();
 		if(mimeInit(g_conf.szMimeFile) == false) {
-			LOG_ERR("Can't load mimetypes from %s", g_conf.szConfigFile);
+			LOG_ERR("Can't load mimetypes from %s", g_conf.szMimeFile);
 		}
 
-		// config hook
-		if(hookAfterConfigLoaded() == false || hookAfterDaemonSIGHUP() == false) {
+		// hup hook
+		if(hookAfterDaemonSIGHUP() == false) {
 			LOG_ERR("Hook failed.");
 		}
 
@@ -364,4 +403,29 @@ void daemonSignalHandler(void) {
 		poolSendSignal(SIGUSR2);
 		LOG_SYS("Decreasing log-level to %d.", g_loglevel);
 	}
+}
+
+static bool ignoreConnection(int nSockFd, long int nWaitUsec) {
+	struct sockaddr_in connAddr;
+	int nConnLen = sizeof(connAddr);
+	int nNewSockFd;
+
+	// wait connection
+        fd_set socklist;
+        struct timeval tv;
+
+        FD_ZERO(&socklist);
+        FD_SET(nSockFd, &socklist);
+        tv.tv_sec = 0, tv.tv_usec = nWaitUsec;
+        if (select(FD_SETSIZE, &socklist, NULL, NULL, &tv) <= 0) return false;
+	if((nNewSockFd = accept(nSockFd, (struct sockaddr *) & connAddr, &nConnLen)) == -1) return false;
+
+	// caughted connection
+	streamPrintf(nNewSockFd, "%s %d %s\r\n", HTTP_PROTOCOL_11, HTTP_RESCODE_SERVICE_UNAVAILABLE, httpResponseGetMsg(HTTP_RESCODE_SERVICE_UNAVAILABLE));
+	streamPrintf(nNewSockFd, "Content-Length: 0\r\n");
+	streamPrintf(nNewSockFd, "Connection: close\r\n");
+	streamPrintf(nNewSockFd, "\r\n");
+	close(nNewSockFd);
+
+	return true;
 }

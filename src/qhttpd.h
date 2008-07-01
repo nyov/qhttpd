@@ -48,8 +48,9 @@
 //
 // PROGRAM SPECIFIC DEFINITIONS
 //
+#define PRG_INFO				"The qDecoder Project"
 #define PRG_NAME				"qhttpd"
-#define PRG_VERSION				"1.0.1"
+#define PRG_VERSION				"1.1.0"
 
 //
 // MAXIMUM INTERNAL LIMITATIONS
@@ -58,18 +59,20 @@
 #define MAX_CHILDS				(128)
 #define MAX_SEMAPHORES				(1+2)
 #define MAX_MAX_SEMAPHORES_LOCK_SECS		(10)		// maximum secondes which semaphores can be locked
-#define LINEBUF_SIZE				(1024)
-#define SYSPATH_SIZE				MAX_PATH_LEN
-#define HTTP_MAX_MEMORY_CONTENTS		(1024*1024)	// if the contents size is less than this, do not use temporary file
-#define	MAX_USERCOUNTER				(10)		// amount of custom counter in shared memory for customizing purpose
+
+#define MAX_HTTP_MEMORY_CONTENTS		(1024*1024)	// if the contents size is less than this, do not use temporary file
 #define	MAX_SHUTDOWN_WAIT			(2000)		// maximum ms for waiting input stream after socket shutdown
 #define	MAX_LINGER_TIMEOUT			(15)
+
+#define	MAX_USERCOUNTER				(10)		// amount of custom counter in shared memory for customizing purpose
 
 #define MAX_LOGLEVEL				(4)
 
 #define	MAX_PATH_LEN				(1024)
-#define	MAX_FILEPATH_LENGTH			(1024*4)
-#define	MAX_FILENAME_LENGTH			(256)
+#define	MAX_FILEPATH_LENGTH			(1024*4-1)
+#define	MAX_FILENAME_LENGTH			(256-1)
+
+#define LINEBUF_SIZE				(1024)
 
 //
 // HTTP RESPONSE CODES
@@ -194,52 +197,59 @@ struct HttpRequest {
 	int	nReqStatus;		// 1:정상, 0: bad request, -1:timeout, -2: connection closed
 
 	// request line
-	char	*pszRequestHost;	// host				ex) www.cdnetwork.co.kr
-	char	*pszRequestMethod;	// request method		ex) GET
-	char	*pszRequestUri;		// url+query.			ex) /100/my%20data/my.gif?query=the%20value
-	char	*pszRequestUrl;		// decoded url			ex) /100/my data/my.gif
-	char	*pszQueryString;	// query string			ex) query=the%20value
-	char	*pszHttpVersion;	// HTTP/?.?
+	char*	pszRequestHost;	// host				ex) www.cdnetwork.co.kr
+	char*	pszRequestMethod;	// request method		ex) GET
+	char*	pszRequestUri;		// url+query.			ex) /100/my%20data/my.gif?query=the%20value
+	char*	pszRequestUrl;		// decoded url			ex) /100/my data/my.gif
+	char*	pszQueryString;	// query string			ex) query=the%20value
+	char*	pszHttpVersion;	// HTTP/?.?
 
 	// request header
 	Q_ENTRY *pHeaders;		// request headers
 
 	// contents
-	uint64_t nContentsLength;	// 컨텐츠 유무 및 사이즈. 0:컨텐츠 없음, n>0 컨텐츠 있음
-	char	*pContents;		// 컴텐츠가 파싱된 경우 NULL 이 아님.
+	size_t	nContentsLength;	// 컨텐츠 유무 및 사이즈. 0:컨텐츠 없음, n>0 컨텐츠 있음
+	char*	pContents;		// 컴텐츠가 파싱된 경우 NULL 이 아님.
 					// nContentsLength > 0 면서 pContents가 NULL 일 수 있음
 };
 
 struct HttpResponse {
 	bool	bOut;			// 응답을 했는지 여부
 
-	char	*pszHttpVersion;	// 응답 프로토콜
+	char*	pszHttpVersion;		// 응답 프로토콜
 	int	nResponseCode;		// 응답 코드
 
-	Q_ENTRY *pHeaders;		// 응답 헤더들
+	Q_ENTRY* pHeaders;		// 응답 헤더들
 
-	char	*pszContentType;
-	uint64_t nContentLength;
-	char	*pContent;
+	char*	pszContentType;
+	size_t	nContentLength;
+	char*	pContent;
 	bool	bChunked;
 };
 
 //
 // DEFINITION FUNCTIONS
 //
-#define _LOG(log, level, prestr, fmt, args...)	do {			\
-	if (g_errlog != NULL && g_loglevel >= level) {			\
-		qLog(log, "%s(%d):" prestr fmt,				\
-		qGetTimeStr(0), getpid(), ##args);			\
-	}								\
-} while(0)
+#define	CONST_STRLEN(x)		(sizeof(x) - 1)
 
-#define _LOG2(log, level, prestr, fmt, args...)	do {			\
-	if (g_errlog != NULL && g_loglevel >= level) {			\
-		qLog(log, "%s(%d):" prestr fmt " (%s:%d)",		\
-		qGetTimeStr(0), getpid(), ##args, __FILE__, __LINE__);	\
-	}								\
-} while(0)
+#define _LOG(log, level, prestr, fmt, args...)	do {					\
+	if (g_errlog != NULL && g_loglevel >= level) {					\
+		char _timestr[14+1];							\
+		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
+		qLog(log, "%s(%d):" prestr fmt,						\
+			_timestr, getpid(), ##args);					\
+	}										\
+} while(false)
+
+#define _LOG2(log, level, prestr, fmt, args...)	do {					\
+	if (g_errlog != NULL && g_loglevel >= level) {					\
+		char _timestr[14+1];							\
+		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
+		qLog(log, "%s(%d):" prestr fmt " (%s:%d)",				\
+			_timestr, getpid(), ##args, __FILE__, __LINE__);		\
+		fflush(stdout);								\
+	}										\
+} while(false)
 
 #define LOG_SYS(fmt, args...)	_LOG(g_errlog, 0, " ", fmt, ##args)
 #define LOG_ERR(fmt, args...)	_LOG2(g_errlog, 1, " [ERROR] ", fmt, ##args)
@@ -247,10 +257,10 @@ struct HttpResponse {
 #define LOG_INFO(fmt, args...)	_LOG(g_errlog, 3, " [INFO] ", fmt, ##args)
 
 #ifdef BUILD_DEBUG
-#define DEBUG(fmt, args...)						\
-	do {								\
-		_LOG2(g_errlog, MAX_LOGLEVEL, " [DEBUG] ", fmt, ##args); \
-	} while (0)
+#define DEBUG(fmt, args...)								\
+	do {										\
+		_LOG2(g_errlog, MAX_LOGLEVEL, " [DEBUG] ", fmt, ##args);		\
+	} while (false)
 #else
 #define DEBUG(fms, args...)
 #endif // BUILD_DEBUG
@@ -260,81 +270,79 @@ struct HttpResponse {
 //
 
 // main.c
-int	main(int argc, char *argv[]);
+extern	int		main(int argc, char *argv[]);
 
 // version.c
-void	printUsages(void);
-void	printVersion(void);
+extern	void		printUsages(void);
+extern	void		printVersion(void);
 
 // config.c
-bool	loadConfig(char	*pszFilePath, Config *pConf);
-
-// signal.c
-void	signalInit(void *func);
+extern	bool		loadConfig(Config *pConf, char *pszFilePath);
 
 // daemon.c
-void	daemonStart(bool nDaemonize);
-void	daemonEnd(int nStatus);
-void	daemonSignalInit(void *func);
-void	daemonSignal(int signo);
-void	daemonSignalHandler(void);
-
-// child.c
-void	childStart(int nSockFd);
-void	childEnd(int nStatus);
-void	childSignalInit(void *func);
-void	childSignal(int signo);
-void	childSignalHandler(void);
-
-// child_main.c
-int	childMain(int nSockFd);
+extern	void		daemonStart(bool nDaemonize);
+extern	void		daemonEnd(int nStatus);
+extern	void		daemonSignalInit(void *func);
+extern	void		daemonSignal(int signo);
+extern	void		daemonSignalHandler(void);
 
 // pool.c
-bool	poolInit(int nMaxChild);
-bool	poolFree(void);
-struct SharedData *poolGetShm(void);
-int	poolSendSignal(int signo);
+extern	bool		poolInit(int nMaxChild);
+extern	bool		poolFree(void);
+extern	struct SharedData* poolGetShm(void);
+extern	int		poolSendSignal(int signo);
 
-int	poolGetTotalLaunched(void);
-int	poolGetCurrentChilds(void);
-int	poolGetWorkingChilds(void);
-int	poolSetIdleExitReqeust(int nNum);
-int	poolSetExitReqeustAll(void);
+extern	bool		poolCheck(void);
+extern	int		poolGetTotalLaunched(void);
+extern	int		poolGetCurrentChilds(void);
+extern	int		poolGetWorkingChilds(void);
+extern	int		poolSetIdleExitReqeust(int nNum);
+extern	int		poolSetExitReqeustAll(void);
 
-bool	poolChildReg(void);
-bool	poolChildDel(int nPid);
-int	poolGetMySlotId(void);
-bool	poolGetExitRequest(void);
-bool	poolSetExitRequest(void);
+extern	bool		poolChildReg(void);
+extern	bool		poolChildDel(int nPid);
+extern	int		poolGetMySlotId(void);
+extern	bool		poolGetExitRequest(void);
+extern	bool		poolSetExitRequest(void);
 
-int	poolGetChildTotalRequests(void);
+extern	int		poolGetChildTotalRequests(void);
 
-bool	poolSetConnInfo(int nSockFd);
-bool	poolSetConnRequest(struct HttpRequest *req);
-bool	poolSetConnResponse(struct HttpResponse *res);
-bool	poolClearConnInfo(void);
-char	*poolGetConnAddr(void);
-unsigned int poolGetConnNaddr(void);
-int	poolGetConnPort(void);
-time_t	poolGetConnReqTime(void);
+extern	bool		poolSetConnInfo(int nSockFd);
+extern	bool		poolSetConnRequest(struct HttpRequest *req);
+extern	bool		poolSetConnResponse(struct HttpResponse *res);
+extern	bool		poolClearConnInfo(void);
+extern	char*		poolGetConnAddr(void);
+extern	unsigned int	poolGetConnNaddr(void);
+extern	int		poolGetConnPort(void);
+extern	time_t		poolGetConnReqTime(void);
+
+// child.c
+extern	void		childStart(int nSockFd);
+extern	void		childEnd(int nStatus);
+extern	void		childSignalInit(void *func);
+extern	void		childSignal(int signo);
+extern	void		childSignalHandler(void);
+
+// child_main.c
+extern	int		childMain(int nSockFd);
 
 // http_request.c
-struct	HttpRequest *httpRequestParse(int nSockFd, int nTimeout);
-void	httpRequestFree(struct HttpRequest *req);
+extern	struct	HttpRequest*	httpRequestParse(int nSockFd, int nTimeout);
+extern	bool		httpRequestFree(struct HttpRequest *req);
 
 // http_response.c
-struct	HttpResponse *httpResponseCreate(void);
-int	httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int nResCode, bool nKeepAlive, char *format, ...);
-bool	httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequest *req, bool bKeepAlive);
-bool	httpResponseSetContent(struct HttpResponse *res, char *pszContentType, uint64_t nContentLength, char *pContent);
-bool	httpResponseSetContentHtml(struct HttpResponse *res, char *pszMsg);
-bool	httpResponseSetContentChunked(struct HttpResponse *res, bool bChunked);
-bool	httpResponseSetHeader(struct HttpResponse *res, char *pszName, char *pszValue);
-bool	httpResponseSetHeaderf(struct HttpResponse *res, char *pszName, char *format, ...);
-bool	httpResponseOut(struct HttpResponse *res, int nSockFd);
-int	httpResponseOutChunk(int nSockFd, char *pszData, int nSize);
-void	httpResponseFree(struct HttpResponse *res);
-char	*httpResponseGetMsg(int nResCode);
+extern	struct HttpResponse* httpResponseCreate(void);
+extern	int		httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int nResCode, bool nKeepAlive, const char *format, ...);
+extern	bool		httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequest *req, bool bKeepAlive);
+extern	bool		httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, size_t nContentLength, const char *pContent);
+extern	bool		httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg);
+extern	bool		httpResponseSetContentChunked(struct HttpResponse *res, bool bChunked);
+extern	bool		httpResponseSetHeader(struct HttpResponse *res, const char *pszName, const char *pszValue);
+extern	bool		httpResponseSetHeaderf(struct HttpResponse *res, const char *pszName, const char *format, ...);
+extern	bool		httpResponseOut(struct HttpResponse *res, int nSockFd);
+extern	int		httpResponseOutChunk(int nSockFd, const char *pszData, int nSize);
+extern	void		httpResponseFree(struct HttpResponse *res);
+extern	const char*	httpResponseGetMsg(int nResCode);
 
 #define response201(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_CREATED, true, httpResponseGetMsg(HTTP_RESCODE_CREATED));
 #define response204(req, res)	httpResponseSetSimple(req, res, HTTP_NO_CONTENT, true, NULL);
@@ -350,54 +358,60 @@ char	*httpResponseGetMsg(int nResCode);
 #define response503(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_SERVICE_UNAVAILABLE, true, httpResponseGetMsg(HTTP_RESCODE_SERVICE_UNAVAILABLE))
 
 // http_header.c
-char	*httpHeaderGetValue(Q_ENTRY *entries, char *name);
-int	httpHeaderGetInt(Q_ENTRY *entries, char *name);
-bool	httpHeaderHasString(Q_ENTRY *entries, char *name, char *str);
-bool	httpHeaderParseRange(char *pszRangeHeader, uint64_t nFilesize, uint64_t *pnRangeOffset1, uint64_t *pnRangeOffset2, uint64_t *pnRangeSize);
+extern	const char*	httpHeaderGetValue(Q_ENTRY *entries, const char *name);
+extern	int		httpHeaderGetInt(Q_ENTRY *entries, const char *name);
+extern	bool		httpHeaderHasString(Q_ENTRY *entries, const char *name, const char *str);
+extern	bool		httpHeaderParseRange(const char *pszRangeHeader, size_t nFilesize, off_t *pnRangeOffset1, off_t *pnRangeOffset2, size_t *pnRangeSize);
 
 // http_handler.c
 struct HttpResponse *httpHandler(struct HttpRequest *req);
 
 // http_method.c
-int	httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res);
-int	httpMethodGet(struct HttpRequest *req, struct HttpResponse *res);
-int	httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, char *pszFilePath, char *pszContentType);
-int	httpMethodHead(struct HttpRequest *req, struct HttpResponse *res);
-int	httpMethodNotImplemented(struct HttpRequest *req, struct HttpResponse *res);
+extern	int		httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res);
+extern	int		httpMethodGet(struct HttpRequest *req, struct HttpResponse *res);
+extern	int		httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, const char *pszFilePath, const char *pszContentType);
+extern	int		httpMethodHead(struct HttpRequest *req, struct HttpResponse *res);
+extern	int		httpMethodNotImplemented(struct HttpRequest *req, struct HttpResponse *res);
 
 // http_status.c
-Q_OBSTACK *httpGetStatusHtml(void);
+extern	Q_OBSTACK*	httpGetStatusHtml(void);
 
 // http_accesslog.c
-bool	httpAccessLog(struct HttpRequest *req, struct HttpResponse *res);
+extern	bool		httpAccessLog(struct HttpRequest *req, struct HttpResponse *res);
 
 // mime.c
-bool	mimeInit(char *pszFilepath);
-bool	mimeFree(void);
-char	*mimeDetect(char *pszFilename);
+extern	bool		mimeInit(const char *pszFilepath);
+extern	bool		mimeFree(void);
+extern	const char*	mimeDetect(const char *pszFilename);
 
-// util.c
-unsigned int convIp2Uint(char *szIp);
-unsigned long int microSleep(unsigned long microsec);
-uint64_t convStr2Uint64(char *szNumStr);
-char	*getExtentionFromFilename(char *szFilename, bool bIncludeDot);
-float	diffTimeval(struct timeval *t1, struct timeval *t0);
-
-bool	isCorrectFilename(char *pszPath);
-bool	isCorrectPath(char *pszPath);
-void	correctPath(char *pszPath);
+// stream.c
+extern	int		streamWaitReadable(int nSockFd, int nTimeoutMs);
+extern	ssize_t		streamRead(void *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs);
+extern	ssize_t		streamGets(char *pszStr, int nSockFd, size_t nSize, int nTimeoutMs);
+extern	ssize_t		streamGetb(char *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs);
+extern	ssize_t		streamPrintf(int nSockFd, const char *format, ...);
+extern	ssize_t		streamPuts(int nSockFd, const char *pszStr);
+extern	ssize_t		streamWrite(int nSockFd, const void *pszBuffer, size_t nSize);
+extern	ssize_t		streamSave(int nFileFd, int nSockFd, size_t nSize, int nTimeoutMs);
+extern	ssize_t		streamSendfile(int nSockFd, const char *pszFilePath, off_t nOffset, size_t nSize);
 
 // hook.c
-bool	hookBeforeMainInit(void);
-bool	hookAfterConfigLoaded(void);
-bool	hookAfterDaemonInit(void);
-int	hookWhileDaemonIdle(void);
-bool	hookBeforeDaemonEnd(void);
-bool	hookAfterDaemonSIGHUP(void);
-bool	hookAfterChildInit(void);
-bool	hookBeforeChildEnd(void);
-bool	hookAfterConnEstablished(void);
-int	hookMethodHandler(struct HttpRequest *req, struct HttpResponse *res);
+extern	bool		hookBeforeMainInit(void);
+extern	bool		hookAfterConfigLoaded(void);
+extern	bool		hookAfterDaemonInit(void);
+extern	int		hookWhileDaemonIdle(void);
+extern	bool		hookBeforeDaemonEnd(void);
+extern	bool		hookAfterDaemonSIGHUP(void);
+extern	bool		hookAfterChildInit(void);
+extern	bool		hookBeforeChildEnd(void);
+extern	bool		hookAfterConnEstablished(void);
+extern	int		hookMethodHandler(struct HttpRequest *req, struct HttpResponse *res);
+
+// util.c
+extern	unsigned int	convIp2Uint(const char *szIp);
+extern	float		diffTimeval(struct timeval *t1, struct timeval *t0);
+extern	bool		isCorrectPath(const char *pszPath);
+extern	void		correctPath(char *pszPath);
 
 //
 // GLOBAL VARIABLES

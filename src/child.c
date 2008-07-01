@@ -24,8 +24,6 @@
 /////////////////////////////////////////////////////////////////////////
 
 void childStart(int nSockFd) {
-	int nIdleCnt;
-
 	// init signal
 	childSignalInit(childSignal);
 
@@ -44,11 +42,12 @@ void childStart(int nSockFd) {
 	// init random
         srandom((unsigned)(time(NULL) + getpid() + nSockFd));
 
-	nIdleCnt = 0;
+	int nIdleCnt = 0;
         while (true) {
                 struct sockaddr_in connAddr;     // client address information
                 int nConnLen = sizeof(connAddr);
                 int nNewSockFd;
+
 
 		//
 		// 컨넥션 대기 영역
@@ -133,7 +132,8 @@ void childStart(int nSockFd) {
 		// close connection
 		if(shutdown(nNewSockFd, SHUT_WR) == 0) {
 			char szDummyBuf[64];
-			while(qSocketRead(nNewSockFd, szDummyBuf, sizeof(szDummyBuf), MAX_SHUTDOWN_WAIT) > 0) {;
+			int i;
+			for(i = 0; streamRead(szDummyBuf, nNewSockFd, sizeof(szDummyBuf), MAX_SHUTDOWN_WAIT) > 0 && i < 10; i++) {;
 				DEBUG("Throw dummy input stream.");
 			}
 		}

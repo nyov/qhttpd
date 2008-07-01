@@ -19,7 +19,7 @@
 
 #include "qhttpd.h"
 
-static char *_getCorrectedHostname(char *pszRequestHost);
+static char *_getCorrectedHostname(const char *pszRequestHost);
 
 /*
  * @return	HttpRequest pointer
@@ -43,6 +43,9 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	req->nReqStatus = 0;
 	req->nContentsLength = -1;
 
+	req->pHeaders = qEntryInit();
+	if(req->pHeaders == NULL) return req;
+
 	//
 	// 헤더 파싱
 	//
@@ -53,7 +56,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		char *pszReqMethod, *pszReqUri, *pszHttpVer, *pszTmp;
 
 		// read line
-		nStreamStatus = qSocketGets(nSockFd, szLineBuf, sizeof(szLineBuf), nTimeout*1000);
+		nStreamStatus = streamGets(szLineBuf, nSockFd, sizeof(szLineBuf), nTimeout*1000);
 		if(nStreamStatus == 0) { // timeout
 			req->nReqStatus = -1;
 			return req;
@@ -63,10 +66,10 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		}
 
 		// parse line
-		pszReqMethod = qStrtok(szLineBuf, " ", NULL);
-		pszReqUri = qStrtok(NULL, " ", NULL);
-		pszHttpVer = qStrtok(NULL, " ", NULL);
-		pszTmp = qStrtok(NULL, " ", NULL);
+		pszReqMethod = strtok(szLineBuf, " ");
+		pszReqUri = strtok(NULL, " ");
+		pszHttpVer = strtok(NULL, " ");
+		pszTmp = strtok(NULL, " ");
 
 		if(pszReqMethod == NULL || pszReqUri == NULL || pszHttpVer == NULL || pszTmp != NULL) {
 			DEBUG("Invalid request line.");
@@ -78,8 +81,41 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		//DEBUG("pszHttpVer %s", pszHttpVer);
 
 		// request method
-		qStrupr(pszReqMethod);
+		qStrUpper(pszReqMethod);
+		/*
+		if(strcmp(pszReqMethod, "GET")
+			&& strcmp(pszReqMethod, "HEAD")
+			&& strcmp(pszReqMethod, "POST")
+			&& strcmp(pszReqMethod, "PUT")
+			&& strcmp(pszReqMethod, "DELETE")
+			&& strcmp(pszReqMethod, "LINK")
+			&& strcmp(pszReqMethod, "UNLINK")
+			&& strcmp(pszReqMethod, "OPTIONS")
+			// DAV method
+			&& strcmp(pszReqMethod, "PROPFIND")
+			&& strcmp(pszReqMethod, "PROPPATCH")
+			&& strcmp(pszReqMethod, "COPY")
+			&& strcmp(pszReqMethod, "MOVE")
+			&& strcmp(pszReqMethod, "MKCOL")
+			&& strcmp(pszReqMethod, "LOCK")
+			&& strcmp(pszReqMethod, "UNLOCK")
+		) {
+			DEBUG("WARNING: Unknown request: %s", pszReqMethod);
+			return req;
+		}
+		*/
 		req->pszRequestMethod = strdup(pszReqMethod);
+
+		// http version
+		qStrUpper(pszHttpVer);
+		if(strcmp(pszHttpVer, HTTP_PROTOCOL_09)
+			&& strcmp(pszHttpVer, HTTP_PROTOCOL_10)
+			&& strcmp(pszHttpVer, HTTP_PROTOCOL_11)
+		) {
+			DEBUG("Unknown protocol: %s", pszHttpVer);
+			return req;
+		}
+		req->pszHttpVersion = strdup(pszHttpVer);
 
 		// request uri
 		if(pszReqUri[0] == '/') {
@@ -91,14 +127,14 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		} else if(!strncasecmp(pszReqUri, "HTTP://", 7)) {
 			// URI의 호스트명은 Host 헤더로 넣고 pszRequestUri에는 경로만
 			pszTmp = strstr(pszReqUri + 8, "/");
-			if(pszTmp == NULL) {	// URL이 없는경우 ex) http://a.b.c
-				req->pHeaders = qEntryAdd(req->pHeaders, "Host",pszReqUri+8, 1);
+			if(pszTmp == NULL) {	// URL이 없는경우 ex) http://a.b.c:80
+				qEntryPutStr(req->pHeaders, "Host", pszReqUri+8, true);
 				req->pszRequestUri = strdup("/");
-			} else {		// URL이 있는경우 ex) http://a.b.c/100
+			} else {		// URL이 있는경우 ex) http://a.b.c:80/100
 				*pszTmp = '\0';
-				req->pHeaders = qEntryAdd(req->pHeaders, "Host",pszReqUri+8, 1);
+				qEntryPutStr(req->pHeaders, "Host", pszReqUri+8, true);
 				*pszTmp = '/';
-				req->pszRequestUri = strdup(pszReqUri);
+				req->pszRequestUri = strdup(pszTmp);
 				if(req->pszRequestUri == NULL) {
 					DEBUG("Decoding failed.");
 					return req;
@@ -122,7 +158,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		}
 
 		// decode path
-		qUrlDecode(req->pszRequestUrl);
+		qDecodeUrl(req->pszRequestUrl);
 
 		// check path
 		if(isCorrectPath(req->pszRequestUrl) == false) {
@@ -130,54 +166,40 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 			return req;
 		}
 		correctPath(req->pszRequestUrl);
-
-		// http version
-		qStrupr(pszHttpVer);
-		if(strcmp(pszHttpVer, HTTP_PROTOCOL_09)
-			&& strcmp(pszHttpVer, HTTP_PROTOCOL_10)
-			&& strcmp(pszHttpVer, HTTP_PROTOCOL_11)
-		) {
-			DEBUG("Unknown protocol: %s", pszHttpVer);
-			return req;
-		}
-		req->pszHttpVersion = strdup(pszHttpVer);
 	}
 
 	// Parse parameter headers : "key: value"
 	while(true) {
-		char *name, *value, *tmp;
-
 		// read line
-		if(qSocketGets(nSockFd, szLineBuf, sizeof(szLineBuf), nTimeout*1000) <= 0) return req;
+		if(streamGets(szLineBuf, nSockFd, sizeof(szLineBuf), nTimeout*1000) <= 0) return req;
 		if(strlen(szLineBuf) == 0) break; // detect line-feed
 
 		// separate :
-		tmp = strstr(szLineBuf, ":");
+		char *tmp = strstr(szLineBuf, ":");
 		if(tmp == NULL) {
 			DEBUG("Request header field is missing ':' separator.");
 			return req;
 		}
 
 		*tmp = '\0';
-		name = qStrupr(qRemoveSpace(szLineBuf)); // 헤더 필드는 대문자로 저장
-		value = qRemoveSpace(tmp + 1);
+		char *name = qStrUpper(qStrTrim(szLineBuf)); // 헤더 필드는 대문자로 저장
+		char *value = qStrTrim(tmp + 1);
 
 		// put
-		Q_ENTRY *entry = qEntryAdd(req->pHeaders, name, value, 1);
-		if(req->pHeaders == NULL) req->pHeaders = entry;
+		qEntryPutStr(req->pHeaders, name, value, true);
 	}
 
 	// parse host
 	req->pszRequestHost = _getCorrectedHostname(httpHeaderGetValue(req->pHeaders, "HOST"));
 	if(req->pszRequestHost == NULL) return req;
-	qEntryAdd(req->pHeaders, "Host", req->pszRequestHost, 1);
+	qEntryPutStr(req->pHeaders, "Host", req->pszRequestHost, true);
 
 	// Parse Contents
 	if(httpHeaderGetValue(req->pHeaders, "CONTENT-LENGTH") != NULL) {
-		req->nContentsLength = convStr2Uint64(httpHeaderGetValue(req->pHeaders, "CONTENT-LENGTH"));
+		req->nContentsLength = (size_t)atoll(httpHeaderGetValue(req->pHeaders, "CONTENT-LENGTH"));
 
 		// PUT과 POST인 경우엔 메모리 로드하지 않음
-		if(req->nContentsLength <= HTTP_MAX_MEMORY_CONTENTS
+		if(req->nContentsLength <= MAX_HTTP_MEMORY_CONTENTS
 			&& strcmp(req->pszRequestMethod, "PUT")	&& strcmp(req->pszRequestMethod, "POST")) {
 
 			if(req->nContentsLength == 0) {
@@ -191,7 +213,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 				}
 
 				// 메모리에 저장
-				int nReaded = qSocketSaveIntoMemory(nSockFd, req->nContentsLength, req->pContents, nTimeout*1000);
+				int nReaded = streamGetb(req->pContents, nSockFd, req->nContentsLength, nTimeout*1000);
 				if(nReaded >= 0) req->pContents[nReaded] = '\0';
 				DEBUG("[Contents] %s", req->pContents);
 
@@ -211,8 +233,8 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	return req;
 }
 
-void httpRequestFree(struct HttpRequest *req) {
-	if(req == NULL) return;
+bool httpRequestFree(struct HttpRequest *req) {
+	if(req == NULL) return false;
 	if(req->pszRequestHost != NULL) free(req->pszRequestHost);
 	if(req->pszRequestMethod != NULL) free(req->pszRequestMethod);
 	if(req->pszRequestUri != NULL) free(req->pszRequestUri);
@@ -223,14 +245,16 @@ void httpRequestFree(struct HttpRequest *req) {
 	if(req->pHeaders != NULL) qEntryFree(req->pHeaders);
 	if(req->pContents != NULL) free(req->pContents);
 	free(req);
+
+	return true;
 }
 
-static char *_getCorrectedHostname(char *pszRequestHost) {
+static char *_getCorrectedHostname(const char *pszRequestHost) {
 	char *pszHost = NULL;
 
 	if(pszRequestHost != NULL) {
 		pszHost = strdup(pszRequestHost);
-		qStrlwr(pszHost);
+		qStrLower(pszHost);
 
 		// 디폴트 포트 80이 붙어온 경우엔 제거
 		char *pszTmp = strstr(pszHost, ":");

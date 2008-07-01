@@ -28,8 +28,8 @@ INCLUDE = -I./				\
 
 LIB	= -L/usr/local/lib -lqDecoder -lz -lm
 
-OBJDEF	= main.o version.o config.o daemon.o child.o child_main.o pool.o	util.o \
-	  http_request.o http_response.o http_header.o http_handler.o http_method.o http_status.o http_accesslog.o mime.o hook.o
+OBJDEF	= main.o version.o config.o daemon.o child.o child_main.o pool.o  mime.o stream.o hook.o util.o \
+	  http_request.o http_response.o http_header.o http_handler.o http_method.o http_status.o http_accesslog.o
 OBJ	= ${OBJDEF}
 
 ## Make Library

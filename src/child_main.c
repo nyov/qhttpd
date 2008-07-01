@@ -23,28 +23,6 @@
 // PUBLIC FUNCTIONS
 /////////////////////////////////////////////////////////////////////////
 
-int qSocketWaitWriteDone(int sockfd, int timeoutms) {
-	struct timeval tv;
-	fd_set readfds;
-
-	// time to wait
-	FD_ZERO(&readfds);
-	FD_SET(sockfd, &readfds);
-	if (timeoutms > 0) {
-		tv.tv_sec = (timeoutms / 1000), tv.tv_usec = ((timeoutms % 1000) * 1000);
-		if (select(FD_SETSIZE, &readfds, NULL, NULL, &tv) < 0) return -1;
-	} else if (timeoutms == 0) { // just poll
-		tv.tv_sec = 0, tv.tv_usec = 0;
-		if (select(FD_SETSIZE, &readfds, NULL, NULL, &tv) < 0) return -1;
-	} else { //  blocks indefinitely
-		if (select(FD_SETSIZE, &readfds, NULL, NULL, NULL) < 0) return -1;
-	}
-
-	if (!FD_ISSET(sockfd, &readfds)) return 0; // timeout
-
-	return 1;
-}
-
 int childMain(int nSockFd) {
 	bool bKeepAlive = false;
 
@@ -98,6 +76,9 @@ int childMain(int nSockFd) {
 		// free resources
 		if(req != NULL) httpRequestFree(req);
 		if(res != NULL) httpResponseFree(res);
+
+		// check exit request
+		//if(poolGetExitRequest() == true) bKeepAlive = false;
 	} while(bKeepAlive == true);
 
 	return 0;

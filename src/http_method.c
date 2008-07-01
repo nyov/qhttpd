@@ -33,19 +33,20 @@ int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
 /*
  * http method - GET
  */
-#define MAX_SENDFILE_CHUNK_SIZE		(1024 * 1024)
 int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
-	char szFilePath[SYSPATH_SIZE];
+	// 파일 전송
+	char szFilePath[MAX_PATH_LEN];
 	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestUrl);
 	return httpProcessGetNormalFile(req, res, szFilePath, mimeDetect(szFilePath));
 }
 
-int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, char *pszFilePath, char *pszContentType) {
+int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, const char *pszFilePath, const char *pszContentType) {
 	struct stat filestat;
 	int nFileFd = -1;
-	uint64_t nFilesize = 0;
+	size_t nFilesize = 0;
 
-	uint64_t nRangeOffset1, nRangeOffset2, nRangeSize;
+	off_t nRangeOffset1, nRangeOffset2;
+	size_t nRangeSize;
 	bool bRangeRequest = false;
 
 	//
@@ -82,17 +83,16 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	//
 
 	// If-Modified-Since 헤더
-	char *pszIfModifiedSince = httpHeaderGetValue(req->pHeaders, "IF-MODIFIED-SINCE");
+	const char *pszIfModifiedSince = httpHeaderGetValue(req->pHeaders, "IF-MODIFIED-SINCE");
 	if(pszIfModifiedSince != NULL) {
-		time_t nUnivTime = qParseGmtimeStr(pszIfModifiedSince);
+		time_t nUnivTime = qTimeParseGmtStr(pszIfModifiedSince);
 		if(nUnivTime >= 0 && nUnivTime > filestat.st_mtime) { // 해석 성공 && 파일이 변경이 없음
-			close(nFileFd);
 			return response304(req, res); // Not modified
 		}
 	}
 
 	// Range 헤더
-	char *pszRange = httpHeaderGetValue(req->pHeaders, "RANGE");
+	const char *pszRange = httpHeaderGetValue(req->pHeaders, "RANGE");
 	if(pszRange != NULL) {
 		bRangeRequest = httpHeaderParseRange(pszRange, nFilesize, &nRangeOffset1, &nRangeOffset2, &nRangeSize);
 	}
@@ -112,16 +112,16 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	httpResponseSetContent(res, pszContentType, nRangeSize, NULL);
 
 	httpResponseSetHeader(res, "Accept-Ranges", "bytes");
-	httpResponseSetHeaderf(res, "Last-Modified", "%s", qGetGmtimeStr(filestat.st_mtime));
+	httpResponseSetHeaderf(res, "Last-Modified", "%s", qTimeGetGmtStaticStr(filestat.st_mtime));
 	//httpResponseSetHeaderf(res, "ETag", "\"%s\"", );
 
 	if(bRangeRequest == true) {
-		httpResponseSetHeaderf(res, "Content-Range", "bytes %ju-%ju/%ju", nRangeOffset1, nRangeOffset2, nFilesize);
+		httpResponseSetHeaderf(res, "Content-Range", "bytes %zu-%zu/%zu", (size_t)nRangeOffset1, (size_t)nRangeOffset2, nFilesize);
 	}
 
 	if(g_conf.nResponseExpires > 0) { // enable client caching
 		httpResponseSetHeaderf(res, "Cache-Control", "max-age=%d", g_conf.nResponseExpires);
-		httpResponseSetHeaderf(res, "Expires", "%s", qGetGmtimeStr(time(NULL)+g_conf.nResponseExpires));
+		httpResponseSetHeaderf(res, "Expires", "%s", qTimeGetGmtStaticStr(time(NULL)+g_conf.nResponseExpires));
 	}
 
 	httpResponseOut(res, req->nSockFd);
@@ -129,12 +129,12 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	//
 	// 파일 전송
 	//
-	if(nFilesize > 0) {
-		uint64_t nSent = qSocketSendfile(req->nSockFd, pszFilePath, nRangeOffset1, nRangeSize);
-		if(nSent != nRangeSize) {
-			LOG_INFO("Connection closed by foreign host. (%ju/%ju)", nSent, nRangeSize);
-		}
 
+	if(nFilesize > 0) {
+		ssize_t nSent = streamSendfile(req->nSockFd, pszFilePath, nRangeOffset1, nRangeSize);
+		if(nSent != nRangeSize) {
+			LOG_INFO("Connection closed by foreign host. (%zd/%zu)", nSent, nRangeSize);
+		}
 	}
 
 	return HTTP_RESCODE_OK;
@@ -145,7 +145,7 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
  */
 int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
 	struct stat filestat;
-	char szFilePath[SYSPATH_SIZE];
+	char szFilePath[MAX_PATH_LEN];
 
 	// 파일 경로
 	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestUrl);
@@ -157,7 +157,7 @@ int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
 	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
 
 	httpResponseSetHeader(res, "Accept-Ranges", "bytes");
-	httpResponseSetHeaderf(res, "Last-Modified", "%s", qGetGmtimeStr(filestat.st_mtime));
+	httpResponseSetHeaderf(res, "Last-Modified", "%s", qTimeGetGmtStaticStr(filestat.st_mtime));
 	//httpResponseSetHeaderf(res, "ETag", "\"%s\"", );
 
 	return HTTP_RESCODE_OK;

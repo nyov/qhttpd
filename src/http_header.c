@@ -19,25 +19,25 @@
 
 #include "qhttpd.h"
 
-char *httpHeaderGetValue(Q_ENTRY *entries, char *name) {
-	return qEntryGetValueNoCase(entries, name);
+const char *httpHeaderGetValue(Q_ENTRY *entries, const char *name) {
+	return (char*)qEntryGetStrCase(entries, name);
 }
 
-int httpHeaderGetInt(Q_ENTRY *entries, char *name) {
-	return qEntryGetIntNoCase(entries, name);
+int httpHeaderGetInt(Q_ENTRY *entries, const char *name) {
+	return qEntryGetIntCase(entries, name);
 }
 
-bool httpHeaderHasString(Q_ENTRY *entries, char *name, char *str) {
-	char *pszVal;
+bool httpHeaderHasString(Q_ENTRY *entries, const char *name, const char *str) {
+	const char *pszVal;
 
-	pszVal = qEntryGetValueNoCase(entries, name);
+	pszVal = qEntryGetStrCase(entries, name);
 	if(pszVal == NULL) return false;
 
-	if(qStristr(pszVal, str) != NULL) return true;
+	if(qStrCaseStr(pszVal, str) != NULL) return true;
 	return false;
 }
 
-bool httpHeaderParseRange(char *pszRangeHeader, uint64_t nFilesize, uint64_t *pnRangeOffset1, uint64_t *pnRangeOffset2, uint64_t *pnRangeSize) {
+bool httpHeaderParseRange(const char *pszRangeHeader, size_t nFilesize, off_t *pnRangeOffset1, off_t *pnRangeOffset2, size_t *pnRangeSize) {
 	if(pszRangeHeader == NULL) return false;
 
 	char *pszRange = strdup(pszRangeHeader);
@@ -47,29 +47,29 @@ bool httpHeaderParseRange(char *pszRangeHeader, uint64_t nFilesize, uint64_t *pn
 	p2 = strstr(pszRange, "-");
 	p3 = strstr(pszRange, ",");
 
-	// πÆπ˝ √º≈©
+	// Î¨∏Î≤ï Ï≤¥ÌÅ¨
 	if(p1 == NULL || p2 == NULL || p2 < p1) {
 		free(pszRange);
 		return false;
 	}
 
-	// ∏÷∆º∑π¿Œ¡ˆ¥¬ ¡ˆø¯ƒ° æ ¿Ω
+	// Î©ÄÌã∞Î†àÏù∏ÏßÄÎäî ÏßÄÏõêÏπò ÏïäÏùå
 	if(p3 == NULL) p3 = pszRange + strlen(pszRange);
 	else *p3 = '\0';
 
 
-	// «ÿºÆ
+	// Ìï¥ÏÑù
 	p1 += 1;
 	*p2 = '\0';
 
 	// start
 	if(p1 == p2) *pnRangeOffset1 = 0;
-	else *pnRangeOffset1 = convStr2Uint64(p1);
+	else *pnRangeOffset1 = (off_t)atoll(p1);
 
 	// end
 	p2 += 1;
 	if(p2 == p3) *pnRangeOffset2 = nFilesize - 1;
-	else *pnRangeOffset2 = convStr2Uint64(p2);
+	else *pnRangeOffset2 = (off_t)atoll(p2);
 
 	*pnRangeSize = (*pnRangeOffset2 - *pnRangeOffset1) + 1;
 	free(pszRange);

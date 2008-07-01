@@ -19,15 +19,16 @@
 
 #include "qhttpd.h"
 
+
 #define DEF_MIME_ENTRY	"_DEF_"
 #define DEF_MIME_TYPE	"application/octet-stream"
 
 Q_ENTRY *m_mimelist = NULL;
 
-bool mimeInit(char *pszFilepath) {
+bool mimeInit(const char *pszFilepath) {
 	if(m_mimelist != NULL) return false;
 
-	m_mimelist = qEntryLoad(pszFilepath, '=', false);
+	m_mimelist = qConfigParseFile(NULL, pszFilepath, '=');
 
 	if(m_mimelist == NULL) return false;
 	return true;
@@ -40,15 +41,15 @@ bool mimeFree(void) {
 	return true;
 }
 
-char *mimeDetect(char *pszFilename) {
+const char *mimeDetect(const char *pszFilename) {
 	if(pszFilename == NULL || m_mimelist == NULL) return DEF_MIME_TYPE;
 
-	char *pszExt = getExtentionFromFilename(pszFilename, false);
-	char *mimetype = qEntryGetValueNoCase(m_mimelist, pszExt);
+	char *pszExt = qFileGetExt(pszFilename);
+	char *pszMimetype = (char *)qEntryGetStrCase(m_mimelist, pszExt);
 	free(pszExt);
 
-	if(mimetype == NULL) qEntryGetValue(m_mimelist, DEF_MIME_ENTRY);
-	if(mimetype == NULL) mimetype = DEF_MIME_TYPE;
+	if(pszMimetype == NULL) pszMimetype = (char*)qEntryGetStr(m_mimelist, DEF_MIME_ENTRY);
+	if(pszMimetype == NULL) pszMimetype = DEF_MIME_TYPE;
 
-	return mimetype;
+	return pszMimetype;
 }

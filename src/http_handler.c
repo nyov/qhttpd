@@ -43,13 +43,16 @@ struct HttpResponse *httpHandler(struct HttpRequest *req) {
 		return res;
 	}
 
-	// check server-status request
+	// handle method
+	int nResCode = 0;
+
+	// 특수 URI 체크
 	if(g_conf.bStatusEnable == true
 	&& !strcmp(req->pszRequestMethod, "GET")
 	&& !strcmp(req->pszRequestUrl, g_conf.szStatusUrl)) {
 		Q_OBSTACK *obHtml = httpGetStatusHtml();
 		if(obHtml == NULL) {
-			response500(req, res);
+			nResCode = response500(req, res);
 			return res;
 		}
 
@@ -59,9 +62,6 @@ struct HttpResponse *httpHandler(struct HttpRequest *req) {
 
 		return res;
 	}
-
-	// handle method
-	int nResCode = 0;
 
 	// method hooking
 	nResCode = hookMethodHandler(req, res);
