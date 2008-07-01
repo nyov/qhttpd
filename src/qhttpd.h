@@ -69,7 +69,7 @@
 #define MAX_LOGLEVEL				(4)
 
 #define	MAX_PATH_LEN				(1024)
-#define	MAX_FILEPATH_LENGTH			(1024*4-1)
+#define	MAX_FILEPATH_LENGTH			((1024*4)-1)
 #define	MAX_FILENAME_LENGTH			(256-1)
 #define LINEBUF_SIZE				(1024)
 
