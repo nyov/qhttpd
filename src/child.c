@@ -48,20 +48,14 @@ void childStart(int nSockFd) {
                 int nConnLen = sizeof(connAddr);
                 int nNewSockFd;
 
-
 		//
 		// 컨넥션 대기 영역
 		//
 
-                // wait connection, for non-block accept
-                fd_set socklist;
-                struct timeval tv;
-
-                FD_ZERO(&socklist);
-                FD_SET(nSockFd, &socklist);
-                tv.tv_sec = 1, tv.tv_usec = 0; // wait 1 sec
-
-                if (select(FD_SETSIZE, &socklist, NULL, NULL, &tv) <= 0) {
+                // wait connection
+		int nStatus = qSocketWaitReadable(nSockFd, 1000); // wait 1 sec
+		if(nStatus < 0) break;
+                else if(nStatus == 0) {
                         //
                         // periodic(1 sec) job here
                         //
@@ -131,10 +125,11 @@ void childStart(int nSockFd) {
 
 		// close connection
 		if(shutdown(nNewSockFd, SHUT_WR) == 0) {
-			char szDummyBuf[64];
-			int i;
-			for(i = 0; streamRead(szDummyBuf, nNewSockFd, sizeof(szDummyBuf), MAX_SHUTDOWN_WAIT) > 0 && i < 10; i++) {;
-				DEBUG("Throw dummy input stream.");
+			char szDummyBuf[1024];
+			while(true) {
+				ssize_t nDummyRead = streamRead(szDummyBuf, nNewSockFd, sizeof(szDummyBuf), MAX_SHUTDOWN_WAIT);
+				if(nDummyRead <= 0) break;
+				DEBUG("Throw %d bytes from dummy input stream.", nDummyRead);
 			}
 		}
 		close(nNewSockFd);

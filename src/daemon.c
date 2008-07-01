@@ -22,7 +22,7 @@
 /////////////////////////////////////////////////////////////////////////
 // PRIVATE FUNCTION PROTOTYPES
 /////////////////////////////////////////////////////////////////////////
-static bool ignoreConnection(int nSockFd, long int nWaitUsec);
+static bool ignoreConnection(int nSockFd, long int nTimeoutMs);
 
 /////////////////////////////////////////////////////////////////////////
 // PUBLIC FUNCTIONS
@@ -144,7 +144,7 @@ void daemonStart(bool nDaemonize) {
 			if(nIdleChilds < g_conf.nMinSpareServers) { // not enough idle childs
 				if(nCurrentChilds < g_conf.nMaxClients) nChildFlag = 1;
 				else if(nIdleChilds <= 0) { // ignore connectin
-					if(ignoreConnection(nSockFd, 1000) == true) {
+					while(ignoreConnection(nSockFd, 0) == true) {
 						nIgnoredConn++;
 						LOG_WARN("Maximum connection reached. Connection ignored. (%d)", nIgnoredConn);
 					}
@@ -181,7 +181,7 @@ void daemonStart(bool nDaemonize) {
 					//DEBUG("%d %d", nTotalLaunched, poolGetTotalLaunched());
 					if(nTotalLaunched != poolGetTotalLaunched()) break;
 					DEBUG("Waiting child registered at pool. [%d]", nWait+1);
-					usleep(1000);
+					usleep(1*1000);
 				}
 				if(nWait == 1000) {
 					LOG_WARN("Delayed child launching.");
@@ -196,6 +196,8 @@ void daemonStart(bool nDaemonize) {
 					LOG_WARN("Can't set exit flag.");
 				}
 				nLastSec = time(NULL);
+			} else {
+				usleep(1 * 1000);
 			}
 		} else { // no need to increase spare server
 			static time_t nLastSec = 0;
@@ -232,6 +234,7 @@ void daemonStart(bool nDaemonize) {
 				// update running time
 				nLastSec = time(NULL);
 			} else {
+				//DEBUG("sleeping...");
 				usleep(1 * 1000);
 			}
 		}
@@ -405,19 +408,15 @@ void daemonSignalHandler(void) {
 	}
 }
 
-static bool ignoreConnection(int nSockFd, long int nWaitUsec) {
+static bool ignoreConnection(int nSockFd, long int nTimeoutMs) {
 	struct sockaddr_in connAddr;
 	int nConnLen = sizeof(connAddr);
 	int nNewSockFd;
 
 	// wait connection
-        fd_set socklist;
-        struct timeval tv;
+        if(qSocketWaitReadable(nSockFd, nTimeoutMs) <= 0) return false;
 
-        FD_ZERO(&socklist);
-        FD_SET(nSockFd, &socklist);
-        tv.tv_sec = 0, tv.tv_usec = nWaitUsec;
-        if (select(FD_SETSIZE, &socklist, NULL, NULL, &tv) <= 0) return false;
+	// accept connection
 	if((nNewSockFd = accept(nSockFd, (struct sockaddr *) & connAddr, &nConnLen)) == -1) return false;
 
 	// caughted connection

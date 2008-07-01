@@ -61,7 +61,7 @@
 #define MAX_MAX_SEMAPHORES_LOCK_SECS		(10)		// maximum secondes which semaphores can be locked
 
 #define MAX_HTTP_MEMORY_CONTENTS		(1024*1024)	// if the contents size is less than this, do not use temporary file
-#define	MAX_SHUTDOWN_WAIT			(2000)		// maximum ms for waiting input stream after socket shutdown
+#define	MAX_SHUTDOWN_WAIT			(5000)		// maximum ms for waiting input stream after socket shutdown
 #define	MAX_LINGER_TIMEOUT			(15)
 
 #define	MAX_USERCOUNTER				(10)		// amount of custom counter in shared memory for customizing purpose
@@ -144,40 +144,22 @@ typedef struct {
 struct SharedData {
 	// daemon info
 	time_t	nStartTime;
-	int	nTotalLaunched;			// »ı¼ºÇÑ Â÷ÀÏµå ÇÁ·Î¼¼½º ¼ö
-	int	nCurrentChilds;			// ÇöÀç ±¸µ¿µÇ´Â Â÷ÀÏµå ÇÁ·Î¼¼½º ¼ö
-
-	int	nTotalConnected;		// Á¢¼ÓÇÑ ÃÑ Å¬¶óÀÌ¾ğÆ® ¼ö
-	int	nTotalRequests;			// Ã³¸®ÇÑ ÃÑ ¿äÃ»¼ö
-
-	// child info
+	int	nTotalLaunched;			// Â»ï¿½Ã·OÂµã¡‡wÎ¼Â¼Â½Âº Â¼ôˆˆ©nt	nCurrentChilds;			// È¶g Â±Â¸ÂµÂ¿ÂµÇ´ Ã·OÂµã¡‡wÎ¼Â¼Â½Âº Â¼ôˆˆ‰int	nTotalConnected;		// bÂ¼Ô‡Ï Ä‘ Å¬Â¶ôŒ¾ñ†¬ Â¼ôˆˆ©nt	nTotalRequests;			// Ã³Â¸Â®È‘ Ä‘ Â¿åƒ»Â¼ôˆˆ‰// child info
 	struct child {
-		int     nPid;			// ÇÁ·Î¼¼½ºID, 0Àº empty slot
-		int	nTotalConnected;	// Á¢¼ÓÇÑ Å¬¶óÀÌ¾ğÆ® ¼ö
-		int	nTotalRequests;		// Ã³¸®ÇÑ ¿äÃ»¼ö
-		time_t  nStartTime;		// ÇÁ·Î¼¼½º ½ÃÀÛ ½Ã°£
-		bool	bExit;			// ÀÌ ÇÃ·¹±×°¡ ¼³Á¤µÇ¾î ÀÖÀ¸¸é, Ã³¸®¸¦ ¸¶Ä¡°í Á¾·á
+		int     nPid;			// ÈÂ·Î¼Â¼Â½ÂºID, 0: empty slot
+		int	nTotalConnected;	// bÂ¼Ô‡Ï Å¬Â¶ôŒ¾ñ†¬ Â¼ôˆ‡‰int	nTotalRequests;		// Ã³Â¸Â®È‘ Â¿åƒ»Â¼ôˆ‡‰time_t  nStartTime;		// ÈÂ·Î¼Â¼Â½Âº Â½Ä€Ù Â½Ã°Â£
+		bool	bExit;			// L ÈƒÂ·Â¹Â±×°Â¡ Â¼Â³dÂµÇ¾ì¡€×€Â¸Â¸çª Ã³Â¸Â®Â¸Â¦ Â¸Â¶Ä¡Â°ë¡Â¾Â·ï¿½		struct {		// bÂ¼ÓµÆ Å¬Â¶ôŒ¾ñ†¬ dÂºÂ¸
+			bool	bConnected;	// Å¬Â¶ôŒ¾ñ†¬ bÂ¼Ñ Â¿Â©ÂºÌŠ			time_t  nStartTime;	// Å¬Â¶ôŒ¾ñ†¬ bÂ¼Ñ Â½Ã°Â£
+			time_t  nEndTime;	// Å¬Â¶ôŒ¾ñ†¬ ~Â·ï¿½Ã°Â£
+			int	nTotalRequests; // Keep Alive Â½`Å¬Â¶ôŒ¾ñ†®°Â¡ ÂºÂ¸Â³Â½ Â¿åƒ»Â¼ôˆˆ‰		int     nSockFd;	// Å¬Â¶ôŒ¾ñ†®¿Î€Å Â¼Ó„ÍŠ			char    szAddr[15+1];	// Å¬Â¶ôŒ¾ñ†¬ IP Â–Â¼ĞŠ			unsigned int nAddr;	// Å¬Â¶ôŒ¾ñ†¬ IP Â–Â¼Ğ¨Â¼ï¿½		int     nPort;		// Å¬Â¶ôŒ¾ñ†¬ Ç·Æ®
 
-		struct {		// Á¢¼ÓµÈ Å¬¶óÀÌ¾ğÆ® Á¤º¸
-			bool	bConnected;	// Å¬¶óÀÌ¾ğÆ® Á¢¼Ó ¿©ºÎ
-			time_t  nStartTime;	// Å¬¶óÀÌ¾ğÆ® Á¢¼Ó ½Ã°£
-			time_t  nEndTime;	// Å¬¶óÀÌ¾ğÆ® Á¾·á ½Ã°£
-			int	nTotalRequests; // Keep Alive ½Ã Å¬¶óÀÌ¾ğÆ®°¡ º¸³½ ¿äÃ»¼ö
+			bool	bRun;			// Â¿åƒ» Ã³Â¸Â®ÂŸ
+			struct	timeval tvReqTime;	// Â¿åƒ» Â½Ã°Â£
+			struct	timeval tvResTime;	// @Â´â ½Ã°Â£
+			char	szReqInfo[1024+1];	// bÂ¼Ñ dÂºÂ¸
+			int	nResponseCode;		// @Â´â¡„ÚµãˆŠ		} conn;
 
-			int     nSockFd;	// Å¬¶óÀÌ¾ğÆ®¿ÍÀÇ ¼ÒÄÏ
-			char    szAddr[15+1];	// Å¬¶óÀÌ¾ğÆ® IP ÁÖ¼Ò
-			unsigned int nAddr;	// Å¬¶óÀÌ¾ğÆ® IP ÁÖ¼Ò(¼ıÀÚ)
-			int     nPort;		// Å¬¶óÀÌ¾ğÆ® Æ÷Æ®
-
-			bool	bRun;			// ¿äÃ» Ã³¸®Áß
-			struct	timeval tvReqTime;	// ¿äÃ» ½Ã°£
-			struct	timeval tvResTime;	// ÀÀ´ä ½Ã°£
-			char	szReqInfo[1024+1];	// Á¢¼Ó Á¤º¸
-			int	nResponseCode;		// ÀÀ´ä ÄÚµå
-
-		} conn;
-
-		//time_t  nLastUpdated;		// ¸¶Áö¸· °»½Å ½Ã°£
+		//time_t  nLastUpdated;		// Â¸Â¶Â¶Â¸Â· Â°Â»Â½Ã Â½Ã°Â£
 	} child[MAX_CHILDS];
 
 	// extra info
@@ -189,11 +171,10 @@ struct SharedData {
 //
 struct HttpRequest {
 	// connection info
-	int	nSockFd;		// ¿¬°á¼ÒÄÏ
-	int	nTimeout;		// Å¸ÀÓ¾Æ¿ô°ª
-
+	int	nSockFd;		// Â¿Â¬Â°á½’Å
+	int	nTimeout;		// Å¸SÂ¾Æ¿ï¿½
 	// request status
-	int	nReqStatus;		// 1:Á¤»ó, 0: bad request, -1:timeout, -2: connection closed
+	int	nReqStatus;		// 1:dÂ»ñª°: bad request, -1:timeout, -2: connection closed
 
 	// request line
 	char*	pszRequestHost;	// host				ex) www.cdnetwork.co.kr
@@ -207,20 +188,15 @@ struct HttpRequest {
 	Q_ENTRY *pHeaders;		// request headers
 
 	// contents
-	size_t	nContentsLength;	// ÄÁÅÙÃ÷ À¯¹« ¹× »çÀÌÁî. 0:ÄÁÅÙÃ÷ ¾øÀ½, n>0 ÄÁÅÙÃ÷ ÀÖÀ½
-	char*	pContents;		// ÄÄÅÙÃ÷°¡ ÆÄ½ÌµÈ °æ¿ì NULL ÀÌ ¾Æ´Ô.
-					// nContentsLength > 0 ¸é¼­ pContents°¡ NULL ÀÏ ¼ö ÀÖÀ½
+	size_t	nContentsLength;	// ÅÆ™Ä· /Â¹Â« Â¹Õ Â»èŒÂ®. 0:ÅÆ™Ä· Â¾ï¿½n>0 ÅÆ™Ä· V=
+	char*	pContents;		// Å„Æ™Ä·Â°Â¡ Ç„Â½ÌµÆ Â°ç€¬ NULL L Â¾Æ´Ò®
+					// nContentsLength > 0 Â¸é¼­ pContentsÂ°Â¡ NULL O Â¼ï¿½=
 };
 
 struct HttpResponse {
-	bool	bOut;			// ÀÀ´äÀ» Çß´ÂÁö ¿©ºÎ
-
-	char*	pszHttpVersion;		// ÀÀ´ä ÇÁ·ÎÅäÄİ
-	int	nResponseCode;		// ÀÀ´ä ÄÚµå
-
-	Q_ENTRY* pHeaders;		// ÀÀ´ä Çì´õµé
-
-	char*	pszContentType;
+	bool	bOut;			// @Â´å€» ÈŸÂ´Ãï¿½ÂºÌŠ
+	char*	pszHttpVersion;		// @Â´â¡‡wÏ…å…
+	int	nResponseCode;		// @Â´â¡„ÚµãˆŠ	Q_ENTRY* pHeaders;		// @Â´â¡‡ìµµÂµçˆŠ	char*	pszContentType;
 	size_t	nContentLength;
 	char*	pContent;
 	bool	bChunked;
