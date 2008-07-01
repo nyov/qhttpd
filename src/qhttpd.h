@@ -144,22 +144,37 @@ typedef struct {
 struct SharedData {
 	// daemon info
 	time_t	nStartTime;
-	int	nTotalLaunched;			// »�÷Oµ㡇wμ¼½º ¼􈈩nt	nCurrentChilds;			// ȶg ±¸µ¿µǴ ÷Oµ㡇wμ¼½º ¼􈈉int	nTotalConnected;		// b¼ԇϠđ Ŭ¶􁌾񆬠¼􈈩nt	nTotalRequests;			// ó¸®ȑ đ ¿僻¼􈈉// child info
+	int	nTotalLaunched;			// total launched childs counter
+	int	nCurrentChilds;			// currently working childs counter
+
+	int	nTotalConnected;		// total connection counter
+	int	nTotalRequests;			// total processed requests counter
+
+	// child info
 	struct child {
-		int     nPid;			// ȁ·μ¼½ºID, 0: empty slot
-		int	nTotalConnected;	// b¼ԇϠŬ¶􁌾񆬠¼􈇉int	nTotalRequests;		// ó¸®ȑ ¿僻¼􈇉time_t  nStartTime;		// ȁ·μ¼½º ½Ā٠½ð£
-		bool	bExit;			// L ȃ·¹±װ¡ ¼³dµǾ졀׀¸¸窠ó¸®¸¦ ¸¶ġ°롁¾·�		struct {		// b¼ӵƠŬ¶􁌾񆬠dº¸
-			bool	bConnected;	// Ŭ¶􁌾񆬠b¼Ѡ¿©º̊			time_t  nStartTime;	// Ŭ¶􁌾񆬠b¼Ѡ½ð£
-			time_t  nEndTime;	// Ŭ¶􁌾񆬠~·�ð£
-			int	nTotalRequests; // Keep Alive ½`Ŭ¶􁌾񆮰¡ º¸³½ ¿僻¼􈈉		int     nSockFd;	// Ŭ¶􁌾񆮿΀Š¼ӄ͊			char    szAddr[15+1];	// Ŭ¶􁌾񆬠IP ¼Њ			unsigned int nAddr;	// Ŭ¶􁌾񆬠IP ¼Ш¼�		int     nPort;		// Ŭ¶􁌾񆬠ǷƮ
+		int     nPid;			// pid, 0 means empty slot
+		int	nTotalConnected;	// total connection counter for this slot
+		int	nTotalRequests;		// total processed requests counter for this slot
+		time_t  nStartTime;		// start time for this slot
+		bool	bExit;			// flag for request exit after done working request
 
-			bool	bRun;			// ¿僻 ó¸®
-			struct	timeval tvReqTime;	// ¿僻 ½ð£
-			struct	timeval tvResTime;	// @´⠽ð£
-			char	szReqInfo[1024+1];	// b¼Ѡdº¸
-			int	nResponseCode;		// @´⡄ڵ㈊		} conn;
+		struct {			// connected client information
+			bool	bConnected;	// flag for connection established
+			time_t  nStartTime;	// connection established time
+			time_t  nEndTime;	// connection closed time
+			int	nTotalRequests; // keep-alive requests counter
 
-		//time_t  nLastUpdated;		// ¸¶¶¸· °»½à½ð£
+			int     nSockFd;	// socket descriptor
+			char    szAddr[15+1];	// client IP address
+			unsigned int nAddr;	// client IP address
+			int     nPort;		// client port number
+
+			bool	bRun;			// flag for working
+			struct	timeval tvReqTime;	// request time
+			struct	timeval tvResTime;	// response time
+			char	szReqInfo[1024+1];	// additional request information
+			int	nResponseCode;		// response code
+		} conn;
 	} child[MAX_CHILDS];
 
 	// extra info
@@ -171,35 +186,40 @@ struct SharedData {
 //
 struct HttpRequest {
 	// connection info
-	int	nSockFd;		// ¿¬°ὒŏ
-	int	nTimeout;		// ŸS¾ƿ�
+	int	nSockFd;		// socket descriptor
+	int	nTimeout;		// timeout value for this request
+
 	// request status
-	int	nReqStatus;		// 1:d»񪞰: bad request, -1:timeout, -2: connection closed
+	int	nReqStatus;		// request status 1:ok, 0:bad request, -1:timeout, -2:connection closed
 
 	// request line
-	char*	pszRequestHost;	// host				ex) www.cdnetwork.co.kr
+	char*	pszRequestHost;		// host				ex) www.cdnetwork.co.kr
 	char*	pszRequestMethod;	// request method		ex) GET
 	char*	pszRequestUri;		// url+query.			ex) /100/my%20data/my.gif?query=the%20value
 	char*	pszRequestUrl;		// decoded url			ex) /100/my data/my.gif
-	char*	pszQueryString;	// query string			ex) query=the%20value
-	char*	pszHttpVersion;	// HTTP/?.?
+	char*	pszQueryString;		// query string			ex) query=the%20value
+	char*	pszHttpVersion;		// version			ex) HTTP/1.1
 
 	// request header
 	Q_ENTRY *pHeaders;		// request headers
 
 	// contents
-	size_t	nContentsLength;	// Łƙķ /¹« ¹ՠ»职®. 0:Łƙķ ¾�n>0 Łƙķ V=
-	char*	pContents;		// ńƙķ°¡ Ǆ½̵Ơ°瀬 NULL L ¾ƴҮ
-					// nContentsLength > 0 ¸鼭 pContents°¡ NULL O ¼�=
+	size_t	nContentsLength;	// contents length 0:no contents, n>0:has contents
+	char*	pContents;		// contents data if parsed (if contents does not parsed : nContentsLength>0 && pContents==NULL)
 };
 
 struct HttpResponse {
-	bool	bOut;			// @´倻 ȟ´Á�º̊
-	char*	pszHttpVersion;		// @´⡇wυ兝
-	int	nResponseCode;		// @´⡄ڵ㈊	Q_ENTRY* pHeaders;		// @´⡇쵵µ爊	char*	pszContentType;
-	size_t	nContentLength;
-	char*	pContent;
-	bool	bChunked;
+	bool	bOut;			// flag for response out already
+
+	char*	pszHttpVersion;		// response protocol
+	int	nResponseCode;		// response code
+
+	Q_ENTRY* pHeaders;		// response headers
+
+	char	*pszContentType;	// contents mime type
+	size_t	nContentLength;		// contents length
+	char*	pContent;		// contents data
+	bool	bChunked;		// flag for chunked data out
 };
 
 //
