@@ -31,9 +31,6 @@
  *		-1 오류(연결 끊김 등)
  *
  */
-int streamWaitReadable(int nSockFd, int nTimeoutMs) {
-	return qSocketWaitReadable(nSockFd, nTimeoutMs);
-}
 
 /**
  * 스트림을 읽는다.
@@ -129,6 +126,6 @@ ssize_t streamSave(int nFileFd, int nSockFd, size_t nSize, int nTimeoutMs) {
 
 ssize_t streamSendfile(int nSockFd, const char *pszFilePath, off_t nOffset, size_t nSize) {
 	ssize_t nSent = qSocketSendfile(nSockFd, pszFilePath, nOffset, nSize);
-	DEBUG("[TX] (sendfile %s %zd bytes)", pszFilePath, nSent);
+        DEBUG("[TX] (sendfile %s %zd/%zu/%zu bytes)", pszFilePath, nSent, (size_t)nOffset, nSize);
 	return nSent;
 }

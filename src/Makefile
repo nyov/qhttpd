@@ -20,7 +20,9 @@
 # Compiler arguments
 CC	= gcc
 CFLAGS  = -Wall
-DEFS	= -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+DEFS2	=
+#DEFS1	= -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+DEFS	= ${DEFS1} ${DEFS2}
 
 INCLUDE = -I./				\
 	  -I/usr/include		\
@@ -41,7 +43,7 @@ qhttpd: ${OBJ}
 reall: clean all
 
 debug:
-	$(MAKE) CFLAGS="-Wall -g -O" DEFS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DBUILD_DEBUG"
+	$(MAKE) CFLAGS="-Wall -g -O" DEFS2="-DBUILD_DEBUG"
 
 install: all
 	install -m 0755 qhttpd ../bin/
