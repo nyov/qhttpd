@@ -1,21 +1,27 @@
-/**************************************************************************
- * qHttpd - Specific Purpose Web Server             http://www.qDecoder.org
+/*
+ * Copyright 2008 The qDecoder Project. All rights reserved.
  *
- * Copyright (C) 2008 Seung-young Kim.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *************************************************************************/
+ * THIS SOFTWARE IS PROVIDED BY THE QDECODER PROJECT ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE QDECODER PROJECT BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "qhttpd.h"
 
@@ -80,33 +86,15 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		//DEBUG("pszReqUri %s", pszReqUri);
 		//DEBUG("pszHttpVer %s", pszHttpVer);
 
+		//
 		// request method
+		//
 		qStrUpper(pszReqMethod);
-		/*
-		if(strcmp(pszReqMethod, "GET")
-			&& strcmp(pszReqMethod, "HEAD")
-			&& strcmp(pszReqMethod, "POST")
-			&& strcmp(pszReqMethod, "PUT")
-			&& strcmp(pszReqMethod, "DELETE")
-			&& strcmp(pszReqMethod, "LINK")
-			&& strcmp(pszReqMethod, "UNLINK")
-			&& strcmp(pszReqMethod, "OPTIONS")
-			// DAV method
-			&& strcmp(pszReqMethod, "PROPFIND")
-			&& strcmp(pszReqMethod, "PROPPATCH")
-			&& strcmp(pszReqMethod, "COPY")
-			&& strcmp(pszReqMethod, "MOVE")
-			&& strcmp(pszReqMethod, "MKCOL")
-			&& strcmp(pszReqMethod, "LOCK")
-			&& strcmp(pszReqMethod, "UNLOCK")
-		) {
-			DEBUG("WARNING: Unknown request: %s", pszReqMethod);
-			return req;
-		}
-		*/
 		req->pszRequestMethod = strdup(pszReqMethod);
 
+		//
 		// http version
+		//
 		qStrUpper(pszHttpVer);
 		if(strcmp(pszHttpVer, HTTP_PROTOCOL_09)
 			&& strcmp(pszHttpVer, HTTP_PROTOCOL_10)
@@ -117,39 +105,37 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		}
 		req->pszHttpVersion = strdup(pszHttpVer);
 
+		//
 		// request uri
+		//
+
+		// if request has only path
 		if(pszReqUri[0] == '/') {
 			req->pszRequestUri = strdup(pszReqUri);
-			if(req->pszRequestUri == NULL) {
-				DEBUG("Decoding failed.");
-				return req;
-			}
+		// if request has full uri format
 		} else if(!strncasecmp(pszReqUri, "HTTP://", 7)) {
-			// URI의 호스트명은 Host 헤더로 넣고 pszRequestUri에는 경로만
+			// divide uri into host and path
 			pszTmp = strstr(pszReqUri + 8, "/");
-			if(pszTmp == NULL) {	// URL이 없는경우 ex) http://a.b.c:80
+			if(pszTmp == NULL) {	// No path, ex) http://a.b.c:80
 				qEntryPutStr(req->pHeaders, "Host", pszReqUri+8, true);
 				req->pszRequestUri = strdup("/");
-			} else {		// URL이 있는경우 ex) http://a.b.c:80/100
+			} else {		// Has path, ex) http://a.b.c:80/100
 				*pszTmp = '\0';
 				qEntryPutStr(req->pHeaders, "Host", pszReqUri+8, true);
 				*pszTmp = '/';
 				req->pszRequestUri = strdup(pszTmp);
-				if(req->pszRequestUri == NULL) {
-					DEBUG("Decoding failed.");
-					return req;
-				}
 			}
+		// invalid format
 		} else {
 			DEBUG("Unable to parse uri: %s", pszReqUri);
 			return req;
 		}
 
-		// request url (no query string)
-		req->pszRequestUrl = strdup(req->pszRequestUri);
+		// request path
+		req->pszRequestPath = strdup(req->pszRequestUri);
 
-		// remove query string from url
-		pszTmp = strstr(req->pszRequestUrl, "?");
+		// remove query string from request path
+		pszTmp = strstr(req->pszRequestPath, "?");
 		if(pszTmp != NULL) {
 			*pszTmp ='\0';
 			req->pszQueryString = strdup(pszTmp + 1);
@@ -158,14 +144,14 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		}
 
 		// decode path
-		qDecodeUrl(req->pszRequestUrl);
+		qDecodeUrl(req->pszRequestPath);
 
 		// check path
-		if(isCorrectPath(req->pszRequestUrl) == false) {
-			DEBUG("Invalid URI format : %s", req->pszRequestUrl);
+		if(isCorrectPath(req->pszRequestPath) == false) {
+			DEBUG("Invalid URI format : %s", req->pszRequestUri);
 			return req;
 		}
-		correctPath(req->pszRequestUrl);
+		correctPath(req->pszRequestPath);
 	}
 
 	// Parse parameter headers : "key: value"
@@ -191,7 +177,10 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 
 	// parse host
 	req->pszRequestHost = _getCorrectedHostname(httpHeaderGetValue(req->pHeaders, "HOST"));
-	if(req->pszRequestHost == NULL) return req;
+	if(req->pszRequestHost == NULL) {
+		DEBUG("Can't find host information.");
+		return req;
+	}
 	qEntryPutStr(req->pHeaders, "Host", req->pszRequestHost, true);
 
 	// Parse Contents
@@ -235,12 +224,13 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 
 bool httpRequestFree(struct HttpRequest *req) {
 	if(req == NULL) return false;
-	if(req->pszRequestHost != NULL) free(req->pszRequestHost);
 	if(req->pszRequestMethod != NULL) free(req->pszRequestMethod);
 	if(req->pszRequestUri != NULL) free(req->pszRequestUri);
-	if(req->pszRequestUrl != NULL) free(req->pszRequestUrl);
-	if(req->pszQueryString != NULL) free(req->pszQueryString);
 	if(req->pszHttpVersion != NULL) free(req->pszHttpVersion);
+
+	if(req->pszRequestHost != NULL) free(req->pszRequestHost);
+	if(req->pszRequestPath != NULL) free(req->pszRequestPath);
+	if(req->pszQueryString != NULL) free(req->pszQueryString);
 
 	if(req->pHeaders != NULL) qEntryFree(req->pHeaders);
 	if(req->pContents != NULL) free(req->pContents);

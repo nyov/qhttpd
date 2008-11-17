@@ -1,21 +1,27 @@
-/**************************************************************************
- * qHttpd - Specific Purpose Web Server             http://www.qDecoder.org
+/*
+ * Copyright 2008 The qDecoder Project. All rights reserved.
  *
- * Copyright (C) 2008 Seung-young Kim.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *************************************************************************/
+ * THIS SOFTWARE IS PROVIDED BY THE QDECODER PROJECT ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE QDECODER PROJECT BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef _QHTTPD_H
 #define _QHTTPD_H
@@ -193,12 +199,14 @@ struct HttpRequest {
 	int	nReqStatus;		// request status 1:ok, 0:bad request, -1:timeout, -2:connection closed
 
 	// request line
-	char*	pszRequestHost;		// host				ex) www.cdnetwork.co.kr
 	char*	pszRequestMethod;	// request method		ex) GET
-	char*	pszRequestUri;		// url+query.			ex) /100/my%20data/my.gif?query=the%20value
-	char*	pszRequestUrl;		// decoded url			ex) /100/my data/my.gif
-	char*	pszQueryString;		// query string			ex) query=the%20value
+	char*	pszRequestUri;		// url+query.			ex) /data%20path?query=the%20value
 	char*	pszHttpVersion;		// version			ex) HTTP/1.1
+
+	// parsed request information
+	char*	pszRequestHost;		// host				ex) www.domain.com
+	char*	pszRequestPath;		// decoded path			ex) /data path
+	char*	pszQueryString;		// query string			ex) query=the%20value
 
 	// request header
 	Q_ENTRY *pHeaders;		// request headers
