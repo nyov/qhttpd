@@ -326,8 +326,9 @@ extern	void		childSignalInit(void *func);
 extern	void		childSignal(int signo);
 extern	void		childSignalHandler(void);
 
-// child_main.c
-extern	int		childMain(int nSockFd);
+// http_main.c
+extern	int		httpMain(int nSockFd);
+extern	struct HttpResponse* httpHandler(struct HttpRequest *req);
 
 // http_request.c
 extern	struct	HttpRequest*	httpRequestParse(int nSockFd, int nTimeout);
@@ -365,9 +366,6 @@ extern	const char*	httpHeaderGetValue(Q_ENTRY *entries, const char *name);
 extern	int		httpHeaderGetInt(Q_ENTRY *entries, const char *name);
 extern	bool		httpHeaderHasString(Q_ENTRY *entries, const char *name, const char *str);
 extern	bool		httpHeaderParseRange(const char *pszRangeHeader, size_t nFilesize, off_t *pnRangeOffset1, off_t *pnRangeOffset2, size_t *pnRangeSize);
-
-// http_handler.c
-struct HttpResponse *httpHandler(struct HttpRequest *req);
 
 // http_method.c
 extern	int		httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res);

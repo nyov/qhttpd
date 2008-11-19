@@ -25,6 +25,71 @@
 
 #include "qhttpd.h"
 
+/////////////////////////////////////////////////////////////////////////
+// PUBLIC FUNCTIONS
+/////////////////////////////////////////////////////////////////////////
+
+int httpMain(int nSockFd) {
+	bool bKeepAlive = false;
+
+	do {
+		/////////////////////////////////////////////////////////
+		// Pre-processing Block
+		/////////////////////////////////////////////////////////
+
+		struct HttpRequest *req = NULL;
+		struct HttpResponse *res = NULL;
+
+		// reset keep-alive
+		bKeepAlive = false;
+
+		/////////////////////////////////////////////////////////
+		// Request processing Block
+		/////////////////////////////////////////////////////////
+
+		// parse request
+		req = httpRequestParse(nSockFd, g_conf.nConnectionTimeout);
+		if(req == NULL) {
+			LOG_ERR("System Error #1.");
+			break;
+		}
+
+		if(req->nReqStatus >= 0) {
+			poolSetConnRequest(req); // set request information
+
+			// handle request
+			res = httpHandler(req);
+			if(res == NULL) {
+				LOG_ERR("System Error #2.");
+				break;
+			}
+			poolSetConnResponse(res); // set response information
+
+			// serialize & stream out
+			httpResponseOut(res, nSockFd);
+
+			// logging
+			httpAccessLog(req, res);
+
+			// check keep-alive
+			if(httpHeaderHasString(res->pHeaders, "CONNECTION", "KEEP-ALIVE") == true) bKeepAlive = true;
+		}
+
+		/////////////////////////////////////////////////////////
+		// Post-processing Block
+		/////////////////////////////////////////////////////////
+
+		// free resources
+		if(req != NULL) httpRequestFree(req);
+		if(res != NULL) httpResponseFree(res);
+
+		// check exit request
+		//if(poolGetExitRequest() == true) bKeepAlive = false;
+	} while(bKeepAlive == true);
+
+	return 0;
+}
+
 /*
  * @return	HttpResponse pointer
  *		NULL : system error
@@ -52,7 +117,7 @@ struct HttpResponse *httpHandler(struct HttpRequest *req) {
 	// handle method
 	int nResCode = 0;
 
-	// 특수 URI 체크
+	// Ư�� URI üũ
 	if(g_conf.bStatusEnable == true
 	&& !strcmp(req->pszRequestMethod, "GET")
 	&& !strcmp(req->pszRequestPath, g_conf.szStatusUrl)) {

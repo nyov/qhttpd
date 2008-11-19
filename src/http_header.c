@@ -53,18 +53,18 @@ bool httpHeaderParseRange(const char *pszRangeHeader, size_t nFilesize, off_t *p
 	p2 = strstr(pszRange, "-");
 	p3 = strstr(pszRange, ",");
 
-	// 문법 체크
+	// grammer check
 	if(p1 == NULL || p2 == NULL || p2 < p1) {
 		free(pszRange);
 		return false;
 	}
 
-	// 멀티레인지는 지원치 않음
+	// multi-range is not supported
 	if(p3 == NULL) p3 = pszRange + strlen(pszRange);
 	else *p3 = '\0';
 
 
-	// 해석
+	// parse
 	p1 += 1;
 	*p2 = '\0';
 

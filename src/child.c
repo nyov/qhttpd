@@ -123,7 +123,7 @@ void childStart(int nSockFd) {
 			// register client information
 			if(poolSetConnInfo(nNewSockFd) == true) {;
 				// launch main logic
-				childMain(nNewSockFd);
+				httpMain(nNewSockFd);
 			}
 		} else {
 			LOG_ERR("Hook failed.");
