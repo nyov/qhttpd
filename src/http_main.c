@@ -37,9 +37,6 @@ int httpMain(int nSockFd) {
 		// Pre-processing Block
 		/////////////////////////////////////////////////////////
 
-		struct HttpRequest *req = NULL;
-		struct HttpResponse *res = NULL;
-
 		// reset keep-alive
 		bKeepAlive = false;
 
@@ -48,22 +45,76 @@ int httpMain(int nSockFd) {
 		/////////////////////////////////////////////////////////
 
 		// parse request
-		req = httpRequestParse(nSockFd, g_conf.nConnectionTimeout);
+		struct HttpRequest *req = httpRequestParse(nSockFd, g_conf.nConnectionTimeout);
 		if(req == NULL) {
-			LOG_ERR("System Error #1.");
+			LOG_ERR("Can't parse request.");
 			break;
 		}
 
-		if(req->nReqStatus >= 0) {
-			poolSetConnRequest(req); // set request information
+		// create response
+		struct HttpResponse *res = httpResponseCreate();
+		if(res == NULL) {
+			LOG_ERR("Can't create response.");
+			httpRequestFree(req);
+			break;
+		}
 
-			// handle request
-			res = httpHandler(req);
-			if(res == NULL) {
-				LOG_ERR("System Error #2.");
-				break;
+		if(req->nReqStatus >= 0) { // normal request
+			// set request information
+			poolSetConnRequest(req);
+
+			// call method handler
+			// 1. parse request.
+			// 2.    lua> luaRequestHandler();
+			// 3.   hook> hookRequestHandler();
+			// 4. native request handler
+			// 5.   hook> hookResponseHandler()
+			// 6.    lua> luaResponseHandler()
+			// 7. response out
+			if(req->nReqStatus > 0) {
+				int nResCode = 0;
+
+#ifdef ENABLE_LUA
+				if(g_conf.bEnableLua == true) {
+					nResCode = luaRequestHandler(req, res);
+				}
+#endif
+				if(nResCode == 0) { // if response does not set
+#ifdef ENABLE_HOOK
+					nResCode = hookRequestHandler(req, res);
+					if(nResCode == 0) { // if nothing done, call native handler
+#endif
+						nResCode =  httpRequestHandler(req, res);
+						if(nResCode == 0) LOG_ERR("An error occured while processing method.");
+#ifdef ENABLE_HOOK
+					}
+#endif
+				}
+			} else { // bad request
+				httpResponseSetCode(res, HTTP_RESCODE_BAD_REQUEST, req, false);
+				httpResponseSetContentHtml(res, "Your browser sent a request that this server could not understand.");
 			}
-			poolSetConnResponse(res); // set response information
+
+			// hook response
+#ifdef ENABLE_HOOK
+			if(hookResponseHandler(req, res) == false) {
+				LOG_WARN("An error occured while processing hookResponseHandler().");
+			}
+#endif
+
+#ifdef ENABLE_LUA
+			if(g_conf.bEnableLua == true && luaResponseHandler(req,res) == false) {
+				LOG_WARN("An error occured while processing luaResponseHandler().");
+			}
+#endif
+
+			 // set response information
+			poolSetConnResponse(res);
+
+			// check exit request
+			if(poolGetExitRequest() == true) {
+				httpHeaderSetStr(res->pHeaders, "Connection", "close");
+			}
 
 			// serialize & stream out
 			httpResponseOut(res, nSockFd);
@@ -72,7 +123,9 @@ int httpMain(int nSockFd) {
 			httpAccessLog(req, res);
 
 			// check keep-alive
-			if(httpHeaderHasString(res->pHeaders, "CONNECTION", "KEEP-ALIVE") == true) bKeepAlive = true;
+			if(httpHeaderHasStr(res->pHeaders, "CONNECTION", "KEEP-ALIVE") == true) bKeepAlive = true;
+		} else { // timeout or connection closed
+			DEBUG("Connection timeout.");
 		}
 
 		/////////////////////////////////////////////////////////
@@ -82,63 +135,23 @@ int httpMain(int nSockFd) {
 		// free resources
 		if(req != NULL) httpRequestFree(req);
 		if(res != NULL) httpResponseFree(res);
-
-		// check exit request
-		//if(poolGetExitRequest() == true) bKeepAlive = false;
 	} while(bKeepAlive == true);
 
 	return 0;
 }
 
 /*
- * @return	HttpResponse pointer
- *		NULL : system error
+ * @return	response code
+ *		0 : system error
  */
-struct HttpResponse *httpHandler(struct HttpRequest *req) {
-	if(req == NULL) return NULL;
+int httpRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
+	if(req == NULL || res == NULL) return 0;
 
-	// create response
-	struct HttpResponse *res = httpResponseCreate();
-	if(res == NULL) return NULL;
+	// check if the request is for server status page
+	int nResCode = httpSpecialRequestHandler(req, res);
+	if(nResCode != 0) return nResCode;
 
-	// filter bad request
-	if(req->nReqStatus == 0) { // bad request
-		DEBUG("Bad request.");
-
-		// @todo: bad request answer
-		httpResponseSetCode(res, HTTP_RESCODE_BAD_REQUEST, req, false);
-		httpResponseSetContentHtml(res, "Your browser sent a request that this server could not understand.");
-		return res;
-	} else if(req->nReqStatus < 0) { // timeout or connection closed
-		DEBUG("Connection timeout.");
-		return res;
-	}
-
-	// handle method
-	int nResCode = 0;
-
-	// 특수 URI 체크
-	if(g_conf.bStatusEnable == true
-	&& !strcmp(req->pszRequestMethod, "GET")
-	&& !strcmp(req->pszRequestPath, g_conf.szStatusUrl)) {
-		Q_OBSTACK *obHtml = httpGetStatusHtml();
-		if(obHtml == NULL) {
-			nResCode = response500(req, res);
-			return res;
-		}
-
-		httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
-		httpResponseSetContent(res, "text/html; charset=\"utf-8\"", qObstackGetSize(obHtml), (char *)qObstackFinish(obHtml));
-		qObstackFree(obHtml);
-
-		return res;
-	}
-
-	// method hooking
-	nResCode = hookMethodHandler(req, res);
-	if(nResCode != 0) return res;
-
-	// native methods
+	// native method handlers
 	if(!strcmp(req->pszRequestMethod, "OPTIONS")) {
 		nResCode = httpMethodOptions(req, res);
 	} else if(!strcmp(req->pszRequestMethod, "GET")) {
@@ -149,5 +162,23 @@ struct HttpResponse *httpHandler(struct HttpRequest *req) {
 		nResCode = httpMethodNotImplemented(req, res);
 	}
 
-	return res;
+	return nResCode;
+}
+
+int httpSpecialRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
+	if(req == NULL || res == NULL) return 0;
+
+	// check if the request is for server status page
+	if(g_conf.bStatusEnable == true && !strcmp(req->pszRequestMethod, "GET") && !strcmp(req->pszRequestPath, g_conf.szStatusUrl)) {
+		Q_OBSTACK *obHtml = httpGetStatusHtml();
+		if(obHtml == NULL) return response500(req, res);
+
+		httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
+		httpResponseSetContent(res, "text/html; charset=\"utf-8\"", qObstackGetSize(obHtml), (char *)qObstackFinish(obHtml));
+		qObstackFree(obHtml);
+
+		return HTTP_RESCODE_OK;
+	}
+
+	return 0;
 }

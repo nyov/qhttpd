@@ -103,6 +103,9 @@ bool loadConfig(Config *pConf, char *pszFilePath) {
 
 	fetch2Int(entry, pConf->nResponseExpires, "qhttpd.ResponseExpires");
 
+	fetch2Bool(entry, pConf->bEnableLua, "qhttpd.EnableLua");
+	fetch2Str(entry, pConf->szLuaScript, "qhttpd.LuaScript");
+
 	fetch2Str(entry, pConf->szErrorLog, "qhttpd.ErrorLog");
 	fetch2Str(entry, pConf->szAccessLog, "qhttpd.AccessLog");
 	fetch2Int(entry, pConf->nLogRotate, "qhttpd.LogRotate");

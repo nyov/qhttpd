@@ -117,11 +117,11 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 			// divide uri into host and path
 			pszTmp = strstr(pszReqUri + 8, "/");
 			if(pszTmp == NULL) {	// No path, ex) http://a.b.c:80
-				qEntryPutStr(req->pHeaders, "Host", pszReqUri+8, true);
+				httpHeaderSetStr(req->pHeaders, "Host", pszReqUri+8);
 				req->pszRequestUri = strdup("/");
 			} else {		// Has path, ex) http://a.b.c:80/100
 				*pszTmp = '\0';
-				qEntryPutStr(req->pHeaders, "Host", pszReqUri+8, true);
+				httpHeaderSetStr(req->pHeaders, "Host", pszReqUri+8);
 				*pszTmp = '/';
 				req->pszRequestUri = strdup(pszTmp);
 			}
@@ -172,20 +172,20 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		char *value = qStrTrim(tmp + 1);
 
 		// put
-		qEntryPutStr(req->pHeaders, name, value, true);
+		httpHeaderSetStr(req->pHeaders, name, value);
 	}
 
 	// parse host
-	req->pszRequestHost = _getCorrectedHostname(httpHeaderGetValue(req->pHeaders, "HOST"));
+	req->pszRequestHost = _getCorrectedHostname(httpHeaderGetStr(req->pHeaders, "HOST"));
 	if(req->pszRequestHost == NULL) {
 		DEBUG("Can't find host information.");
 		return req;
 	}
-	qEntryPutStr(req->pHeaders, "Host", req->pszRequestHost, true);
+	httpHeaderSetStr(req->pHeaders, "Host", req->pszRequestHost);
 
 	// Parse Contents
-	if(httpHeaderGetValue(req->pHeaders, "CONTENT-LENGTH") != NULL) {
-		req->nContentsLength = (size_t)atoll(httpHeaderGetValue(req->pHeaders, "CONTENT-LENGTH"));
+	if(httpHeaderGetStr(req->pHeaders, "CONTENT-LENGTH") != NULL) {
+		req->nContentsLength = (size_t)atoll(httpHeaderGetStr(req->pHeaders, "CONTENT-LENGTH"));
 
 		// PUT과 POST인 경우엔 메모리 로드하지 않음
 		if(req->nContentsLength <= MAX_HTTP_MEMORY_CONTENTS

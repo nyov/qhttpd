@@ -56,7 +56,7 @@
 //
 #define PRG_INFO				"The qDecoder Project"
 #define PRG_NAME				"qhttpd"
-#define PRG_VERSION				"1.1.0"
+#define PRG_VERSION				"1.2.0"
 
 //
 // MAXIMUM INTERNAL LIMITATIONS
@@ -133,6 +133,9 @@ typedef struct {
 	int	nConnectionTimeout;
 
 	int	nResponseExpires;
+
+	bool	bEnableLua;
+	char	szLuaScript[MAX_PATH_LEN+1];
 
 	char	szErrorLog[64+1];
 	char	szAccessLog[64+1];
@@ -328,7 +331,8 @@ extern	void		childSignalHandler(void);
 
 // http_main.c
 extern	int		httpMain(int nSockFd);
-extern	struct HttpResponse* httpHandler(struct HttpRequest *req);
+extern	int		httpRequestHandler(struct HttpRequest *req, struct HttpResponse *res);
+extern	int		httpSpecialRequestHandler(struct HttpRequest *req, struct HttpResponse *res);
 
 // http_request.c
 extern	struct	HttpRequest*	httpRequestParse(int nSockFd, int nTimeout);
@@ -341,8 +345,6 @@ extern	bool		httpResponseSetCode(struct HttpResponse *res, int nResCode, struct 
 extern	bool		httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, size_t nContentLength, const char *pContent);
 extern	bool		httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg);
 extern	bool		httpResponseSetContentChunked(struct HttpResponse *res, bool bChunked);
-extern	bool		httpResponseSetHeader(struct HttpResponse *res, const char *pszName, const char *pszValue);
-extern	bool		httpResponseSetHeaderf(struct HttpResponse *res, const char *pszName, const char *format, ...);
 extern	bool		httpResponseOut(struct HttpResponse *res, int nSockFd);
 extern	int		httpResponseOutChunk(int nSockFd, const char *pszData, int nSize);
 extern	void		httpResponseFree(struct HttpResponse *res);
@@ -362,9 +364,12 @@ extern	const char*	httpResponseGetMsg(int nResCode);
 #define response503(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_SERVICE_UNAVAILABLE, true, httpResponseGetMsg(HTTP_RESCODE_SERVICE_UNAVAILABLE))
 
 // http_header.c
-extern	const char*	httpHeaderGetValue(Q_ENTRY *entries, const char *name);
-extern	int		httpHeaderGetInt(Q_ENTRY *entries, const char *name);
-extern	bool		httpHeaderHasString(Q_ENTRY *entries, const char *name, const char *str);
+extern	const char*	httpHeaderGetStr(Q_ENTRY *entries, const char *pszName);
+extern	int		httpHeaderGetInt(Q_ENTRY *entries, const char *pszName);
+extern	bool		httpHeaderSetStr(Q_ENTRY *entries, const char *pszName, const char *pszValue);
+extern	bool		httpHeaderSetStrf(Q_ENTRY *entries, const char *pszName, const char *format, ...);
+extern	bool		httpHeaderRemove(Q_ENTRY *entries, const char *pszName);
+extern	bool		httpHeaderHasStr(Q_ENTRY *entries, const char *pszName, const char *pszValue);
 extern	bool		httpHeaderParseRange(const char *pszRangeHeader, size_t nFilesize, off_t *pnRangeOffset1, off_t *pnRangeOffset2, size_t *pnRangeSize);
 
 // http_method.c
@@ -397,16 +402,29 @@ extern	ssize_t		streamSave(int nFileFd, int nSockFd, size_t nSize, int nTimeoutM
 extern	ssize_t		streamSendfile(int nSockFd, const char *pszFilePath, off_t nOffset, size_t nSize);
 
 // hook.c
+#ifdef ENABLE_HOOK
 extern	bool		hookBeforeMainInit(void);
 extern	bool		hookAfterConfigLoaded(void);
 extern	bool		hookAfterDaemonInit(void);
 extern	int		hookWhileDaemonIdle(void);
 extern	bool		hookBeforeDaemonEnd(void);
 extern	bool		hookAfterDaemonSIGHUP(void);
+
 extern	bool		hookAfterChildInit(void);
 extern	bool		hookBeforeChildEnd(void);
-extern	bool		hookAfterConnEstablished(void);
-extern	int		hookMethodHandler(struct HttpRequest *req, struct HttpResponse *res);
+extern	bool		hookAfterConnEstablished(int nSockFd);
+
+extern	int		hookRequestHandler(struct HttpRequest *req, struct HttpResponse *res);
+extern	bool		hookResponseHandler(struct HttpRequest *req, struct HttpResponse *res);
+#endif
+
+// script.c
+#ifdef ENABLE_LUA
+extern	bool		luaInit(const char *pszScriptPath);
+extern	bool		luaFree(void);
+extern	int		luaRequestHandler(struct HttpRequest *req, struct HttpResponse *res);
+extern	bool		luaResponseHandler(struct HttpRequest *req, struct HttpResponse *res);
+#endif
 
 // util.c
 extern	unsigned int	convIp2Uint(const char *szIp);

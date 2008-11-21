@@ -55,6 +55,12 @@ qhttpd.ConnectionTimeout	= 5
 qhttpd.ResponseExpires		= 300
 
 ##
+## Lua Script Engine
+##
+qhttpd.EnableLua		= NO
+qhttpd.LuaScript		= ${qhttpd.ConfDir}/qhttpd.lua
+
+##
 ## Log Setting
 ##
 

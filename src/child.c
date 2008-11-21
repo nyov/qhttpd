@@ -39,11 +39,20 @@ void childStart(int nSockFd) {
 		childEnd(EXIT_FAILURE);
 	}
 
-	// hook
+#ifdef ENABLE_HOOK
 	if(hookAfterChildInit() == false) {
 		LOG_ERR("Hook failed.\n");
 		childEnd(EXIT_FAILURE);
 	}
+#endif
+
+#ifdef ENABLE_LUA
+	if(g_conf.bEnableLua == true) {
+		if(luaInit(g_conf.szLuaScript) == false) {
+			LOG_WARN("Can't initialize lua engine.");
+		}
+	}
+#endif
 
 	// init random
         srandom((unsigned)(time(NULL) + getpid() + nSockFd));
@@ -118,16 +127,20 @@ void childStart(int nSockFd) {
 			}
 		}
 
+#ifdef ENABLE_HOOK
 		// connection hook
-		if(hookAfterConnEstablished() == true) {
+		if(hookAfterConnEstablished(nNewSockFd) == true) {
+#endif
 			// register client information
-			if(poolSetConnInfo(nNewSockFd) == true) {;
+			if(poolSetConnInfo(nNewSockFd) == true) {
 				// launch main logic
 				httpMain(nNewSockFd);
 			}
+#ifdef ENABLE_HOOK
 		} else {
 			LOG_ERR("Hook failed.");
 		}
+#endif
 
 		// close connection
 		if(shutdown(nNewSockFd, SHUT_WR) == 0) {
@@ -156,10 +169,17 @@ void childEnd(int nStatus) {
 	if(bAlready == true) return;
 	bAlready = true;
 
+	#ifdef ENABLE_LUA
+	// release lua
+	if(g_conf.bEnableLua == true) luaFree();
+	#endif
+
+#ifdef ENABLE_HOOK
 	// hook
 	if(hookBeforeChildEnd() == false) {
 		LOG_ERR("Hook failed.\n");
 	}
+#endif
 
 	// remove child info
 	if(poolChildDel(getpid()) == false) {

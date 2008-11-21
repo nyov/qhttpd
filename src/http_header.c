@@ -25,21 +25,43 @@
 
 #include "qhttpd.h"
 
-const char *httpHeaderGetValue(Q_ENTRY *entries, const char *name) {
-	return (char*)qEntryGetStrCase(entries, name);
+const char *httpHeaderGetStr(Q_ENTRY *entries, const char *pszName) {
+	return (char*)qEntryGetStrCase(entries, pszName);
 }
 
-int httpHeaderGetInt(Q_ENTRY *entries, const char *name) {
-	return qEntryGetIntCase(entries, name);
+int httpHeaderGetInt(Q_ENTRY *entries, const char *pszName) {
+	return qEntryGetIntCase(entries, pszName);
 }
 
-bool httpHeaderHasString(Q_ENTRY *entries, const char *name, const char *str) {
-	const char *pszVal;
+bool httpHeaderSetStr(Q_ENTRY *entries, const char *pszName, const char *pszValue) {
+	if(pszValue != NULL) qEntryPutStr(entries, pszName, pszValue, true);
+	else qEntryRemove(entries, pszName);
 
-	pszVal = qEntryGetStrCase(entries, name);
+	return true;
+}
+
+bool httpHeaderSetStrf(Q_ENTRY *entries, const char *pszName, const char *format, ...) {
+	char szValue[1024];
+	va_list arglist;
+
+	va_start(arglist, format);
+	vsnprintf(szValue, sizeof(szValue)-1, format, arglist);
+	szValue[sizeof(szValue)-1] = '\0';
+	va_end(arglist);
+
+	return httpHeaderSetStr(entries, pszName, szValue);
+}
+
+bool httpHeaderRemove(Q_ENTRY *entries, const char *pszName) {
+	if(qEntryRemove(entries, pszName) > 0) return true;
+	return false;
+}
+
+bool httpHeaderHasStr(Q_ENTRY *entries, const char *pszName, const char *pszValue) {
+	const char *pszVal = qEntryGetStrCase(entries, pszName);
 	if(pszVal == NULL) return false;
 
-	if(qStrCaseStr(pszVal, str) != NULL) return true;
+	if(qStrCaseStr(pszVal, pszValue) != NULL) return true;
 	return false;
 }
 

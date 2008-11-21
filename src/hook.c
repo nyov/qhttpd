@@ -23,7 +23,13 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef ENABLE_HOOK
+
 #include "qhttpd.h"
+
+//
+// process management daemon
+//
 
 bool hookBeforeMainInit(void) {
 	return true;
@@ -49,6 +55,10 @@ bool hookAfterDaemonSIGHUP(void) {
 	return true;
 }
 
+//
+// for each connection
+//
+
 bool hookAfterChildInit(void) {
 	return true;
 }
@@ -57,10 +67,31 @@ bool hookBeforeChildEnd(void) {
 	return true;
 }
 
-bool hookAfterConnEstablished(void) {
+bool hookAfterConnEstablished(int nSockFd) {
 	return true;
 }
 
-int hookMethodHandler(struct HttpRequest *req, struct HttpResponse *res) {
+//
+// request & response hooking
+//
+// 1. parse request.
+// 3.   hook> hookRequestHandler();
+// 2.    lua> luaRequestHandler();
+// 4. native request handler
+// 5.   hook> hookResponseHandler()
+// 6.    lua> luaResponseHandler()
+// 7. response out
+
+// in case of bad request, hook will not be called.
+// return response code, only when you set response code.
+// in case of modifying headers and such modifications, return 0.
+int hookRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
 	return 0;
 }
+
+// in case of bad request, hook will not be called.
+bool hookResponseHandler(struct HttpRequest *req, struct HttpResponse *res) {
+	return true;
+}
+
+#endif

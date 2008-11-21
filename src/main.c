@@ -50,11 +50,11 @@ int main(int argc, char *argv[]) {
 	char szConfigFile[MAX_PATH_LEN];
 	bool nDaemonize = true;
 
-	// hook
+#ifdef ENABLE_HOOK
 	if(hookBeforeMainInit() == false) {
 		return EXIT_FAILURE;
 	}
-
+#endif
 	// initialize
 	strcpy(szConfigFile, "");
 
@@ -102,11 +102,13 @@ int main(int argc, char *argv[]) {
 	if (loadConfig(&g_conf, szConfigFile)) {
 		//fprintf(stderr, "Configuration loaded.\n");
 
+#ifdef ENABLE_HOOK
 		// config hook
 		if(hookAfterConfigLoaded() == false) {
 			fprintf(stderr, "Hook failed.\n");
 			return EXIT_FAILURE;
 		}
+#endif
 	} else {
 		fprintf(stderr, "ERROR: Can't load configuration file %s\n", szConfigFile);
 		printUsages();

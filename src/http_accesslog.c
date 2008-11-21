@@ -28,10 +28,10 @@
 bool httpAccessLog(struct HttpRequest *req, struct HttpResponse *res) {
 	if(req->pszRequestMethod == NULL) return false;
 
-	const char *pszHost = httpHeaderGetValue(res->pHeaders, "HOST");
-	const char *pszReferer = httpHeaderGetValue(req->pHeaders, "REFERER");
-	const char *pszAgent = httpHeaderGetValue(req->pHeaders, "USER-AGENT");
-	const char *pszLocation = httpHeaderGetValue(res->pHeaders, "LOCATION");
+	const char *pszHost = httpHeaderGetStr(res->pHeaders, "HOST");
+	const char *pszReferer = httpHeaderGetStr(req->pHeaders, "REFERER");
+	const char *pszAgent = httpHeaderGetStr(req->pHeaders, "USER-AGENT");
+	const char *pszLocation = httpHeaderGetStr(res->pHeaders, "LOCATION");
 
 	qLog(g_acclog, "%s - - [%s] \"%s http://%s%s %s\" %d %zu \"%s\" \"%s\" \"%s\"",
 		poolGetConnAddr(),  qTimeGetLocalStaticStr(poolGetConnReqTime()),

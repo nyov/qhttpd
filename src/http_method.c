@@ -30,7 +30,7 @@
  */
 int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
 	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
-	httpResponseSetHeader(res, "Allow", "OPTIONS,GET,HEAD");
+	httpHeaderSetStr(res->pHeaders, "Allow", "OPTIONS,GET,HEAD");
 	httpResponseSetContent(res, "httpd/unix-directory", 0, NULL);
 
 	return HTTP_RESCODE_OK;
@@ -88,7 +88,7 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	//
 
 	// check If-Modified-Since header
-	const char *pszIfModifiedSince = httpHeaderGetValue(req->pHeaders, "IF-MODIFIED-SINCE");
+	const char *pszIfModifiedSince = httpHeaderGetStr(req->pHeaders, "IF-MODIFIED-SINCE");
 	if(pszIfModifiedSince != NULL) {
 		time_t nUnivTime = qTimeParseGmtStr(pszIfModifiedSince);
 		if(nUnivTime >= 0 && nUnivTime > filestat.st_mtime) { // succeed to parsing header && file does not modified
@@ -97,7 +97,7 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	}
 
 	// check Range header
-	const char *pszRange = httpHeaderGetValue(req->pHeaders, "RANGE");
+	const char *pszRange = httpHeaderGetStr(req->pHeaders, "RANGE");
 	if(pszRange != NULL) {
 		bRangeRequest = httpHeaderParseRange(pszRange, nFilesize, &nRangeOffset1, &nRangeOffset2, &nRangeSize);
 	}
@@ -116,17 +116,17 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
 	httpResponseSetContent(res, pszContentType, nRangeSize, NULL);
 
-	httpResponseSetHeader(res, "Accept-Ranges", "bytes");
-	httpResponseSetHeaderf(res, "Last-Modified", "%s", qTimeGetGmtStaticStr(filestat.st_mtime));
-	//httpResponseSetHeaderf(res, "ETag", "\"%s\"", );
+	httpHeaderSetStr(res->pHeaders, "Accept-Ranges", "bytes");
+	httpHeaderSetStrf(res->pHeaders, "Last-Modified", "%s", qTimeGetGmtStaticStr(filestat.st_mtime));
+	//httpHeaderSetStrf(res->pHeaders, "ETag", "\"%s\"", );
 
 	if(bRangeRequest == true) {
-		httpResponseSetHeaderf(res, "Content-Range", "bytes %zu-%zu/%zu", (size_t)nRangeOffset1, (size_t)nRangeOffset2, nFilesize);
+		httpHeaderSetStrf(res->pHeaders, "Content-Range", "bytes %zu-%zu/%zu", (size_t)nRangeOffset1, (size_t)nRangeOffset2, nFilesize);
 	}
 
 	if(g_conf.nResponseExpires > 0) { // enable client caching
-		httpResponseSetHeaderf(res, "Cache-Control", "max-age=%d", g_conf.nResponseExpires);
-		httpResponseSetHeaderf(res, "Expires", "%s", qTimeGetGmtStaticStr(time(NULL)+g_conf.nResponseExpires));
+		httpHeaderSetStrf(res->pHeaders, "Cache-Control", "max-age=%d", g_conf.nResponseExpires);
+		httpHeaderSetStrf(res->pHeaders, "Expires", "%s", qTimeGetGmtStaticStr(time(NULL)+g_conf.nResponseExpires));
 	}
 
 	httpResponseOut(res, req->nSockFd);
@@ -161,8 +161,8 @@ int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
 	// print out response
 	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
 
-	httpResponseSetHeader(res, "Accept-Ranges", "bytes");
-	httpResponseSetHeaderf(res, "Last-Modified", "%s", qTimeGetGmtStaticStr(filestat.st_mtime));
+	httpHeaderSetStr(res->pHeaders, "Accept-Ranges", "bytes");
+	httpHeaderSetStrf(res->pHeaders, "Last-Modified", "%s", qTimeGetGmtStaticStr(filestat.st_mtime));
 	//httpResponseSetHeaderf(res, "ETag", "\"%s\"", );
 
 	return HTTP_RESCODE_OK;

@@ -71,35 +71,32 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 	if(pszHttpVer == NULL) pszHttpVer = HTTP_PROTOCOL_11;
 
 	// default headers
-	httpResponseSetHeader(res, "Date", qTimeGetGmtStaticStr(0));
-	httpResponseSetHeaderf(res, "Server", "%s/%s (%s)", PRG_NAME, PRG_VERSION, PRG_INFO);
+	httpHeaderSetStr(res->pHeaders, "Date", qTimeGetGmtStaticStr(0));
+	httpHeaderSetStrf(res->pHeaders, "Server", "%s/%s (%s)", PRG_NAME, PRG_VERSION, PRG_INFO);
 
 	// decide to turn on/off keep-alive
 	if(g_conf.bKeepAliveEnable == true && bKeepAlive == true) {
 		//if(strcmp(pszHttpVer, HTTP_PROTOCOL_11)) bKeepAlive = false; // HTTP/1.1이 아니면 - Jaguar 5000 호환성 문제로 제거
-		if(httpHeaderHasString(req->pHeaders, "CONNECTION", "KEEP-ALIVE") == false
-		&& httpHeaderHasString(req->pHeaders, "CONNECTION", "TE") == false) bKeepAlive = false; // 요청이 keep-alive가 아니면
+		if(httpHeaderHasStr(req->pHeaders, "CONNECTION", "KEEP-ALIVE") == false
+		&& httpHeaderHasStr(req->pHeaders, "CONNECTION", "TE") == false) bKeepAlive = false; // 요청이 keep-alive가 아니면
 	} else {
 		bKeepAlive = false;
 	}
 
 	// Set keep-alive header
 	if(bKeepAlive == true) {
-		httpResponseSetHeader(res, "Connection", "Keep-Alive");
-		httpResponseSetHeaderf(res, "Keep-Alive", "timeout=%d", req->nTimeout);
+		httpHeaderSetStr(res->pHeaders, "Connection", "Keep-Alive");
+		httpHeaderSetStrf(res->pHeaders, "Keep-Alive", "timeout=%d", req->nTimeout);
 
 		pszHttpVer = HTTP_PROTOCOL_11;
 	} else {
-		httpResponseSetHeader(res, "Connection", "close");
+		httpHeaderSetStr(res->pHeaders, "Connection", "close");
 	}
 
 	// Set response code
 	if(res->pszHttpVersion != NULL) free(res->pszHttpVersion);
 	res->pszHttpVersion = strdup(pszHttpVer);
 	res->nResponseCode = nResCode;
-
-	// set to no content
-	httpResponseSetContent(res, NULL, 0, NULL);
 
 	return true;
 }
@@ -168,25 +165,6 @@ bool httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg) {
 /**
  * @param value NULL일 경우 name에 해당하는 헤더를 삭제
  */
-bool httpResponseSetHeader(struct HttpResponse *res, const char *pszName, const char *pszValue) {
-	if(pszValue != NULL) qEntryPutStr(res->pHeaders, pszName, pszValue, true);
-	else qEntryRemove(res->pHeaders, pszName);
-
-	return true;
-}
-
-bool httpResponseSetHeaderf(struct HttpResponse *res, const char *pszName, const char *format, ...) {
-	char szValue[1024];
-	va_list arglist;
-
-	va_start(arglist, format);
-	vsnprintf(szValue, sizeof(szValue)-1, format, arglist);
-	szValue[sizeof(szValue)-1] = '\0';
-	va_end(arglist);
-
-	return httpResponseSetHeader(res, pszName, szValue);
-}
-
 bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	if(res->pszHttpVersion == NULL || res->nResponseCode == 0 || res->bOut == true) return false;
 
@@ -195,18 +173,18 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	//
 
 	if(res->bChunked == true) {
-		httpResponseSetHeader(res, "Transfer-Encoding", "chunked");
+		httpHeaderSetStr(res->pHeaders, "Transfer-Encoding", "chunked");
 	} else {
-		httpResponseSetHeaderf(res, "Content-Length", "%zu", res->nContentLength);
+		httpHeaderSetStrf(res->pHeaders, "Content-Length", "%zu", res->nContentLength);
 	}
 
 	// Content-Type 헤더
 	if(res->pszContentType != NULL) {
-		httpResponseSetHeader(res, "Content-Type", res->pszContentType);
+		httpHeaderSetStr(res->pHeaders, "Content-Type", res->pszContentType);
 	}
 
 	// Date 헤더 - 서버 시각
-	httpResponseSetHeader(res, "Date", qTimeGetGmtStaticStr(0));
+	httpHeaderSetStr(res->pHeaders, "Date", qTimeGetGmtStaticStr(0));
 
 	//
 	// 출력

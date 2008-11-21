@@ -115,11 +115,13 @@ void daemonStart(bool nDaemonize) {
 	}
 	LOG_INFO("  - Child management pool created.");
 
+#ifdef ENABLE_HOOK
 	// after init hook
 	if(hookAfterDaemonInit() == false) {
 		LOG_ERR("Hook failed.");
 		daemonEnd(EXIT_FAILURE);
 	}
+#endif
 
 	// listen
 	if (listen(nSockFd, g_conf.nMaxpending) == -1) {
@@ -231,11 +233,11 @@ void daemonStart(bool nDaemonize) {
 					LOG_WARN("Child count mismatch. fixed.");
 				}
 
-				// hook
-				int nJobCnt = hookWhileDaemonIdle();
-				if(nJobCnt < 0) {
+#ifdef ENABLE_HOOK
+				if(hookWhileDaemonIdle() < 0) {
 					LOG_ERR("Hook failed.");
 				}
+#endif
 
 				// update running time
 				nLastSec = time(NULL);
@@ -274,10 +276,11 @@ void daemonEnd(int nStatus) {
 		while(waitpid(-1, NULL, WNOHANG) > 0);
 	}
 
-	// hook
+#ifdef ENABLE_HOOK
 	if(hookBeforeDaemonEnd() == false) {
 		LOG_ERR("Hook failed.");
 	}
+#endif
 
 	// destroy semaphore
 	int i;
@@ -366,22 +369,24 @@ void daemonSignalHandler(void) {
 			LOG_ERR("Can't reload configuration file %s", g_conf.szConfigFile);
 		}
 
+#ifdef ENABLE_HOOK
 		// config hook
 		if(hookAfterConfigLoaded() == false) {
 			LOG_ERR("Hook failed.");
 		}
-
+#endif
 		// reload mime
 		mimeFree();
 		if(mimeInit(g_conf.szMimeFile) == false) {
 			LOG_ERR("Can't load mimetypes from %s", g_conf.szMimeFile);
 		}
 
+#ifdef ENABLE_HOOK
 		// hup hook
 		if(hookAfterDaemonSIGHUP() == false) {
 			LOG_ERR("Hook failed.");
 		}
-
+#endif
 		// re-launch childs
 		poolSetExitReqeustAll();
 
