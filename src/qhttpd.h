@@ -62,7 +62,7 @@
 // MAXIMUM INTERNAL LIMITATIONS
 //
 
-#define MAX_CHILDS				(128)
+#define MAX_CHILDS				(256)
 #define MAX_SEMAPHORES				(1+2)
 #define MAX_MAX_SEMAPHORES_LOCK_SECS		(10)		// maximum secondes which semaphores can be locked
 

@@ -2,7 +2,7 @@ qHttpd Changes
 --------------
 
 [v1.2.0]
-o Embedding Lua script engine.
+o Embedded LUA script engine.
   see conf/qhttpd.lua.dist
   [configuration file]
   qhttpd.EnableLua = NO
