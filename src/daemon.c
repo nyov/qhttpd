@@ -151,7 +151,7 @@ void daemonStart(bool nDaemonize) {
 		} else {
 			if(nIdleChilds < g_conf.nMinSpareServers) { // not enough idle childs
 				if(nCurrentChilds < g_conf.nMaxClients) nChildFlag = 1;
-				else if(nIdleChilds <= 0) { // ignore connectin
+				else if(nIdleChilds <= 0 && g_conf.bIgnoreOverConnection == true) { // ignore connectin
 					while(ignoreConnection(nSockFd, 0) == true) {
 						nIgnoredConn++;
 						LOG_WARN("Maximum connection reached. Connection ignored. (%d)", nIgnoredConn);

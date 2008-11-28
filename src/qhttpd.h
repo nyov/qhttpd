@@ -131,6 +131,7 @@ typedef struct {
 
 	bool	bKeepAliveEnable;
 	int	nConnectionTimeout;
+	bool	bIgnoreOverConnection;
 
 	int	nResponseExpires;
 

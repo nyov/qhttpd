@@ -100,6 +100,7 @@ bool loadConfig(Config *pConf, char *pszFilePath) {
 
 	fetch2Bool(entry, pConf->bKeepAliveEnable, "qhttpd.KeepAliveEnable");
 	fetch2Int(entry, pConf->nConnectionTimeout, "qhttpd.ConnectionTimeout");
+	fetch2Bool(entry, pConf->bIgnoreOverConnection, "qhttpd.IgnoreOverConnection");
 
 	fetch2Int(entry, pConf->nResponseExpires, "qhttpd.ResponseExpires");
 
