@@ -32,7 +32,7 @@ LUA_LIB = /usr/local/lib/liblua.a -ldl -lm
 CC	= gcc
 CFLAGS  = -Wall
 DEFS	+= ${DEFS_CT}
-#DEFS	+= -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+#DEFS	+= -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 
 INCLUDE = -I./				\
 	  -I/usr/include		\
