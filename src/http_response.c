@@ -101,7 +101,7 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 	return true;
 }
 
-bool httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, size_t nContentLength, const char *pContent) {
+bool httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, off_t nContentLength, const char *pContent) {
 	// content-type
 	if(res->pszContentType != NULL) free(res->pszContentType);
 	res->pszContentType = (pszContentType != NULL) ? strdup(pszContentType) : NULL;
@@ -175,7 +175,7 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	if(res->bChunked == true) {
 		httpHeaderSetStr(res->pHeaders, "Transfer-Encoding", "chunked");
 	} else {
-		httpHeaderSetStrf(res->pHeaders, "Content-Length", "%zu", res->nContentLength);
+		httpHeaderSetStrf(res->pHeaders, "Content-Length", "%jd", res->nContentLength);
 	}
 
 	// Content-Type 헤더

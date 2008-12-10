@@ -216,7 +216,7 @@ struct HttpRequest {
 	Q_ENTRY *pHeaders;		// request headers
 
 	// contents
-	size_t	nContentsLength;	// contents length 0:no contents, n>0:has contents
+	off_t	nContentsLength;	// contents length 0:no contents, n>0:has contents
 	char*	pContents;		// contents data if parsed (if contents does not parsed : nContentsLength>0 && pContents==NULL)
 };
 
@@ -229,7 +229,7 @@ struct HttpResponse {
 	Q_ENTRY* pHeaders;		// response headers
 
 	char	*pszContentType;	// contents mime type
-	size_t	nContentLength;		// contents length
+	off_t	nContentLength;		// contents length
 	char*	pContent;		// contents data
 	bool	bChunked;		// flag for chunked data out
 };
@@ -343,7 +343,7 @@ extern	bool		httpRequestFree(struct HttpRequest *req);
 extern	struct HttpResponse* httpResponseCreate(void);
 extern	int		httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int nResCode, bool nKeepAlive, const char *format, ...);
 extern	bool		httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequest *req, bool bKeepAlive);
-extern	bool		httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, size_t nContentLength, const char *pContent);
+extern	bool		httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, off_t nContentLength, const char *pContent);
 extern	bool		httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg);
 extern	bool		httpResponseSetContentChunked(struct HttpResponse *res, bool bChunked);
 extern	bool		httpResponseOut(struct HttpResponse *res, int nSockFd);
@@ -371,7 +371,7 @@ extern	bool		httpHeaderSetStr(Q_ENTRY *entries, const char *pszName, const char 
 extern	bool		httpHeaderSetStrf(Q_ENTRY *entries, const char *pszName, const char *format, ...);
 extern	bool		httpHeaderRemove(Q_ENTRY *entries, const char *pszName);
 extern	bool		httpHeaderHasStr(Q_ENTRY *entries, const char *pszName, const char *pszValue);
-extern	bool		httpHeaderParseRange(const char *pszRangeHeader, size_t nFilesize, off_t *pnRangeOffset1, off_t *pnRangeOffset2, size_t *pnRangeSize);
+extern	bool		httpHeaderParseRange(const char *pszRangeHeader, off_t nFilesize, off_t *pnRangeOffset1, off_t *pnRangeOffset2, off_t *pnRangeSize);
 
 // http_method.c
 extern	int		httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res);
@@ -399,8 +399,8 @@ extern	ssize_t		streamGetb(char *pszBuffer, int nSockFd, size_t nSize, int nTime
 extern	ssize_t		streamPrintf(int nSockFd, const char *format, ...);
 extern	ssize_t		streamPuts(int nSockFd, const char *pszStr);
 extern	ssize_t		streamWrite(int nSockFd, const void *pszBuffer, size_t nSize);
-extern	ssize_t		streamSave(int nFileFd, int nSockFd, size_t nSize, int nTimeoutMs);
-extern	ssize_t		streamSendfile(int nSockFd, const char *pszFilePath, off_t nOffset, size_t nSize);
+extern	off_t		streamSave(int nFd, int nSockFd, off_t nSize, int nTimeoutMs);
+extern	off_t		streamSendfile(int nSockFd, int nFd, off_t nOffset, off_t nSize);
 
 // hook.c
 #ifdef ENABLE_HOOK

@@ -124,14 +124,14 @@ ssize_t streamWrite(int nSockFd, const void *pszBuffer, size_t nSize) {
  *		0 timeout
  *		n<0 ¿¡·¯
  */
-ssize_t streamSave(int nFileFd, int nSockFd, size_t nSize, int nTimeoutMs) {
-	ssize_t nSaved = qSocketSaveIntoFile(nFileFd, nSockFd, nSize, nTimeoutMs);
-	DEBUG("[RX] (binary,wrote/request=%zd/%zu bytes)", nSaved, nSize);
+off_t streamSave(int nFd, int nSockFd, off_t nSize, int nTimeoutMs) {
+	off_t nSaved = qSocketSaveIntoFile(nFd, nSockFd, nSize, nTimeoutMs);
+	DEBUG("[RX] (save %jd/%jd bytes)", nSaved, nSize);
 	return nSaved;
 }
 
-ssize_t streamSendfile(int nSockFd, const char *pszFilePath, off_t nOffset, size_t nSize) {
-	ssize_t nSent = qSocketSendfile(nSockFd, pszFilePath, nOffset, nSize);
-        DEBUG("[TX] (sendfile %s %zd/%zu/%zu bytes)", pszFilePath, nSent, (size_t)nOffset, nSize);
+off_t streamSendfile(int nSockFd, int nFd, off_t nOffset, off_t nSize) {
+	off_t nSent = qSocketSendfile(nSockFd, nFd, nOffset, nSize);
+        DEBUG("[TX] (sendfile %jd/%jd/%jd bytes)", nSent, nOffset, nSize);
 	return nSent;
 }

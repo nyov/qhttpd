@@ -185,7 +185,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 
 	// Parse Contents
 	if(httpHeaderGetStr(req->pHeaders, "CONTENT-LENGTH") != NULL) {
-		req->nContentsLength = (size_t)atoll(httpHeaderGetStr(req->pHeaders, "CONTENT-LENGTH"));
+		req->nContentsLength = (off_t)atoll(httpHeaderGetStr(req->pHeaders, "CONTENT-LENGTH"));
 
 		// PUT과 POST인 경우엔 메모리 로드하지 않음
 		if(req->nContentsLength <= MAX_HTTP_MEMORY_CONTENTS

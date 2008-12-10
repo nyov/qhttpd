@@ -65,7 +65,7 @@ bool httpHeaderHasStr(Q_ENTRY *entries, const char *pszName, const char *pszValu
 	return false;
 }
 
-bool httpHeaderParseRange(const char *pszRangeHeader, size_t nFilesize, off_t *pnRangeOffset1, off_t *pnRangeOffset2, size_t *pnRangeSize) {
+bool httpHeaderParseRange(const char *pszRangeHeader, off_t nFilesize, off_t *pnRangeOffset1, off_t *pnRangeOffset2, off_t *pnRangeSize) {
 	if(pszRangeHeader == NULL) return false;
 
 	char *pszRange = strdup(pszRangeHeader);

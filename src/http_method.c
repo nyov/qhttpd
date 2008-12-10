@@ -48,10 +48,10 @@ int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
 int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, const char *pszFilePath, const char *pszContentType) {
 	struct stat filestat;
 	int nFileFd = -1;
-	size_t nFilesize = 0;
+	off_t nFilesize = 0;
 
 	off_t nRangeOffset1, nRangeOffset2;
-	size_t nRangeSize;
+	off_t nRangeSize;
 	bool bRangeRequest = false;
 
 	//
@@ -121,7 +121,7 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	//httpHeaderSetStrf(res->pHeaders, "ETag", "\"%s\"", );
 
 	if(bRangeRequest == true) {
-		httpHeaderSetStrf(res->pHeaders, "Content-Range", "bytes %zu-%zu/%zu", (size_t)nRangeOffset1, (size_t)nRangeOffset2, nFilesize);
+		httpHeaderSetStrf(res->pHeaders, "Content-Range", "bytes %jd-%jd/%jd", nRangeOffset1, nRangeOffset2, nFilesize);
 	}
 
 	if(g_conf.nResponseExpires > 0) { // enable client caching
@@ -134,11 +134,14 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	//
 	// send file
 	//
-
 	if(nFilesize > 0) {
-		ssize_t nSent = streamSendfile(req->nSockFd, pszFilePath, nRangeOffset1, nRangeSize);
-		if(nSent != nRangeSize) {
-			LOG_INFO("Connection closed by foreign host. (%zd/%zu)", nSent, nRangeSize);
+		int nFd = open(pszFilePath, O_RDONLY , 0);
+		if(nFd >= 0) {
+			off_t nSent = streamSendfile(req->nSockFd, nFd, nRangeOffset1, nRangeSize);
+			close(nFd);
+			if(nSent != nRangeSize) {
+				LOG_INFO("Connection closed by foreign host. (%jd/%jd/%jd)", nSent, nRangeOffset1, nRangeSize);
+			}
 		}
 	}
 
