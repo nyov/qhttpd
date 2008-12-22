@@ -26,7 +26,8 @@ QDECODER_INC = -I/usr/local/include
 QDECODER_LIB = /usr/local/lib/libqDecoder.a
 
 LUA_INC = -I/usr/local/include
-LUA_LIB = /usr/local/lib/liblua.a -ldl -lm
+LUA_LIB = /usr/local/lib/liblua.a -lm
+#LUA_LIB += -ldl
 
 ## Compiler arguments
 CC	= gcc
@@ -49,18 +50,12 @@ INCLUDE	+= ${QDECODER_INC}
 LIB	+= ${QDECODER_LIB}
 
 ## Enable hook
-ENABLE_HOOK="0"
-ifeq (${ENABLE_HOOK}, "1")
-	DEFS	+= -DENABLE_HOOK
-endif
+DEFS	+= -DENABLE_HOOK
 
 ## Lua script engine
-ENABLE_LUA="1"
-ifeq (${ENABLE_LUA}, "1")
-	DEFS	+= -DENABLE_LUA
-	INCLUDE	+= ${LUA_INC}
-	LIB	+= ${LUA_LIB}
-endif
+DEFS	+= -DENABLE_LUA
+INCLUDE	+= ${LUA_INC}
+LIB	+= ${LUA_LIB}
 
 ## Make Library
 all:	qhttpd
