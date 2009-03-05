@@ -27,7 +27,7 @@ QDECODER_LIB = /usr/local/lib/libqDecoder.a
 
 LUA_INC = -I/usr/local/include
 LUA_LIB = /usr/local/lib/liblua.a -lm
-#LUA_LIB += -ldl
+LUA_LIB += -ldl
 
 ## Compiler arguments
 CC	= gcc

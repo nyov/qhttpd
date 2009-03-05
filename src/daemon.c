@@ -96,7 +96,7 @@ void daemonStart(bool nDaemonize) {
 	}
 
 	// save pid
-	if(qCountSave(g_conf.szPidfile, getpid()) == false) {
+	if(qCountSave(g_conf.szPidfile, getpid()) == 0) {
 		LOG_ERR("Can't create pid file.");
 		daemonEnd(EXIT_FAILURE);
 	}
