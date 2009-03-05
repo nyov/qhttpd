@@ -47,6 +47,13 @@ qhttpd.KeepAliveEnable		= YES
 ## number of seconds before receives and sends time out.
 qhttpd.ConnectionTimeout	= 5
 
+## allows you to handle coming connections while maximum childs
+## are reached and all childs are working. set to YES, then the
+## coming connections will be closed immediately with to response
+## 503 SERVICE_UNAVAILABLE, otherwise the coming connections will
+## be pended and waiting the sequence.
+qhttpd.IgnoreOverConnection     = NO
+
 ##
 ## TTL Control
 ##
