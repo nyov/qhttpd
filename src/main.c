@@ -110,7 +110,8 @@ int main(int argc, char *argv[]) {
 		}
 #endif
 	} else {
-		fprintf(stderr, "ERROR: Can't load configuration file %s\n", szConfigFile);
+		fprintf(stderr, "ERROR: Can't load configuration file '%s'.\n", szConfigFile);
+		fprintf(stderr, "       Missing configuration entry? Use '-d' option for more detail.\n");
 		printUsages();
 		return EXIT_FAILURE;
 	}

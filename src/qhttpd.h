@@ -240,21 +240,28 @@ struct HttpResponse {
 #define	CONST_STRLEN(x)		(sizeof(x) - 1)
 
 #define _LOG(log, level, prestr, fmt, args...)	do {					\
-	if (g_errlog != NULL && g_loglevel >= level) {					\
+	if (g_loglevel >= level) {							\
 		char _timestr[14+1];							\
 		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
-		qLog(log, "%s(%d):" prestr fmt,						\
-			_timestr, getpid(), ##args);					\
+		if(log != NULL)								\
+			qLog(log, "%s(%d):" prestr fmt					\
+			, _timestr, getpid(), ##args);					\
+		else 									\
+			printf("%s(%d):" prestr fmt "\n"				\
+			, _timestr, getpid(), ##args);					\
 	}										\
 } while(false)
 
 #define _LOG2(log, level, prestr, fmt, args...)	do {					\
-	if (g_errlog != NULL && g_loglevel >= level) {					\
+	if (g_loglevel >= level) {							\
 		char _timestr[14+1];							\
 		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
-		qLog(log, "%s(%d):" prestr fmt " (%s:%d)",				\
-			_timestr, getpid(), ##args, __FILE__, __LINE__);		\
-		fflush(stdout);								\
+		if(log != NULL)								\
+			qLog(log, "%s(%d):" prestr fmt " (%s:%d)"			\
+			, _timestr, getpid(), ##args, __FILE__, __LINE__);		\
+		else									\
+			printf("%s(%d):" prestr fmt " (%s:%d)\n"			\
+			, _timestr, getpid(), ##args, __FILE__, __LINE__);		\
 	}										\
 } while(false)
 
@@ -436,6 +443,7 @@ extern	void		correctPath(char *pszPath);
 //
 // GLOBAL VARIABLES
 //
+extern bool	g_debug;
 extern Config	g_conf;
 extern int	g_semid;
 extern Q_LOG	*g_errlog;
