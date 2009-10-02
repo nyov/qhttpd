@@ -29,7 +29,7 @@
 // GLOBAL VARIABLES
 /////////////////////////////////////////////////////////////////////////
 bool	g_debug = false;		// debug message on/off flag
-sigset_t g_sigflags = 0;		// signals received
+sigset_t g_sigflags;			// signals received
 
 Config	g_conf;				// configuration structure
 int	g_semid = -1;			// semaphore id
