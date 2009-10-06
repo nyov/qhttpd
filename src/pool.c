@@ -60,7 +60,7 @@ bool poolInit(int nMaxChild) {
 		return false;
 	}
 
-	nShmId = qShmInit(g_conf.szPidfile, 'p', sizeof(struct SharedData), true);
+	nShmId = qShmInit(g_conf.szPidfile, '0', sizeof(struct SharedData), true);
 	if(nShmId < 0) return false;
 
 	pShm = (struct SharedData *)qShmGet(nShmId);

@@ -282,14 +282,10 @@ void daemonEnd(int nStatus) {
 	}
 #endif
 
-	// destroy semaphore
-	int i;
-	for(i = 0; i < MAX_SEMAPHORES; i++) qSemLeave(g_semid, i);	// force to unlock every semaphores
-	if (qSemFree(g_semid) == false) {
-		LOG_WARN("Can't destroy semaphore.");
-	} else {
-		LOG_INFO("Semaphore destroied.");
-	}
+	// destroy mime
+  	if (mimeFree() == false) {
+  		LOG_WARN("Can't destroy mime types.");
+  	}
 
 	// destroy shared memory
 	if (poolFree() == false) {
@@ -298,10 +294,14 @@ void daemonEnd(int nStatus) {
 		LOG_INFO("Child management pool destroied.");
 	}
 
-	// destroy mime
-  	if (mimeFree() == false) {
-  		LOG_WARN("Can't destroy mime types.");
-  	}
+	// destroy semaphore
+	int i;
+	for(i = 0; i < MAX_SEMAPHORES; i++) qSemLeave(g_semid, i);	// force to unlock every semaphores
+	if (qSemFree(g_semid) == false) {
+		LOG_WARN("Can't destroy semaphore.");
+	} else {
+		LOG_INFO("Semaphore destroied.");
+	}
 
 	// remove pid file
 	if (qFileExist(g_conf.szPidfile) == true && unlink(g_conf.szPidfile) != 0) {
