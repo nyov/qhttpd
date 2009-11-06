@@ -218,7 +218,7 @@ void daemonStart(bool nDaemonize) {
 				for(i = 0; i < MAX_SEMAPHORES; i++) {
 					if(qSemCheck(g_semid, i) == true) {
 						nSemLockCnt[i]++;
-						if(nSemLockCnt[i] > MAX_MAX_SEMAPHORES_LOCK_SECS) {
+						if(nSemLockCnt[i] > MAX_SEMAPHORES_LOCK_SECS) {
 							LOG_ERR("Force to unlock semaphore no %d", i);
 							qSemLeave(g_semid, i);	// force to unlock
 							nSemLockCnt[i] = 0;
