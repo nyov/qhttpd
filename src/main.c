@@ -47,7 +47,7 @@ int	g_loglevel = 0;			// log level
  * @author Seung-young Kim
  */
 int main(int argc, char *argv[]) {
-	char szConfigFile[MAX_PATH_LEN];
+	char szConfigFile[PATH_MAX];
 	bool nDaemonize = true;
 
 #ifdef ENABLE_HOOK

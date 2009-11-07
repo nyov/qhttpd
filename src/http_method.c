@@ -40,7 +40,7 @@ int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
  * http method - GET
  */
 int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
-	char szFilePath[MAX_PATH_LEN];
+	char szFilePath[PATH_MAX];
 	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
 	return httpProcessGetNormalFile(req, res, szFilePath, mimeDetect(szFilePath));
 }
@@ -153,7 +153,7 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
  */
 int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
 	struct stat filestat;
-	char szFilePath[MAX_PATH_LEN];
+	char szFilePath[PATH_MAX];
 
 	// file path
 	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);

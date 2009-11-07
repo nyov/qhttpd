@@ -74,9 +74,7 @@
 
 #define MAX_LOGLEVEL				(4)
 
-#define	MAX_PATH_LEN				(1024)
-#define	MAX_FILEPATH_LENGTH			((1024*4)-1)
-#define	MAX_FILENAME_LENGTH			(256-1)
+#define URL_MAX					(PATH_MAX)
 #define LINEBUF_SIZE				(1024)
 
 //
@@ -109,16 +107,16 @@
 //
 
 typedef struct {
-	char	szConfigFile[MAX_PATH_LEN+1];
+	char	szConfigFile[PATH_MAX];
 
-	char	szRunDir[MAX_PATH_LEN+1];
-	char	szLogDir[MAX_PATH_LEN+1];
-	char	szDataDir[MAX_PATH_LEN+1];
-	char	szTmpDir[MAX_PATH_LEN+1];
+	char	szRunDir[PATH_MAX];
+	char	szLogDir[PATH_MAX];
+	char	szDataDir[PATH_MAX];
+	char	szTmpDir[PATH_MAX];
 
-	char	szMimeFile[MAX_PATH_LEN+1];
+	char	szMimeFile[PATH_MAX];
 
-	char	szPidfile[MAX_PATH_LEN+1];
+	char	szPidfile[PATH_MAX];
 	int	nPort;
 	int	nMaxpending;
 
@@ -136,7 +134,7 @@ typedef struct {
 	int	nResponseExpires;
 
 	bool	bEnableLua;
-	char	szLuaScript[MAX_PATH_LEN+1];
+	char	szLuaScript[PATH_MAX];
 
 	char	szErrorLog[64+1];
 	char	szAccessLog[64+1];
@@ -144,7 +142,7 @@ typedef struct {
 	int	nLogLevel;
 
 	bool	bStatusEnable;
-	char	szStatusUrl[MAX_PATH_LEN+1];
+	char	szStatusUrl[URL_MAX];
 } Config;
 
 //

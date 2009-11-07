@@ -421,14 +421,14 @@ void daemonSignalHandler(void) {
 
 static bool ignoreConnection(int nSockFd, long int nTimeoutMs) {
 	struct sockaddr_in connAddr;
-	int nConnLen = sizeof(connAddr);
+	socklen_t nConnLen = sizeof(connAddr);
 	int nNewSockFd;
 
 	// wait connection
         if(qSocketWaitReadable(nSockFd, nTimeoutMs) <= 0) return false;
 
 	// accept connection
-	if((nNewSockFd = accept(nSockFd, (struct sockaddr *) & connAddr, &nConnLen)) == -1) return false;
+	if((nNewSockFd = accept(nSockFd, (struct sockaddr *)&connAddr, &nConnLen)) == -1) return false;
 
 	// caughted connection
 	streamPrintf(nNewSockFd, "%s %d %s\r\n", HTTP_PROTOCOL_11, HTTP_RESCODE_SERVICE_UNAVAILABLE, httpResponseGetMsg(HTTP_RESCODE_SERVICE_UNAVAILABLE));

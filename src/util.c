@@ -69,17 +69,17 @@ float diffTimeval(struct timeval *t1, struct timeval *t0) {
 }
 
 /**
- * 경로가 정확한지 체크
+ * validate file path
  */
 bool isCorrectPath(const char *pszPath) {
 	if(pszPath == NULL) return false;
 
 	int nLen = strlen(pszPath);
-	if(nLen == 0 || nLen >= MAX_FILEPATH_LENGTH) return false;
+	if(nLen == 0 || nLen >= PATH_MAX) return false;
 	else if(pszPath[0] != '/') return false;
 	else if(strpbrk(pszPath, "\\:*?\"<>|") != NULL) return false;
 
-	// 슬래쉬로 구분되는 각 폴더명의 최대 길이 체크
+	// check folder name length
 	char *t;
 	int n;
 	for(n = 0, t = (char *)pszPath; *t != '\0'; t++) {
@@ -88,11 +88,11 @@ bool isCorrectPath(const char *pszPath) {
 			continue;
 		}
 
-		if(n == 0 && *t == '.') return false;	// 폴더명의 첫글자가 . 이면 오류
-		else if(n >= MAX_FILENAME_LENGTH) {
+		if(n >= FILENAME_MAX) {
 			DEBUG("Filename too long.");
 			return false;
 		}
+
 		n++;
 	}
 
