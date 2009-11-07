@@ -42,14 +42,14 @@ void daemonStart(bool nDaemonize) {
 	daemonSignalInit(daemonSignal);
 
 	// open log
-	g_errlog = qLogOpen(g_conf.szLogDir, g_conf.szErrorLog, g_conf.nLogRotate, true);
-	g_acclog = qLogOpen(g_conf.szLogDir, g_conf.szAccessLog, g_conf.nLogRotate, true);
+	g_errlog = qLog(g_conf.szErrorLog, g_conf.nLogRotate, true);
+	g_acclog = qLog(g_conf.szAccessLog, g_conf.nLogRotate, true);
 	if (g_errlog == NULL || g_acclog == NULL) {
 		printf("Can't open log file.\n");
 		daemonEnd(EXIT_FAILURE);
 	}
-	qLogSetConsole(g_errlog, true);
-	qLogSetConsole(g_acclog, false);
+	g_errlog->duplicate(g_errlog, stdout,  true);
+	g_acclog->duplicate(g_acclog, stdout, false);
 
 	LOG_INFO("Initializing %s...", PRG_NAME);
 
@@ -92,7 +92,7 @@ void daemonStart(bool nDaemonize) {
 	if (nDaemonize) {
 		LOG_INFO("Entering daemon mode.");
 		daemon(false, false); // after this line, parent's pid will be changed.
-		qLogSetConsole(g_errlog, false); // do not screen out any more
+		g_errlog->duplicate(g_errlog, stdout, false); // do not screen out any more
 	}
 
 	// save pid
@@ -312,8 +312,8 @@ void daemonEnd(int nStatus) {
 	LOG_SYS("%s Terminated.", PRG_NAME);
 
 	// close log
-	if(g_acclog != NULL) qLogClose(g_acclog);
-	if(g_errlog != NULL) qLogClose(g_errlog);
+	if(g_acclog != NULL) g_acclog->free(g_acclog);
+	if(g_errlog != NULL) g_errlog->free(g_errlog);
 
 	exit(nStatus);
 }

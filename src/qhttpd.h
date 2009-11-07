@@ -242,26 +242,26 @@ struct HttpResponse {
 		char _timestr[14+1];							\
 		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
 		if(log != NULL)								\
-			qLog(log, "%s(%d):" prestr fmt					\
+			log->writef(log, "%s(%d):" prestr fmt					\
 			, _timestr, getpid(), ##args);					\
 		else 									\
 			printf("%s(%d):" prestr fmt "\n"				\
 			, _timestr, getpid(), ##args);					\
 	}										\
-} while(false)
+} while(0)
 
 #define _LOG2(log, level, prestr, fmt, args...)	do {					\
 	if (g_loglevel >= level) {							\
 		char _timestr[14+1];							\
 		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
 		if(log != NULL)								\
-			qLog(log, "%s(%d):" prestr fmt " (%s:%d)"			\
+			log->writef(log, "%s(%d):" prestr fmt " (%s:%d)"			\
 			, _timestr, getpid(), ##args, __FILE__, __LINE__);		\
 		else									\
 			printf("%s(%d):" prestr fmt " (%s:%d)\n"			\
 			, _timestr, getpid(), ##args, __FILE__, __LINE__);		\
 	}										\
-} while(false)
+} while(0)
 
 #define LOG_SYS(fmt, args...)	_LOG(g_errlog, 0, " ", fmt, ##args)
 #define LOG_ERR(fmt, args...)	_LOG2(g_errlog, 1, " [ERROR] ", fmt, ##args)

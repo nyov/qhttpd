@@ -260,7 +260,7 @@ bool poolChildDel(int nPid) {
 
 	// clear rest of all
 	//poolInitSlot(nSlot);
-	m_pShm->child[nSlot].nPid = 0; // 세부 데이터의 크리어 여부는 재 사용시에 행함
+	m_pShm->child[nSlot].nPid = 0; // data cleaning will be executed at the time when it is reused.
 	m_pShm->nCurrentChilds--;
 
 	qSemLeave(g_semid, POOL_SEM_ID);
