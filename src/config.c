@@ -66,7 +66,7 @@ do {								\
  * @param pszFilePath	file path of egis.conf
  * @return true if successful otherwise returns false
  */
-bool loadConfig(Config *pConf, char *pszFilePath) {
+bool loadConfig(struct Config *pConf, char *pszFilePath) {
 	if (pszFilePath == NULL || !strcmp(pszFilePath, "")) {
 		return false;
 	}

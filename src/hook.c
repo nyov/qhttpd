@@ -35,7 +35,7 @@ bool hookBeforeMainInit(void) {
 	return true;
 }
 
-bool hookAfterConfigLoaded(void) {
+bool hookAfterConfigLoaded(struct Config *config, bool bConfigLoadSucceed) {
 	return true;
 }
 
@@ -43,6 +43,7 @@ bool hookAfterDaemonInit(void) {
 	return true;
 }
 
+// return : number of jobs did, in case of error return -1
 int hookWhileDaemonIdle(void) {
 	return 0;
 }
@@ -75,8 +76,8 @@ bool hookAfterConnEstablished(int nSockFd) {
 // request & response hooking
 //
 // 1. parse request.
-// 3.   hook> hookRequestHandler();
-// 2.    lua> luaRequestHandler();
+// 2.   hook> hookRequestHandler();
+// 3.    lua> luaRequestHandler();
 // 4. native request handler
 // 5.   hook> hookResponseHandler()
 // 6.    lua> luaResponseHandler()

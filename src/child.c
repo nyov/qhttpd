@@ -148,7 +148,7 @@ void childStart(int nSockFd) {
 			while(true) {
 				ssize_t nDummyRead = streamRead(szDummyBuf, nNewSockFd, sizeof(szDummyBuf), MAX_SHUTDOWN_WAIT);
 				if(nDummyRead <= 0) break;
-				DEBUG("Throw %d bytes from dummy input stream.", nDummyRead);
+				DEBUG("Throw %zu bytes from dummy input stream.", nDummyRead);
 			}
 		}
 		close(nNewSockFd);

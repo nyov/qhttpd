@@ -41,7 +41,7 @@ INCLUDE = -I./				\
 
 LIB	= -L/usr/local/lib
 
-OBJ	= main.o version.o config.o daemon.o child.o pool.o mime.o hook.o script.o \
+OBJ	= main.o version.o config.o daemon.o child.o pool.o mime.o script.o \
 	  http_main.o http_request.o http_response.o http_header.o http_method.o http_status.o http_accesslog.o \
 	  stream.o util.o
 
@@ -50,7 +50,8 @@ INCLUDE	+= ${QDECODER_INC}
 LIB	+= ${QDECODER_LIB}
 
 ## Enable hook
-DEFS	+= -DENABLE_HOOK
+#DEFS	+= -DENABLE_HOOK
+#OBJ	+= hook.o
 
 ## Lua script engine
 DEFS	+= -DENABLE_LUA

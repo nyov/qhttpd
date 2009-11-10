@@ -364,17 +364,19 @@ void daemonSignalHandler(void) {
 		sigdelset(&g_sigflags, SIGHUP);
 		LOG_INFO("Caughted SIGHUP");
 
-		// reload config
-		if(loadConfig(&g_conf, g_conf.szConfigFile) == false) {
-			LOG_ERR("Can't reload configuration file %s", g_conf.szConfigFile);
+		struct Config newconf;
+		memset((void*)&newconf, 0, sizeof(newconf));
+		bool bConfigLoadStatus = loadConfig(&newconf, g_conf.szConfigFile);
+#ifdef ENABLE_HOOK
+		bConfigLoadStatus = hookAfterConfigLoaded(&newconf, bConfigLoadStatus);
+#endif
+		if(bConfigLoadStatus == true) {
+			g_conf = newconf;
+			LOG_INFO("Configuration re-loaded.");
+		} else {
+			LOG_ERR("Can't reload configuration.");
 		}
 
-#ifdef ENABLE_HOOK
-		// config hook
-		if(hookAfterConfigLoaded() == false) {
-			LOG_ERR("Hook failed.");
-		}
-#endif
 		// reload mime
 		mimeFree();
 		if(mimeInit(g_conf.szMimeFile) == false) {

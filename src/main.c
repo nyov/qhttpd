@@ -28,14 +28,14 @@
 /////////////////////////////////////////////////////////////////////////
 // GLOBAL VARIABLES
 /////////////////////////////////////////////////////////////////////////
-bool	g_debug = false;		// debug message on/off flag
-sigset_t g_sigflags;			// signals received
+bool		g_debug = false;	// debug message on/off flag
+sigset_t	g_sigflags;		// signals received
 
-Config	g_conf;				// configuration structure
-int	g_semid = -1;			// semaphore id
-Q_LOG	*g_errlog = NULL;		// error log
-Q_LOG	*g_acclog = NULL;		// access log
-int	g_loglevel = 0;			// log level
+struct Config	g_conf;			// configuration structure
+int		g_semid = -1;		// semaphore id
+Q_LOG*		g_errlog = NULL;	// error log
+Q_LOG*		g_acclog = NULL;	// access log
+int		g_loglevel = 0;		// log level
 
 /////////////////////////////////////////////////////////////////////////
 // PUBLIC FUNCTIONS
@@ -99,19 +99,14 @@ int main(int argc, char *argv[]) {
 	}
 
 	// parse configuration
-	if (loadConfig(&g_conf, szConfigFile)) {
-		//fprintf(stderr, "Configuration loaded.\n");
-
+	memset((void*)&g_conf, 0, sizeof(g_conf));
+	bool bConfigLoadStatus = loadConfig(&g_conf, szConfigFile);
 #ifdef ENABLE_HOOK
-		// config hook
-		if(hookAfterConfigLoaded() == false) {
-			fprintf(stderr, "Hook failed.\n");
-			return EXIT_FAILURE;
-		}
+	bConfigLoadStatus = hookAfterConfigLoaded(&g_conf, bConfigLoadStatus);
 #endif
-	} else {
-		fprintf(stderr, "ERROR: Can't load configuration file '%s'.\n", szConfigFile);
-		fprintf(stderr, "       Missing configuration entry? Use '-d' option for more detail.\n");
+	if(bConfigLoadStatus == false) {
+		fprintf(stderr, "ERROR: Can't load configuration.\n");
+		fprintf(stderr, "       Use '-d' option to see more details.\n");
 		printUsages();
 		return EXIT_FAILURE;
 	}

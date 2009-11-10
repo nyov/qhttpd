@@ -106,7 +106,7 @@
 // CONFIGURATION STRUCTURES
 //
 
-typedef struct {
+struct Config {
 	char	szConfigFile[PATH_MAX];
 
 	char	szRunDir[PATH_MAX];
@@ -143,7 +143,7 @@ typedef struct {
 
 	bool	bStatusEnable;
 	char	szStatusUrl[URL_MAX];
-} Config;
+};
 
 //
 // SHARED STRUCTURES
@@ -268,6 +268,10 @@ struct HttpResponse {
 #define LOG_WARN(fmt, args...)	_LOG2(g_errlog, 2, " [WARN] ", fmt, ##args)
 #define LOG_INFO(fmt, args...)	_LOG(g_errlog, 3, " [INFO] ", fmt, ##args)
 
+#ifdef DEBUG
+#undef DEBUG
+#endif
+
 #ifdef BUILD_DEBUG
 #define DEBUG(fmt, args...)								\
 	do {										\
@@ -289,7 +293,7 @@ extern	void		printUsages(void);
 extern	void		printVersion(void);
 
 // config.c
-extern	bool		loadConfig(Config *pConf, char *pszFilePath);
+extern	bool		loadConfig(struct Config *pConf, char *pszFilePath);
 
 // daemon.c
 extern	void		daemonStart(bool nDaemonize);
@@ -410,7 +414,8 @@ extern	off_t		streamSendfile(int nSockFd, int nFd, off_t nOffset, off_t nSize);
 // hook.c
 #ifdef ENABLE_HOOK
 extern	bool		hookBeforeMainInit(void);
-extern	bool		hookAfterConfigLoaded(void);
+extern	bool		hookAfterConfigLoaded(struct Config *config, bool bConfigLoadSucceed);
+
 extern	bool		hookAfterDaemonInit(void);
 extern	int		hookWhileDaemonIdle(void);
 extern	bool		hookBeforeDaemonEnd(void);
@@ -441,12 +446,12 @@ extern	void		correctPath(char *pszPath);
 //
 // GLOBAL VARIABLES
 //
-extern bool	g_debug;
-extern Config	g_conf;
-extern int	g_semid;
-extern Q_LOG	*g_errlog;
-extern Q_LOG	*g_acclog;
-extern int	g_loglevel;
-extern sigset_t	g_sigflags;
+extern bool		g_debug;
+extern struct Config	g_conf;
+extern int		g_semid;
+extern Q_LOG*		g_errlog;
+extern Q_LOG*		g_acclog;
+extern int		g_loglevel;
+extern sigset_t		g_sigflags;
 
 #endif	// _QHTTPD_H
