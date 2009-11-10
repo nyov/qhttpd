@@ -31,7 +31,7 @@
 int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
 	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
 	httpHeaderSetStr(res->pHeaders, "Allow", "OPTIONS,GET,HEAD");
-	httpResponseSetContent(res, "httpd/unix-directory", 0, NULL);
+	httpResponseSetContent(res, "httpd/unix-directory", NULL, 0);
 
 	return HTTP_RESCODE_OK;
 }
@@ -114,7 +114,7 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 	//
 
 	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
-	httpResponseSetContent(res, pszContentType, nRangeSize, NULL);
+	httpResponseSetContent(res, pszContentType, NULL, nRangeSize);
 
 	httpHeaderSetStr(res->pHeaders, "Accept-Ranges", "bytes");
 	httpHeaderSetStrf(res->pHeaders, "Last-Modified", "%s", qTimeGetGmtStaticStr(filestat.st_mtime));

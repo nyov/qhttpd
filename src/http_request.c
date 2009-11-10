@@ -49,7 +49,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	req->nReqStatus = 0;
 	req->nContentsLength = -1;
 
-	req->pHeaders = qEntryInit();
+	req->pHeaders = qEntry();
 	if(req->pHeaders == NULL) return req;
 
 	//
@@ -232,7 +232,7 @@ bool httpRequestFree(struct HttpRequest *req) {
 	if(req->pszRequestPath != NULL) free(req->pszRequestPath);
 	if(req->pszQueryString != NULL) free(req->pszQueryString);
 
-	if(req->pHeaders != NULL) qEntryFree(req->pHeaders);
+	if(req->pHeaders != NULL) req->pHeaders->free(req->pHeaders);
 	if(req->pContents != NULL) free(req->pContents);
 	free(req);
 

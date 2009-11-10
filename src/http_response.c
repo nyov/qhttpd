@@ -35,7 +35,7 @@ struct HttpResponse *httpResponseCreate(void) {
 	// Response 구조체 초기화
 	memset((void *)res, 0, sizeof(struct HttpResponse));
 	res->bOut = false;
-	res->pHeaders = qEntryInit();
+	res->pHeaders = qEntry();
 	if(res->pHeaders == NULL) return NULL;
 
 	return res;
@@ -101,7 +101,7 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 	return true;
 }
 
-bool httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, off_t nContentLength, const char *pContent) {
+bool httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, const char *pContent, size_t nContentLength) {
 	// content-type
 	if(res->pszContentType != NULL) free(res->pszContentType);
 	res->pszContentType = (pszContentType != NULL) ? strdup(pszContentType) : NULL;
@@ -159,7 +159,7 @@ bool httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg) {
 	);
 	//szContent[sizeof(szContent)-1] = '\0';
 
-	return httpResponseSetContent(res, "text/html", strlen(szContent), szContent);
+	return httpResponseSetContent(res, "text/html", szContent, strlen(szContent));
 }
 
 /**
@@ -187,21 +187,25 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	httpHeaderSetStr(res->pHeaders, "Date", qTimeGetGmtStaticStr(0));
 
 	//
-	// 출력
+	// Print out
 	//
 
-	// 첫번째 라인은 응답 코드
+	// first line is response code
 	streamPrintf(nSockFd, "%s %d %s\r\n",
 		res->pszHttpVersion,
 		res->nResponseCode,
 		httpResponseGetMsg(res->nResponseCode)
 	);
 
-	// 기타 헤더 출력
-	const Q_NLOBJ *obj;
-	for (obj = qEntryFirst(res->pHeaders); obj; obj = qEntryNext(res->pHeaders)) {
-		streamPrintf(nSockFd, "%s: %s\r\n", obj->name, (char*)obj->object);
+	// print out headers
+	Q_ENTRY *tbl = res->pHeaders;
+	Q_NLOBJ_T obj;
+	memset((void*)&obj, 0, sizeof(obj)); // must be cleared before call
+	tbl->lock(tbl);
+	while(tbl->getNext(tbl, &obj, NULL, false) == true) {
+		streamPrintf(nSockFd, "%s: %s\r\n", obj.name, (char*)obj.data);
 	}
+	tbl->unlock(tbl);
 
 	// 헤더 끝. 공백 라인
 	streamPrintf(nSockFd, "\r\n");
@@ -236,7 +240,7 @@ void httpResponseFree(struct HttpResponse *res) {
 	if(res == NULL) return;
 
 	if(res->pszHttpVersion != NULL) free(res->pszHttpVersion);
-	if(res->pHeaders) qEntryFree(res->pHeaders);
+	if(res->pHeaders) res->pHeaders->free(res->pHeaders);
 	if(res->pszContentType != NULL) free(res->pszContentType);
 	if(res->pContent != NULL) free(res->pContent);
 	free(res);

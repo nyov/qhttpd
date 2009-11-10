@@ -307,7 +307,7 @@ static int lualib_response_setContent(lua_State *lua) {
 
 	const char *pszContent = lua_tostring(lua, -1); lua_pop(lua, 1);
 	const char *pszContentType = lua_tostring(lua, -1); lua_pop(lua, 1);
-	httpResponseSetContent(m_res, pszContentType, strlen(pszContent), pszContent);
+	httpResponseSetContent(m_res, pszContentType, pszContent, strlen(pszContent));
 
 	DEBUG("lualib_http_setContent: %s %s", pszContentType, pszContent);
 

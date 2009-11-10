@@ -26,16 +26,16 @@
 #include "qhttpd.h"
 
 const char *httpHeaderGetStr(Q_ENTRY *entries, const char *pszName) {
-	return (char*)qEntryGetStrCase(entries, pszName);
+	return (char*)entries->getStrCase(entries, pszName, false);
 }
 
 int httpHeaderGetInt(Q_ENTRY *entries, const char *pszName) {
-	return qEntryGetIntCase(entries, pszName);
+	return entries->getIntCase(entries, pszName);
 }
 
 bool httpHeaderSetStr(Q_ENTRY *entries, const char *pszName, const char *pszValue) {
-	if(pszValue != NULL) qEntryPutStr(entries, pszName, pszValue, true);
-	else qEntryRemove(entries, pszName);
+	if(pszValue != NULL) entries->putStr(entries, pszName, pszValue, true);
+	else entries->remove(entries, pszName);
 
 	return true;
 }
@@ -53,12 +53,12 @@ bool httpHeaderSetStrf(Q_ENTRY *entries, const char *pszName, const char *format
 }
 
 bool httpHeaderRemove(Q_ENTRY *entries, const char *pszName) {
-	if(qEntryRemove(entries, pszName) > 0) return true;
+	if(entries->remove(entries, pszName) > 0) return true;
 	return false;
 }
 
 bool httpHeaderHasStr(Q_ENTRY *entries, const char *pszName, const char *pszValue) {
-	const char *pszVal = qEntryGetStrCase(entries, pszName);
+	const char *pszVal = entries->getStrCase(entries, pszName, false);
 	if(pszVal == NULL) return false;
 
 	if(qStrCaseStr(pszVal, pszValue) != NULL) return true;

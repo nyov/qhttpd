@@ -42,7 +42,7 @@ bool mimeInit(const char *pszFilepath) {
 
 bool mimeFree(void) {
 	if(m_mimelist == NULL) return false;
-	qEntryFree(m_mimelist);
+	m_mimelist->free(m_mimelist);
 	m_mimelist = NULL;
 	return true;
 }
@@ -51,10 +51,10 @@ const char *mimeDetect(const char *pszFilename) {
 	if(pszFilename == NULL || m_mimelist == NULL) return DEF_MIME_TYPE;
 
 	char *pszExt = qFileGetExt(pszFilename);
-	char *pszMimetype = (char *)qEntryGetStrCase(m_mimelist, pszExt);
+	char *pszMimetype = (char *)m_mimelist->getStrCase(m_mimelist, pszExt, false);
 	free(pszExt);
 
-	if(pszMimetype == NULL) pszMimetype = (char*)qEntryGetStr(m_mimelist, DEF_MIME_ENTRY);
+	if(pszMimetype == NULL) pszMimetype = (char*)m_mimelist->getStr(m_mimelist, DEF_MIME_ENTRY, false);
 	if(pszMimetype == NULL) pszMimetype = DEF_MIME_TYPE;
 
 	return pszMimetype;

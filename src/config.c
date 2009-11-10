@@ -26,10 +26,10 @@
 #include "qhttpd.h"
 
 #define fetch2Str(e, d, n)	do {				\
-	const char *t = qEntryGetStr(e, n);			\
+	const char *t = e->getStr(e, n, false);			\
 	if(t == NULL) {						\
 		DEBUG("No such entry : %s", n);			\
-		qEntryFree(e);					\
+		e->free(e);					\
 		return false;					\
 	}							\
 	qStrCpy(d, sizeof(d), t, sizeof(d));			\
@@ -38,10 +38,10 @@
 
 #define fetch2Int(e, d, n)					\
 do {								\
-	const char *t = qEntryGetStr(e, n);			\
+	const char *t = e->getStr(e, n, false);			\
 	if(t == NULL) {						\
 		DEBUG("No such entry : %s", n);			\
-		qEntryFree(e);					\
+		e->free(e);					\
 		return false;					\
 	}							\
 	d = atoi(t);						\
@@ -49,10 +49,10 @@ do {								\
 
 #define fetch2Bool(e, d, n)					\
 do {								\
-	const char *t = qEntryGetStr(e, n);			\
+	const char *t = e->getStr(e, n, false);			\
 	if(t == NULL) {						\
 		DEBUG("No such entry : %s", n);			\
-		qEntryFree(e);					\
+		e->free(e);					\
 		return false;					\
 	}							\
 	d = (!strcasecmp(t, "YES") || !strcasecmp(t, "TRUE") || \
@@ -118,7 +118,7 @@ bool loadConfig(Config *pConf, char *pszFilePath) {
 	//
 	// free resources
 	//
-	qEntryFree(entry);
+	entry->free(entry);
 
 	return true;
 }

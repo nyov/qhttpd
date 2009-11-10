@@ -33,7 +33,7 @@ bool httpAccessLog(struct HttpRequest *req, struct HttpResponse *res) {
 	const char *pszAgent = httpHeaderGetStr(req->pHeaders, "USER-AGENT");
 	const char *pszLocation = httpHeaderGetStr(res->pHeaders, "LOCATION");
 
-	qLog(g_acclog, "%s - - [%s] \"%s http://%s%s %s\" %d %jd \"%s\" \"%s\" \"%s\"",
+	g_acclog->writef(g_acclog, "%s - - [%s] \"%s http://%s%s %s\" %d %jd \"%s\" \"%s\" \"%s\"",
 		poolGetConnAddr(),  qTimeGetLocalStaticStr(poolGetConnReqTime()),
 		req->pszRequestMethod, pszHost, req->pszRequestUri, req->pszHttpVersion,
 		res->nResponseCode, res->nContentLength,

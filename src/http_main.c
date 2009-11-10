@@ -174,8 +174,12 @@ int httpSpecialRequestHandler(struct HttpRequest *req, struct HttpResponse *res)
 		if(obHtml == NULL) return response500(req, res);
 
 		httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
-		httpResponseSetContent(res, "text/html; charset=\"utf-8\"", qObstackGetSize(obHtml), (char *)qObstackFinish(obHtml));
-		qObstackFree(obHtml);
+		size_t nHtmlSize = 0;
+		char *pszHtml = obHtml->getFinal(obHtml, &nHtmlSize);
+
+		httpResponseSetContent(res, "text/html; charset=\"utf-8\"", pszHtml, nHtmlSize);
+
+		obHtml->free(obHtml);
 
 		return HTTP_RESCODE_OK;
 	}
