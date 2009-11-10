@@ -43,8 +43,7 @@ unsigned int convIp2Uint(const char *szIp) {
 		else if (nTokenCnt == 2) nAddr += (unsigned int)(atoi(pszToken)) * 0x10000;
 		else if (nTokenCnt == 3) nAddr += (unsigned int)(atoi(pszToken)) * 0x100;
 		else if (nTokenCnt == 4) nAddr += (unsigned int)(atoi(pszToken));
-		else return -1;
-		// unsigned로 변경
+		else return 0;
 	}
 	if (nTokenCnt != 4) return 0;
 
@@ -100,17 +99,19 @@ bool isCorrectPath(const char *pszPath) {
 }
 
 /**
- * 경로 조정.
- * nsIsCorrectPath()를 한번 하고 호출한다는 전제
+ * Correting path
+ *
+ * @note
+ *    remove :  heading & tailing white spaces, double slashes, tailing slash
  */
 void correctPath(char *pszPath) {
-	// 공백 제거
+	// take off heading & tailing white spaces
 	qStrTrim(pszPath);
 
-	// 중복 슬래쉬 제거
+	// take off double slashes
 	while(strstr(pszPath, "//") != NULL) qStrReplace("sr", pszPath, "//", "/");
 
-	// 테일링 슬래쉬 제거
+	// take off tailing slash
 	int nLen = strlen(pszPath);
 	if(nLen <= 1) return;
 	if(pszPath[nLen - 1] == '/') pszPath[nLen - 1] = '\0';
