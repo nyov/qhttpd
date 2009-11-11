@@ -25,10 +25,14 @@
 
 #include "qhttpd.h"
 
+static int _httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, const char *pszFilePath, const char *pszContentType);
+
 /*
  * http method - OPTIONS
  */
 int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
+	if(g_conf.methods.bOptions == false) return response403(req, res);
+
 	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
 	httpHeaderSetStr(res->pHeaders, "Allow", "OPTIONS,GET,HEAD");
 	httpResponseSetContent(res, "httpd/unix-directory", NULL, 0);
@@ -37,15 +41,42 @@ int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
 }
 
 /*
+ * http method - HEAD
+ */
+int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
+	if(g_conf.methods.bHead == false) return response403(req, res);
+
+	struct stat filestat;
+	char szFilePath[PATH_MAX];
+
+	// file path
+	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
+
+	// file info
+	if (stat(szFilePath, &filestat) < 0) return response404(req, res);
+
+	// print out response
+	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
+
+	httpHeaderSetStr(res->pHeaders, "Accept-Ranges", "bytes");
+	httpHeaderSetStrf(res->pHeaders, "Last-Modified", "%s", qTimeGetGmtStaticStr(filestat.st_mtime));
+	//httpResponseSetHeaderf(res, "ETag", "\"%s\"", );
+
+	return HTTP_RESCODE_OK;
+}
+
+/*
  * http method - GET
  */
 int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
+	if(g_conf.methods.bGet == false) return response403(req, res);
+
 	char szFilePath[PATH_MAX];
 	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
-	return httpProcessGetNormalFile(req, res, szFilePath, mimeDetect(szFilePath));
+	return _httpProcessGetNormalFile(req, res, szFilePath, mimeDetect(szFilePath));
 }
 
-int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, const char *pszFilePath, const char *pszContentType) {
+static int _httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, const char *pszFilePath, const char *pszContentType) {
 	struct stat filestat;
 	int nFileFd = -1;
 	off_t nFilesize = 0;
@@ -149,26 +180,12 @@ int httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, 
 }
 
 /*
- * http method - HEAD
+ * http method - PUT
  */
-int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
-	struct stat filestat;
-	char szFilePath[PATH_MAX];
+int httpMethodPut(struct HttpRequest *req, struct HttpResponse *res) {
+	if(g_conf.methods.bPut == false) return response403(req, res);
 
-	// file path
-	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
-
-	// file info
-	if (stat(szFilePath, &filestat) < 0) return response404(req, res);
-
-	// print out response
-	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
-
-	httpHeaderSetStr(res->pHeaders, "Accept-Ranges", "bytes");
-	httpHeaderSetStrf(res->pHeaders, "Last-Modified", "%s", qTimeGetGmtStaticStr(filestat.st_mtime));
-	//httpResponseSetHeaderf(res, "ETag", "\"%s\"", );
-
-	return HTTP_RESCODE_OK;
+	return response501(req, res);
 }
 
 /*

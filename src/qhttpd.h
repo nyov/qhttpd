@@ -127,10 +127,18 @@ struct ServerConfig {
 	int	nMaxClients;
 	int	nMaxRequestsPerChild;
 
+	// AllowedMethods
+	char	szAllowedMethods[PATH_MAX];
+	struct {
+		bool bOptions;
+		bool bHead;
+		bool bGet;
+		bool bPut;
+	} methods;
+
 	bool	bKeepAliveEnable;
 	int	nConnectionTimeout;
 	bool	bIgnoreOverConnection;
-
 	int	nResponseExpires;
 
 	bool	bEnableLua;
@@ -139,8 +147,8 @@ struct ServerConfig {
 	bool	bStatusEnable;
 	char	szStatusUrl[URL_MAX];
 
-	char	szErrorLog[64+1];
-	char	szAccessLog[64+1];
+	char	szErrorLog[PATH_MAX];
+	char	szAccessLog[PATH_MAX];
 	int	nLogRotate;
 	int	nLogLevel;
 };
@@ -384,9 +392,9 @@ extern	bool		httpHeaderParseRange(const char *pszRangeHeader, off_t nFilesize, o
 
 // http_method.c
 extern	int		httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res);
-extern	int		httpMethodGet(struct HttpRequest *req, struct HttpResponse *res);
-extern	int		httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, const char *pszFilePath, const char *pszContentType);
 extern	int		httpMethodHead(struct HttpRequest *req, struct HttpResponse *res);
+extern	int		httpMethodGet(struct HttpRequest *req, struct HttpResponse *res);
+extern	int		httpMethodPut(struct HttpRequest *req, struct HttpResponse *res);
 extern	int		httpMethodNotImplemented(struct HttpRequest *req, struct HttpResponse *res);
 
 // http_status.c

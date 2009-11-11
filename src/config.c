@@ -32,7 +32,7 @@
 		e->free(e);					\
 		return false;					\
 	}							\
-	qStrCpy(d, sizeof(d), t, sizeof(d));			\
+	qStrCpy(d, sizeof(d), t);				\
 } while (false)
 
 
@@ -78,7 +78,7 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	}
 
 	// copy to structure
-	qStrCpy(pConf->szConfigFile, sizeof(pConf->szConfigFile), pszFilePath, sizeof(pConf->szConfigFile));
+	qStrCpy(pConf->szConfigFile, sizeof(pConf->szConfigFile), pszFilePath);
 
 	fetch2Str(entry, pConf->szRunDir, "qhttpd.RunDir");
 	fetch2Str(entry, pConf->szLogDir, "qhttpd.LogDir");
@@ -98,10 +98,17 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	fetch2Int(entry, pConf->nMaxClients, "qhttpd.MaxClients");
 	fetch2Int(entry, pConf->nMaxRequestsPerChild, "qhttpd.MaxRequestsPerChild");
 
+	fetch2Str(entry, pConf->szAllowedMethods, "qhttpd.AllowedMethods");
+	qStrUpper(pConf->szAllowedMethods);
+	if(!strcmp(pConf->szAllowedMethods, "ALL")) strncpy(pConf->szAllowedMethods, "OPTIONS,HEAD,GET,PUT", sizeof(pConf->szAllowedMethods));
+	if(strstr(pConf->szAllowedMethods, "OPTIONS") != NULL) pConf->methods.bOptions = true;
+	if(strstr(pConf->szAllowedMethods, "HEAD") != NULL) pConf->methods.bHead = true;
+	if(strstr(pConf->szAllowedMethods, "GET") != NULL) pConf->methods.bGet = true;
+	if(strstr(pConf->szAllowedMethods, "PUT") != NULL) pConf->methods.bPut = true;
+
 	fetch2Bool(entry, pConf->bKeepAliveEnable, "qhttpd.KeepAliveEnable");
 	fetch2Int(entry, pConf->nConnectionTimeout, "qhttpd.ConnectionTimeout");
 	fetch2Bool(entry, pConf->bIgnoreOverConnection, "qhttpd.IgnoreOverConnection");
-
 	fetch2Int(entry, pConf->nResponseExpires, "qhttpd.ResponseExpires");
 
 	fetch2Bool(entry, pConf->bEnableLua, "qhttpd.EnableLua");

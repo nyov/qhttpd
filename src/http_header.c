@@ -61,7 +61,7 @@ bool httpHeaderHasStr(Q_ENTRY *entries, const char *pszName, const char *pszValu
 	const char *pszVal = entries->getStrCase(entries, pszName, false);
 	if(pszVal == NULL) return false;
 
-	if(qStrCaseStr(pszVal, pszValue) != NULL) return true;
+	if(strcasestr(pszVal, pszValue) != NULL) return true;
 	return false;
 }
 
