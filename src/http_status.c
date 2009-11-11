@@ -39,7 +39,7 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 	obHtml->growStr(obHtml, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\r\n");
 	obHtml->growStr(obHtml, "<html>\r\n");
 	obHtml->growStr(obHtml, "<head>\r\n");
-	obHtml->growStrf(obHtml,"  <title>%s/%s Status</title>\r\n", PRG_NAME, PRG_VERSION);
+	obHtml->growStrf(obHtml,"  <title>%s/%s Status</title>\r\n", g_prgname, g_prgversion);
 	obHtml->growStr(obHtml, "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\r\n");
 	obHtml->growStr(obHtml, "  <style type=\"text/css\">\r\n");
 	obHtml->growStr(obHtml, "    body,td,th { font-size:14px; }\r\n");
@@ -49,9 +49,9 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 
 	char *pszCurrentTime = qTimeGetLocalStr(0);
 	char *pszStartTime = qTimeGetLocalStr(pShm->nStartTime);
-	obHtml->growStrf(obHtml,"<h1>%s/%s Status</h1>\r\n", PRG_NAME, PRG_VERSION);
+	obHtml->growStrf(obHtml,"<h1>%s/%s Status</h1>\r\n", g_prgname, g_prgversion);
 	obHtml->growStr(obHtml, "<dl>\r\n");
-	obHtml->growStrf(obHtml,"  <dt>Server Version: %s v%s (%s; %s; %s)</dt>\r\n", PRG_NAME, PRG_VERSION, __DATE__, __TIME__, pszBuildMode);
+	obHtml->growStrf(obHtml,"  <dt>Server Version: %s v%s (%s; %s; %s)</dt>\r\n", g_prgname, g_prgversion, __DATE__, __TIME__, pszBuildMode);
 	obHtml->growStrf(obHtml,"  <dt>Current Time: %s\r\n", pszCurrentTime);
 	obHtml->growStrf(obHtml,"  , Start Time: %s</dt>\r\n", pszStartTime);
 	obHtml->growStrf(obHtml,"  <dt>Total Connections : %d\r\n", pShm->nTotalConnected);
@@ -137,7 +137,7 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 	obHtml->growStr(obHtml, "</table>\r\n");
 
 	obHtml->growStr(obHtml, "<hr>\r\n");
-	obHtml->growStrf(obHtml,"%s v%s, %s\r\n", PRG_NAME, PRG_VERSION, PRG_INFO);
+	obHtml->growStrf(obHtml,"%s v%s, %s\r\n", g_prgname, g_prgversion, PRG_INFO);
 	obHtml->growStr(obHtml, "</body>\r\n");
 	obHtml->growStr(obHtml, "</html>\r\n");
 

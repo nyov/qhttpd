@@ -72,7 +72,7 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 
 	// default headers
 	httpHeaderSetStr(res->pHeaders, "Date", qTimeGetGmtStaticStr(0));
-	httpHeaderSetStrf(res->pHeaders, "Server", "%s/%s (%s)", PRG_NAME, PRG_VERSION, PRG_INFO);
+	httpHeaderSetStrf(res->pHeaders, "Server", "%s/%s (%s)", g_prgname, g_prgversion, g_prginfo);
 
 	// decide to turn on/off keep-alive
 	if(g_conf.bKeepAliveEnable == true && bKeepAlive == true) {
@@ -155,7 +155,7 @@ bool httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg) {
 		res->nResponseCode, httpResponseGetMsg(res->nResponseCode),
 		res->nResponseCode, httpResponseGetMsg(res->nResponseCode),
 		pszMsg,
-		PRG_INFO, PRG_NAME, PRG_VERSION
+		g_prginfo, g_prgname, g_prgversion
 	);
 	//szContent[sizeof(szContent)-1] = '\0';
 

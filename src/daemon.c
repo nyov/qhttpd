@@ -51,8 +51,6 @@ void daemonStart(bool nDaemonize) {
 	g_errlog->duplicate(g_errlog, stdout,  true);
 	g_acclog->duplicate(g_acclog, stdout, false);
 
-	LOG_INFO("Initializing %s...", PRG_NAME);
-
 	// load mime
 	if(mimeInit(g_conf.szMimeFile) == false) {
 		LOG_WARN("Can't load mimetypes from %s", g_conf.szMimeFile);
@@ -96,13 +94,13 @@ void daemonStart(bool nDaemonize) {
 	}
 
 	// save pid
-	if(qCountSave(g_conf.szPidfile, getpid()) == false) {
+	if(qCountSave(g_conf.szPidFile, getpid()) == false) {
 		LOG_ERR("Can't create pid file.");
 		daemonEnd(EXIT_FAILURE);
 	}
 
 	// init semaphore
-	if ((g_semid = qSemInit(g_conf.szPidfile, 's', MAX_SEMAPHORES, true)) < 0) {
+	if ((g_semid = qSemInit(g_conf.szPidFile, 's', MAX_SEMAPHORES, true)) < 0) {
 		LOG_ERR("Can't initialize semaphore.");
 		daemonEnd(EXIT_FAILURE);
 	}
@@ -124,13 +122,13 @@ void daemonStart(bool nDaemonize) {
 #endif
 
 	// listen
-	if (listen(nSockFd, g_conf.nMaxpending) == -1) {
+	if (listen(nSockFd, g_conf.nMaxPending) == -1) {
 		LOG_ERR("Can't listen port %d.", g_conf.nPort);
 		daemonEnd(EXIT_FAILURE);
 	}
 
 	// starting.
-	LOG_SYS("%s %s is ready on the port %d.", PRG_NAME, PRG_VERSION, g_conf.nPort);
+	LOG_SYS("%s %s is ready on the port %d.", g_prgname, g_prgversion, g_conf.nPort);
 
 	// prefork management
 	int nIgnoredConn = 0;
@@ -304,12 +302,12 @@ void daemonEnd(int nStatus) {
 	}
 
 	// remove pid file
-	if (qFileExist(g_conf.szPidfile) == true && unlink(g_conf.szPidfile) != 0) {
-		LOG_WARN("Can't remove pid file %s", g_conf.szPidfile);
+	if (qFileExist(g_conf.szPidFile) == true && unlink(g_conf.szPidFile) != 0) {
+		LOG_WARN("Can't remove pid file %s", g_conf.szPidFile);
 	}
 
 	// final
-	LOG_SYS("%s Terminated.", PRG_NAME);
+	LOG_SYS("%s Terminated.", g_prgname);
 
 	// close log
 	if(g_acclog != NULL) g_acclog->free(g_acclog);
@@ -364,7 +362,7 @@ void daemonSignalHandler(void) {
 		sigdelset(&g_sigflags, SIGHUP);
 		LOG_INFO("Caughted SIGHUP");
 
-		struct Config newconf;
+		struct ServerConfig newconf;
 		memset((void*)&newconf, 0, sizeof(newconf));
 		bool bConfigLoadStatus = loadConfig(&newconf, g_conf.szConfigFile);
 #ifdef ENABLE_HOOK

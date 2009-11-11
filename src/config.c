@@ -62,11 +62,11 @@ do {								\
 /**
  * configuration parser
  *
- * @param pConf		Config structure
+ * @param pConf		ServerConfig structure
  * @param pszFilePath	file path of egis.conf
  * @return true if successful otherwise returns false
  */
-bool loadConfig(struct Config *pConf, char *pszFilePath) {
+bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	if (pszFilePath == NULL || !strcmp(pszFilePath, "")) {
 		return false;
 	}
@@ -87,9 +87,9 @@ bool loadConfig(struct Config *pConf, char *pszFilePath) {
 
 	fetch2Str(entry, pConf->szMimeFile, "qhttpd.MimeFile");
 
-	fetch2Str(entry, pConf->szPidfile, "qhttpd.PidFile");
+	fetch2Str(entry, pConf->szPidFile, "qhttpd.PidFile");
 	fetch2Int(entry, pConf->nPort, "qhttpd.Port");
-	fetch2Int(entry, pConf->nMaxpending, "qhttpd.MaxPending");
+	fetch2Int(entry, pConf->nMaxPending, "qhttpd.MaxPending");
 
 	fetch2Int(entry, pConf->nStartServers, "qhttpd.StartServers");
 	fetch2Int(entry, pConf->nMinSpareServers, "qhttpd.MinSpareServers");
@@ -107,13 +107,13 @@ bool loadConfig(struct Config *pConf, char *pszFilePath) {
 	fetch2Bool(entry, pConf->bEnableLua, "qhttpd.EnableLua");
 	fetch2Str(entry, pConf->szLuaScript, "qhttpd.LuaScript");
 
+	fetch2Bool(entry, pConf->bStatusEnable, "qhttpd.StatusEnable");
+	fetch2Str(entry, pConf->szStatusUrl, "qhttpd.StatusUrl");
+
 	fetch2Str(entry, pConf->szErrorLog, "qhttpd.ErrorLog");
 	fetch2Str(entry, pConf->szAccessLog, "qhttpd.AccessLog");
 	fetch2Int(entry, pConf->nLogRotate, "qhttpd.LogRotate");
 	fetch2Int(entry, pConf->nLogLevel, "qhttpd.LogLevel");
-
-	fetch2Bool(entry, pConf->bStatusEnable, "qhttpd.StatusEnable");
-	fetch2Str(entry, pConf->szStatusUrl, "qhttpd.StatusUrl");
 
 	//
 	// free resources

@@ -27,7 +27,7 @@
 
 void printUsages(void) {
 	printVersion();
-	fprintf(stderr, "Usage: %s [-h] [-d] [-D] -c configfile\n", PRG_NAME);
+	fprintf(stderr, "Usage: %s [-h] [-d] [-D] -c configfile\n", g_prgname);
 	fprintf(stderr, "  -h		Display this help message and exit.\n");
 	fprintf(stderr, "  -v		Version info.\n");
 	fprintf(stderr, "  -d		Run as debugging mode.\n");
@@ -42,6 +42,6 @@ void printVersion(void) {
 #endif
 
 	fprintf(stderr, "%s v%s (%s; %s; %s)\n",
-	    PRG_NAME, PRG_VERSION, __DATE__, __TIME__,
+	    g_prgname, g_prgversion, __DATE__, __TIME__,
 	    pszBuildMode);
 }

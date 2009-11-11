@@ -28,10 +28,14 @@
 /////////////////////////////////////////////////////////////////////////
 // GLOBAL VARIABLES
 /////////////////////////////////////////////////////////////////////////
+char*		g_prginfo = PRG_INFO;
+char*		g_prgname = PRG_NAME;
+char*		g_prgversion = PRG_VERSION;
+
 bool		g_debug = false;	// debug message on/off flag
 sigset_t	g_sigflags;		// signals received
 
-struct Config	g_conf;			// configuration structure
+struct ServerConfig	g_conf;		// configuration structure
 int		g_semid = -1;		// semaphore id
 Q_LOG*		g_errlog = NULL;	// error log
 Q_LOG*		g_acclog = NULL;	// access log
@@ -107,13 +111,13 @@ int main(int argc, char *argv[]) {
 	if(bConfigLoadStatus == false) {
 		fprintf(stderr, "ERROR: Can't load configuration.\n");
 		fprintf(stderr, "       Use '-d' option to see more details.\n");
-		printUsages();
+		//printUsages();
 		return EXIT_FAILURE;
 	}
 
 	// check pid file
-	if(qFileExist(g_conf.szPidfile) == true) {
-		fprintf(stderr, "ERROR: pid file(%s) exists. already running?\n", g_conf.szPidfile);
+	if(qFileExist(g_conf.szPidFile) == true) {
+		fprintf(stderr, "ERROR: pid file(%s) exists. already running?\n", g_conf.szPidFile);
 		return EXIT_FAILURE;
 	}
 

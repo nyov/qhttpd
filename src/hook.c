@@ -32,10 +32,17 @@
 //
 
 bool hookBeforeMainInit(void) {
+
+	/*
+	g_prginfo = "PROGRAM_INFO"
+	g_prgname = "PROGRAM_NAME";
+	g_prgversion = "PROGRAM_VERSION";
+	*/
+
 	return true;
 }
 
-bool hookAfterConfigLoaded(struct Config *config, bool bConfigLoadSucceed) {
+bool hookAfterConfigLoaded(struct ServerConfig *config, bool bConfigLoadSucceed) {
 	return true;
 }
 

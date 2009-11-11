@@ -106,7 +106,7 @@
 // CONFIGURATION STRUCTURES
 //
 
-struct Config {
+struct ServerConfig {
 	char	szConfigFile[PATH_MAX];
 
 	char	szRunDir[PATH_MAX];
@@ -116,9 +116,9 @@ struct Config {
 
 	char	szMimeFile[PATH_MAX];
 
-	char	szPidfile[PATH_MAX];
+	char	szPidFile[PATH_MAX];
 	int	nPort;
-	int	nMaxpending;
+	int	nMaxPending;
 
 	int	nStartServers;
 	int	nMinSpareServers;
@@ -136,13 +136,13 @@ struct Config {
 	bool	bEnableLua;
 	char	szLuaScript[PATH_MAX];
 
+	bool	bStatusEnable;
+	char	szStatusUrl[URL_MAX];
+
 	char	szErrorLog[64+1];
 	char	szAccessLog[64+1];
 	int	nLogRotate;
 	int	nLogLevel;
-
-	bool	bStatusEnable;
-	char	szStatusUrl[URL_MAX];
 };
 
 //
@@ -293,7 +293,7 @@ extern	void		printUsages(void);
 extern	void		printVersion(void);
 
 // config.c
-extern	bool		loadConfig(struct Config *pConf, char *pszFilePath);
+extern	bool		loadConfig(struct ServerConfig *pConf, char *pszFilePath);
 
 // daemon.c
 extern	void		daemonStart(bool nDaemonize);
@@ -414,7 +414,7 @@ extern	off_t		streamSendfile(int nSockFd, int nFd, off_t nOffset, off_t nSize);
 // hook.c
 #ifdef ENABLE_HOOK
 extern	bool		hookBeforeMainInit(void);
-extern	bool		hookAfterConfigLoaded(struct Config *config, bool bConfigLoadSucceed);
+extern	bool		hookAfterConfigLoaded(struct ServerConfig *config, bool bConfigLoadSucceed);
 
 extern	bool		hookAfterDaemonInit(void);
 extern	int		hookWhileDaemonIdle(void);
@@ -446,12 +446,17 @@ extern	void		correctPath(char *pszPath);
 //
 // GLOBAL VARIABLES
 //
+extern char*		g_prginfo;
+extern char*		g_prgname;
+extern char*		g_prgversion;
+
 extern bool		g_debug;
-extern struct Config	g_conf;
+extern sigset_t		g_sigflags;
+
+extern struct ServerConfig	g_conf;
 extern int		g_semid;
 extern Q_LOG*		g_errlog;
 extern Q_LOG*		g_acclog;
 extern int		g_loglevel;
-extern sigset_t		g_sigflags;
 
 #endif	// _QHTTPD_H
