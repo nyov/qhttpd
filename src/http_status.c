@@ -137,7 +137,7 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 	obHtml->growStr(obHtml, "</table>\r\n");
 
 	obHtml->growStr(obHtml, "<hr>\r\n");
-	obHtml->growStrf(obHtml,"%s v%s, %s\r\n", g_prgname, g_prgversion, PRG_INFO);
+	obHtml->growStrf(obHtml,"%s v%s, %s\r\n", g_prgname, g_prgversion, g_prginfo);
 	obHtml->growStr(obHtml, "</body>\r\n");
 	obHtml->growStr(obHtml, "</html>\r\n");
 

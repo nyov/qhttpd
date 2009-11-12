@@ -127,7 +127,12 @@ struct ServerConfig {
 	int	nMaxClients;
 	int	nMaxRequestsPerChild;
 
-	// AllowedMethods
+	bool	bKeepAliveEnable;
+	int	nConnectionTimeout;
+	bool	bIgnoreOverConnection;
+	int	nResponseExpires;
+
+	// allowed methods
 	char	szAllowedMethods[PATH_MAX];
 	struct {
 		bool bOptions;
@@ -135,11 +140,6 @@ struct ServerConfig {
 		bool bGet;
 		bool bPut;
 	} methods;
-
-	bool	bKeepAliveEnable;
-	int	nConnectionTimeout;
-	bool	bIgnoreOverConnection;
-	int	nResponseExpires;
 
 	bool	bEnableLua;
 	char	szLuaScript[PATH_MAX];

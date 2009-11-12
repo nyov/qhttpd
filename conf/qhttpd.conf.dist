@@ -2,89 +2,97 @@
 ## qHttpd Setting
 ##
 
-qhttpd.BaseDir			= /usr/local/qhttpd
-qhttpd.BinDir			= ${qhttpd.BaseDir}/bin
-qhttpd.SbinDir			= ${qhttpd.BaseDir}/sbin
-qhttpd.RunDir			= ${qhttpd.BaseDir}/run
-qhttpd.LogDir			= ${qhttpd.BaseDir}/logs
-qhttpd.ConfDir			= ${qhttpd.BaseDir}/conf
-qhttpd.DataDir			= ${qhttpd.BaseDir}/htdocs
-qhttpd.TmpDir			= /tmp
+BaseDir			= /usr/local/qhttpd
+BinDir			= ${BaseDir}/bin
+SbinDir			= ${BaseDir}/sbin
+RunDir			= ${BaseDir}/run
+LogDir			= ${BaseDir}/logs
+ConfDir			= ${BaseDir}/conf
+DataDir			= ${BaseDir}/htdocs
+TmpDir			= /tmp
 
 ## the mimetype file
-qhttpd.MimeFile			= ${qhttpd.ConfDir}/mimetypes.conf
+MimeFile			= ${ConfDir}/mimetypes.conf
 
 ## the pid file which is recorded by egisdavd when it starts
-qhttpd.PidFile			= ${qhttpd.RunDir}/qhttpd.pid
+PidFile			= ${RunDir}/qhttpd.pid
 
 ## listening port
-qhttpd.Port			= 8080
+Port			= 8080
 
 ## number of connection queuing
-qhttpd.MaxPending		= 5
+MaxPending		= 5
 
 ## number of server processes to start
-qhttpd.StartServers		= 5
+StartServers		= 5
 
 ## minimum number of server processes which are kept spare
-qhttpd.MinSpareServers		= 3
+MinSpareServers		= 3
 
 ## maximum number of server processes which are kept spare
-qhttpd.MaxSpareServers		= 5
+MaxSpareServers		= 5
 
 ## maximum number of idle seconds
-qhttpd.MaxIdleSeconds		= 300
+MaxIdleSeconds		= 300
 
 ## maximum number of server processes allowed to start
-qhttpd.MaxClients		= 50
+MaxClients		= 50
 
 ## maximum number of requests a server process serves
-qhttpd.MaxRequestsPerChild	= 3000
+MaxRequestsPerChild	= 3000
 
 ## number of seconds to wait for the next request
-qhttpd.KeepAliveEnable		= YES
+KeepAliveEnable		= YES
 
 ## number of seconds before receives and sends time out.
-qhttpd.ConnectionTimeout	= 5
+ConnectionTimeout	= 5
 
 ## allows you to handle coming connections while maximum childs
 ## are reached and all childs are working. set to YES, then the
 ## coming connections will be closed immediately with to response
 ## 503 SERVICE_UNAVAILABLE, otherwise the coming connections will
 ## be pended and waiting the sequence.
-qhttpd.IgnoreOverConnection     = NO
+IgnoreOverConnection     = NO
 
 ##
 ## TTL Control
 ##
 
 ## number of seconds of contents expiration
-qhttpd.ResponseExpires		= 300
+ResponseExpires		= 300
+
+##
+## Allowed methods
+##
+
+## allowed methods, (ALL = OPTIONS,HEAD,GET,PUT,...)
+AllowedMethods		= ALL
+#AllowedMethods		= OPTIONS,HEAD,GET,PUT
 
 ##
 ## Lua Script Engine
 ##
-qhttpd.EnableLua		= NO
-qhttpd.LuaScript		= ${qhttpd.ConfDir}/qhttpd.lua
+EnableLua		= NO
+LuaScript		= ${ConfDir}/qhttpd.lua
+
+##
+## Server Status Setting
+##
+StatusEnable		= YES
+StatusUrl		= /qhttpd/server-status
 
 ##
 ## Log Setting
 ##
 
 ## error log format
-qhttpd.ErrorLog			= qhttpd-%Y%m%d.err
+ErrorLog			= qhttpd-%Y%m%d.err
 
 ## access log format
-qhttpd.AccessLog		= qhttpd-%Y%m%d.log
+AccessLog		= qhttpd-%Y%m%d.log
 
 ## number of seconds to rotate log
-qhttpd.LogRotate		= 86400
+LogRotate		= 86400
 
 ## log level, 0:SYSTEM, 1:ERROR, 2:WARNING, 3:INFO, 4:DEBUG
-qhttpd.LogLevel		= 2
-
-##
-## Server Status Setting
-##
-qhttpd.StatusEnable		= YES
-qhttpd.StatusUrl		= /qhttpd/server-status
+LogLevel		= 2

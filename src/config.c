@@ -80,25 +80,30 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	// copy to structure
 	qStrCpy(pConf->szConfigFile, sizeof(pConf->szConfigFile), pszFilePath);
 
-	fetch2Str(entry, pConf->szRunDir, "qhttpd.RunDir");
-	fetch2Str(entry, pConf->szLogDir, "qhttpd.LogDir");
-	fetch2Str(entry, pConf->szDataDir, "qhttpd.DataDir");
-	fetch2Str(entry, pConf->szTmpDir, "qhttpd.TmpDir");
+	fetch2Str(entry, pConf->szRunDir, "RunDir");
+	fetch2Str(entry, pConf->szLogDir, "LogDir");
+	fetch2Str(entry, pConf->szDataDir, "DataDir");
+	fetch2Str(entry, pConf->szTmpDir, "TmpDir");
 
-	fetch2Str(entry, pConf->szMimeFile, "qhttpd.MimeFile");
+	fetch2Str(entry, pConf->szMimeFile, "MimeFile");
 
-	fetch2Str(entry, pConf->szPidFile, "qhttpd.PidFile");
-	fetch2Int(entry, pConf->nPort, "qhttpd.Port");
-	fetch2Int(entry, pConf->nMaxPending, "qhttpd.MaxPending");
+	fetch2Str(entry, pConf->szPidFile, "PidFile");
+	fetch2Int(entry, pConf->nPort, "Port");
+	fetch2Int(entry, pConf->nMaxPending, "MaxPending");
 
-	fetch2Int(entry, pConf->nStartServers, "qhttpd.StartServers");
-	fetch2Int(entry, pConf->nMinSpareServers, "qhttpd.MinSpareServers");
-	fetch2Int(entry, pConf->nMaxSpareServers, "qhttpd.MaxSpareServers");
-	fetch2Int(entry, pConf->nMaxIdleSeconds, "qhttpd.MaxIdleSeconds");
-	fetch2Int(entry, pConf->nMaxClients, "qhttpd.MaxClients");
-	fetch2Int(entry, pConf->nMaxRequestsPerChild, "qhttpd.MaxRequestsPerChild");
+	fetch2Int(entry, pConf->nStartServers, "StartServers");
+	fetch2Int(entry, pConf->nMinSpareServers, "MinSpareServers");
+	fetch2Int(entry, pConf->nMaxSpareServers, "MaxSpareServers");
+	fetch2Int(entry, pConf->nMaxIdleSeconds, "MaxIdleSeconds");
+	fetch2Int(entry, pConf->nMaxClients, "MaxClients");
+	fetch2Int(entry, pConf->nMaxRequestsPerChild, "MaxRequestsPerChild");
 
-	fetch2Str(entry, pConf->szAllowedMethods, "qhttpd.AllowedMethods");
+	fetch2Bool(entry, pConf->bKeepAliveEnable, "KeepAliveEnable");
+	fetch2Int(entry, pConf->nConnectionTimeout, "ConnectionTimeout");
+	fetch2Bool(entry, pConf->bIgnoreOverConnection, "IgnoreOverConnection");
+	fetch2Int(entry, pConf->nResponseExpires, "ResponseExpires");
+
+	fetch2Str(entry, pConf->szAllowedMethods, "AllowedMethods");
 	qStrUpper(pConf->szAllowedMethods);
 	if(!strcmp(pConf->szAllowedMethods, "ALL")) strncpy(pConf->szAllowedMethods, "OPTIONS,HEAD,GET,PUT", sizeof(pConf->szAllowedMethods));
 	if(strstr(pConf->szAllowedMethods, "OPTIONS") != NULL) pConf->methods.bOptions = true;
@@ -106,21 +111,16 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	if(strstr(pConf->szAllowedMethods, "GET") != NULL) pConf->methods.bGet = true;
 	if(strstr(pConf->szAllowedMethods, "PUT") != NULL) pConf->methods.bPut = true;
 
-	fetch2Bool(entry, pConf->bKeepAliveEnable, "qhttpd.KeepAliveEnable");
-	fetch2Int(entry, pConf->nConnectionTimeout, "qhttpd.ConnectionTimeout");
-	fetch2Bool(entry, pConf->bIgnoreOverConnection, "qhttpd.IgnoreOverConnection");
-	fetch2Int(entry, pConf->nResponseExpires, "qhttpd.ResponseExpires");
+	fetch2Bool(entry, pConf->bEnableLua, "EnableLua");
+	fetch2Str(entry, pConf->szLuaScript, "LuaScript");
 
-	fetch2Bool(entry, pConf->bEnableLua, "qhttpd.EnableLua");
-	fetch2Str(entry, pConf->szLuaScript, "qhttpd.LuaScript");
+	fetch2Bool(entry, pConf->bStatusEnable, "StatusEnable");
+	fetch2Str(entry, pConf->szStatusUrl, "StatusUrl");
 
-	fetch2Bool(entry, pConf->bStatusEnable, "qhttpd.StatusEnable");
-	fetch2Str(entry, pConf->szStatusUrl, "qhttpd.StatusUrl");
-
-	fetch2Str(entry, pConf->szErrorLog, "qhttpd.ErrorLog");
-	fetch2Str(entry, pConf->szAccessLog, "qhttpd.AccessLog");
-	fetch2Int(entry, pConf->nLogRotate, "qhttpd.LogRotate");
-	fetch2Int(entry, pConf->nLogLevel, "qhttpd.LogLevel");
+	fetch2Str(entry, pConf->szErrorLog, "ErrorLog");
+	fetch2Str(entry, pConf->szAccessLog, "AccessLog");
+	fetch2Int(entry, pConf->nLogRotate, "LogRotate");
+	fetch2Int(entry, pConf->nLogLevel, "LogLevel");
 
 	//
 	// free resources
