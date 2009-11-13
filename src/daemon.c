@@ -28,6 +28,7 @@
 /////////////////////////////////////////////////////////////////////////
 // PRIVATE FUNCTION PROTOTYPES
 /////////////////////////////////////////////////////////////////////////
+static int m_nBindSockFd = -1;
 static bool ignoreConnection(int nSockFd, long int nTimeoutMs);
 
 /////////////////////////////////////////////////////////////////////////
@@ -35,9 +36,6 @@ static bool ignoreConnection(int nSockFd, long int nTimeoutMs);
 /////////////////////////////////////////////////////////////////////////
 
 void daemonStart(bool nDaemonize) {
-	int nSockFd = 0;
-	struct sockaddr_in svrAddr;     // server address information
-
 	// init signal
 	daemonSignalInit(daemonSignal);
 
@@ -68,18 +66,19 @@ void daemonStart(bool nDaemonize) {
 		if (so_reuseaddr > 0) setsockopt(nSockFd, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr, sizeof(so_reuseaddr));
 		if (so_sndbufsize > 0) setsockopt(nSockFd, SOL_SOCKET, SO_SNDBUF, &so_sndbufsize, sizeof(so_sndbufsize));
 		if (so_rcvbufsize > 0) setsockopt(nSockFd, SOL_SOCKET, SO_RCVBUF, &so_rcvbufsize, sizeof(so_rcvbufsize));
-
-		// set to non-block socket
-                fcntl(nSockFd, F_SETFL, O_NONBLOCK);
 	}
 
-	// set information
-	svrAddr.sin_family = AF_INET;         // host byte order
-	svrAddr.sin_port = htons(g_conf.nPort);  // short, network byte order
-	svrAddr.sin_addr.s_addr = INADDR_ANY; // auto-fill with my IP
-	memset((void *)&(svrAddr.sin_zero), 0, sizeof(svrAddr.sin_zero)); // zero the rest of the struct
+	// set to non-block socket
+	m_nBindSockFd = nSockFd; // store bind sock id
+	fcntl(nSockFd, F_SETFL, O_NONBLOCK);
 
 	// bind
+	struct sockaddr_in svrAddr;		// server address information
+	svrAddr.sin_family = AF_INET;		// host byte order
+	svrAddr.sin_port = htons(g_conf.nPort);	// short, network byte order
+	svrAddr.sin_addr.s_addr = INADDR_ANY;	// auto-fill with my IP
+	memset((void *)&(svrAddr.sin_zero), 0, sizeof(svrAddr.sin_zero)); // zero the rest of the struct
+
 	if (bind(nSockFd, (struct sockaddr *)&svrAddr, sizeof(struct sockaddr)) == -1) {
 		LOG_ERR("Can't bind port %d (errno: %d)", g_conf.nPort, errno);
 		daemonEnd(EXIT_FAILURE);
@@ -279,6 +278,12 @@ void daemonEnd(int nStatus) {
 		LOG_ERR("Hook failed.");
 	}
 #endif
+
+	// close bind sock
+	if(m_nBindSockFd >= 0) {
+		close(m_nBindSockFd);
+		m_nBindSockFd = -1;
+	}
 
 	// destroy mime
   	if (mimeFree() == false) {

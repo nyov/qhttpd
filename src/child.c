@@ -59,10 +59,6 @@ void childStart(int nSockFd) {
 
 	int nIdleCnt = 0;
         while (true) {
-                struct sockaddr_in connAddr;     // client address information
-                socklen_t nConnLen = sizeof(connAddr);
-                int nNewSockFd;
-
 		//
 		// 컨넥션 대기 영역
 		//
@@ -104,6 +100,10 @@ void childStart(int nSockFd) {
 
                 // new connection arrived
                 nIdleCnt = 0;
+
+                struct sockaddr_in connAddr;     // client address information
+                socklen_t nConnLen = sizeof(connAddr);
+                int nNewSockFd;
                 if ((nNewSockFd = accept(nSockFd, (struct sockaddr *)&connAddr, &nConnLen)) == -1) {
                         // 다른 프로세스에 의해 처리되었음
                         //DEBUG("I'm late...");
