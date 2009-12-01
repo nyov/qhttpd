@@ -49,12 +49,40 @@ void daemonStart(bool nDaemonize) {
 	g_errlog->duplicate(g_errlog, stdout,  true);
 	g_acclog->duplicate(g_acclog, stdout, false);
 
+	// entering daemon mode
+	if (nDaemonize) {
+		LOG_INFO("Entering daemon mode.");
+		daemon(false, false); // after this line, parent's pid will be changed.
+		g_errlog->duplicate(g_errlog, stdout, false); // do not screen out any more
+	}
+
+	// save pid
+	if(qCountSave(g_conf.szPidFile, getpid()) == false) {
+		LOG_ERR("Can't create pid file.");
+		daemonEnd(EXIT_FAILURE);
+	}
+
+	// init semaphore
+	if ((g_semid = qSemInit(g_conf.szPidFile, 's', MAX_SEMAPHORES, true)) < 0) {
+		LOG_ERR("Can't initialize semaphore.");
+		daemonEnd(EXIT_FAILURE);
+	}
+	LOG_INFO("  - Semaphore created.");
+
+	// init shared memory
+	if (poolInit(g_conf.nMaxClients) == false) {
+		LOG_ERR("Can't initialize child management pool.");
+		daemonEnd(EXIT_FAILURE);
+	}
+	LOG_INFO("  - Child management pool created.");
+
 	// load mime
 	if(mimeInit(g_conf.szMimeFile) == false) {
 		LOG_WARN("Can't load mimetypes from %s", g_conf.szMimeFile);
 	}
 
 	// init socket
+	int nSockFd;
 	if ((nSockFd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		LOG_ERR("Can't create socket.");
 		daemonEnd(EXIT_FAILURE);
@@ -85,32 +113,11 @@ void daemonStart(bool nDaemonize) {
 	}
 	LOG_INFO("  - Binding port %d succeed.", g_conf.nPort);
 
-	// entering daemon mode
-	if (nDaemonize) {
-		LOG_INFO("Entering daemon mode.");
-		daemon(false, false); // after this line, parent's pid will be changed.
-		g_errlog->duplicate(g_errlog, stdout, false); // do not screen out any more
-	}
-
-	// save pid
-	if(qCountSave(g_conf.szPidFile, getpid()) == false) {
-		LOG_ERR("Can't create pid file.");
+	// listen
+	if (listen(nSockFd, g_conf.nMaxPending) == -1) {
+		LOG_ERR("Can't listen port %d.", g_conf.nPort);
 		daemonEnd(EXIT_FAILURE);
 	}
-
-	// init semaphore
-	if ((g_semid = qSemInit(g_conf.szPidFile, 's', MAX_SEMAPHORES, true)) < 0) {
-		LOG_ERR("Can't initialize semaphore.");
-		daemonEnd(EXIT_FAILURE);
-	}
-	LOG_INFO("  - Semaphore created.");
-
-	// init shared memory
-	if (poolInit(g_conf.nMaxClients) == false) {
-		LOG_ERR("Can't initialize child management pool.");
-		daemonEnd(EXIT_FAILURE);
-	}
-	LOG_INFO("  - Child management pool created.");
 
 #ifdef ENABLE_HOOK
 	// after init hook
@@ -119,12 +126,6 @@ void daemonStart(bool nDaemonize) {
 		daemonEnd(EXIT_FAILURE);
 	}
 #endif
-
-	// listen
-	if (listen(nSockFd, g_conf.nMaxPending) == -1) {
-		LOG_ERR("Can't listen port %d.", g_conf.nPort);
-		daemonEnd(EXIT_FAILURE);
-	}
 
 	// starting.
 	LOG_SYS("%s %s is ready on the port %d.", g_prgname, g_prgversion, g_conf.nPort);
