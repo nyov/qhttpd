@@ -25,7 +25,7 @@
 
 #include "qhttpd.h"
 
-unsigned int convIp2Uint(const char *szIp) {
+unsigned int getIp2Uint(const char *szIp) {
 	char szBuf[15+1];
 	char *pszToken;
 	int nTokenCnt = 0;
@@ -50,7 +50,7 @@ unsigned int convIp2Uint(const char *szIp) {
 	return nAddr;
 }
 
-float diffTimeval(struct timeval *t1, struct timeval *t0) {
+float getDiffTimeval(struct timeval *t1, struct timeval *t0) {
 	struct timeval nowt;
 	float nDiff;
 
@@ -70,7 +70,7 @@ float diffTimeval(struct timeval *t1, struct timeval *t0) {
 /**
  * validate file path
  */
-bool isCorrectPath(const char *pszPath) {
+bool isValidPathname(const char *pszPath) {
 	if(pszPath == NULL) return false;
 
 	int nLen = strlen(pszPath);
@@ -104,7 +104,7 @@ bool isCorrectPath(const char *pszPath) {
  * @note
  *    remove :  heading & tailing white spaces, double slashes, tailing slash
  */
-void correctPath(char *pszPath) {
+void correctPathname(char *pszPath) {
 	// take off heading & tailing white spaces
 	qStrTrim(pszPath);
 

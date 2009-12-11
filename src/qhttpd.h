@@ -448,10 +448,10 @@ extern	bool		luaResponseHandler(struct HttpRequest *req, struct HttpResponse *re
 #endif
 
 // util.c
-extern	unsigned int	convIp2Uint(const char *szIp);
-extern	float		diffTimeval(struct timeval *t1, struct timeval *t0);
-extern	bool		isCorrectPath(const char *pszPath);
-extern	void		correctPath(char *pszPath);
+extern	unsigned int	getIp2Uint(const char *szIp);
+extern	float		getDiffTimeval(struct timeval *t1, struct timeval *t0);
+extern	bool		isValidPathname(const char *pszPath);
+extern	void		correctPathname(char *pszPath);
 
 //
 // GLOBAL VARIABLES

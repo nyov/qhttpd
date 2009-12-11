@@ -110,8 +110,8 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 		if(pShm->child[i].conn.nEndTime >= pShm->child[i].conn.nStartTime) nConnRuns = difftime(pShm->child[i].conn.nEndTime, pShm->child[i].conn.nStartTime);
 		else if(pShm->child[i].conn.nStartTime > 0) nConnRuns = difftime(time(NULL), pShm->child[i].conn.nStartTime);
 
-		if(pShm->child[i].conn.bRun == true) nReqRuns = diffTimeval(NULL, &pShm->child[i].conn.tvReqTime);
-		else nReqRuns = diffTimeval(&pShm->child[i].conn.tvResTime, &pShm->child[i].conn.tvReqTime);
+		if(pShm->child[i].conn.bRun == true) nReqRuns = getDiffTimeval(NULL, &pShm->child[i].conn.tvReqTime);
+		else nReqRuns = getDiffTimeval(&pShm->child[i].conn.tvResTime, &pShm->child[i].conn.tvReqTime);
 
 		char szTimeStr[sizeof(char) * (CONST_STRLEN("YYYYMMDDhhmmss")+1)];
 		obHtml->growStr(obHtml, "  <tr align=center>\r\n");

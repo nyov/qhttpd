@@ -317,7 +317,7 @@ bool poolSetConnInfo(int nSockFd) {
 
 	m_pShm->child[m_nMySlotId].conn.nSockFd = nSockFd;
 	qStrCpy(m_pShm->child[m_nMySlotId].conn.szAddr, sizeof(m_pShm->child[m_nMySlotId].conn.szAddr), inet_ntoa(sockAddr.sin_addr));
-	m_pShm->child[m_nMySlotId].conn.nAddr = convIp2Uint(m_pShm->child[m_nMySlotId].conn.szAddr);
+	m_pShm->child[m_nMySlotId].conn.nAddr = getIp2Uint(m_pShm->child[m_nMySlotId].conn.szAddr);
 	m_pShm->child[m_nMySlotId].conn.nPort = (int)sockAddr.sin_port; // int is more convenience to use
 
 	// set child info

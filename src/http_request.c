@@ -147,11 +147,11 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		qDecodeUrl(req->pszRequestPath);
 
 		// check path
-		if(isCorrectPath(req->pszRequestPath) == false) {
+		if(isValidPathname(req->pszRequestPath) == false) {
 			DEBUG("Invalid URI format : %s", req->pszRequestUri);
 			return req;
 		}
-		correctPath(req->pszRequestPath);
+		correctPathname(req->pszRequestPath);
 	}
 
 	// Parse parameter headers : "key: value"
