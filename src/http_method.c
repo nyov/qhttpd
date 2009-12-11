@@ -25,19 +25,17 @@
 
 #include "qhttpd.h"
 
-static int _httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, const char *pszFilePath, const char *pszContentType);
-
 /*
  * http method - OPTIONS
  */
 int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
 	if(g_conf.methods.bOptions == false) return response403(req, res);
 
-	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
-	httpHeaderSetStr(res->pHeaders, "Allow", "OPTIONS,GET,HEAD");
+	httpResponseSetCode(res, HTTP_CODE_OK, req, true);
+	httpHeaderSetStr(res->pHeaders, "Allow", g_conf.szAllowedMethods);
 	httpResponseSetContent(res, "httpd/unix-directory", NULL, 0);
 
-	return HTTP_RESCODE_OK;
+	return HTTP_CODE_OK;
 }
 
 /*
@@ -56,13 +54,13 @@ int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
 	if (stat(szFilePath, &filestat) < 0) return response404(req, res);
 
 	// print out response
-	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
+	httpResponseSetCode(res, HTTP_CODE_OK, req, true);
 
 	httpHeaderSetStr(res->pHeaders, "Accept-Ranges", "bytes");
 	httpHeaderSetStrf(res->pHeaders, "Last-Modified", "%s", qTimeGetGmtStaticStr(filestat.st_mtime));
 	//httpResponseSetHeaderf(res, "ETag", "\"%s\"", );
 
-	return HTTP_RESCODE_OK;
+	return HTTP_CODE_OK;
 }
 
 /*
@@ -71,48 +69,46 @@ int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
 int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
 	if(g_conf.methods.bGet == false) return response403(req, res);
 
-	char szFilePath[PATH_MAX];
-	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
-	return _httpProcessGetNormalFile(req, res, szFilePath, mimeDetect(szFilePath));
-}
-
-static int _httpProcessGetNormalFile(struct HttpRequest *req, struct HttpResponse *res, const char *pszFilePath, const char *pszContentType) {
-	struct stat filestat;
-	int nFileFd = -1;
-	off_t nFilesize = 0;
-
-	off_t nRangeOffset1, nRangeOffset2;
-	off_t nRangeSize;
-	bool bRangeRequest = false;
-
 	//
 	// file open section
 	//
 
+	// generate abs path
+	char szFilePath[PATH_MAX];
+	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
+
 	// open file
-	nFileFd = open(pszFilePath, O_RDONLY , 0);
-	if(nFileFd < 0) {
-		LOG_INFO("File open failed. %s", pszFilePath);
+	int nFd = open(szFilePath, O_RDONLY , 0);
+	if(nFd < 0) {
+		LOG_INFO("File open failed. %s", szFilePath);
 		return response404(req, res);
 	}
 
+	// send file
+	int nResCode = httpRealGet(req, res, nFd, mimeDetect(szFilePath));
+
+	// close file
+	close(nFd);
+
+	return nResCode;
+}
+
+int httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, const char *pszContentType) {
+
 	// get info
-	if (fstat(nFileFd, &filestat) < 0) {
-		LOG_INFO("File stat failed. %s", pszFilePath);
+	struct stat filestat;
+	if (fstat(nFd, &filestat) < 0) {
+		LOG_INFO("File %s stat failed.", req->pszRequestPath);
 		return response404(req, res);
 	}
 
 	// get size
-	nFilesize = (uint64_t)filestat.st_size;
+	off_t nFilesize = (uint64_t)filestat.st_size;
 
 	// is normal file
 	if(S_ISREG(filestat.st_mode) == 0) {
-		close(nFileFd);
 		return response403(req, res);
 	}
-
-	// close file
-	close(nFileFd);
 
 	//
 	// header handling section
@@ -128,6 +124,8 @@ static int _httpProcessGetNormalFile(struct HttpRequest *req, struct HttpRespons
 	}
 
 	// check Range header
+	off_t nRangeOffset1, nRangeOffset2, nRangeSize;
+	bool bRangeRequest = false;
 	const char *pszRange = httpHeaderGetStr(req->pHeaders, "RANGE");
 	if(pszRange != NULL) {
 		bRangeRequest = httpHeaderParseRange(pszRange, nFilesize, &nRangeOffset1, &nRangeOffset2, &nRangeSize);
@@ -144,7 +142,7 @@ static int _httpProcessGetNormalFile(struct HttpRequest *req, struct HttpRespons
 	// print out response headers
 	//
 
-	httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
+	httpResponseSetCode(res, HTTP_CODE_OK, req, true);
 	httpResponseSetContent(res, pszContentType, NULL, nRangeSize);
 
 	httpHeaderSetStr(res->pHeaders, "Accept-Ranges", "bytes");
@@ -166,17 +164,13 @@ static int _httpProcessGetNormalFile(struct HttpRequest *req, struct HttpRespons
 	// send file
 	//
 	if(nFilesize > 0) {
-		int nFd = open(pszFilePath, O_RDONLY , 0);
-		if(nFd >= 0) {
-			off_t nSent = streamSendfile(req->nSockFd, nFd, nRangeOffset1, nRangeSize);
-			close(nFd);
-			if(nSent != nRangeSize) {
-				LOG_INFO("Connection closed by foreign host. (%jd/%jd/%jd)", nSent, nRangeOffset1, nRangeSize);
-			}
+		off_t nSent = streamSendfile(req->nSockFd, nFd, nRangeOffset1, nRangeSize);
+		if(nSent != nRangeSize) {
+			LOG_INFO("Connection closed by foreign host. (%s/%jd/%jd/%jd)", req->pszRequestPath, nSent, nRangeOffset1, nRangeSize);
 		}
 	}
 
-	return HTTP_RESCODE_OK;
+	return HTTP_CODE_OK;
 }
 
 /*
@@ -184,8 +178,45 @@ static int _httpProcessGetNormalFile(struct HttpRequest *req, struct HttpRespons
  */
 int httpMethodPut(struct HttpRequest *req, struct HttpResponse *res) {
 	if(g_conf.methods.bPut == false) return response403(req, res);
+	if(req->nContentsLength < 0) return response405(req, res);
 
-	return response501(req, res);
+	// generate abs path
+	char szFilePath[PATH_MAX];
+	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
+
+	// open file for writing
+	int nFd = open(szFilePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	if(nFd < 0) {
+		return response403(req, res); // forbidden - can't open file
+	}
+
+	// receive file
+	int nResCode = httpRealPut(req, res, nFd);
+
+	// close file
+	close(nFd);
+
+	return nResCode;
+}
+
+int httpRealPut(struct HttpRequest *req, struct HttpResponse *res, int nFd) {
+	// header check
+	if(httpHeaderHasStr(req->pHeaders, "EXPECT", "100-CONTINUE") == true) {
+		streamPrintf(req->nSockFd, "%s %d %s\r\n", req->pszHttpVersion, HTTP_CODE_CONTINUE, httpResponseGetMsg(HTTP_CODE_CONTINUE));
+		streamPrintf(req->nSockFd, "\r\n");
+	}
+
+	// save
+	off_t nSaved = streamSave(nFd, req->nSockFd, req->nContentsLength, req->nTimeout*1000);
+
+	if(nSaved != req->nContentsLength) {
+		LOG_INFO("Broken pipe. %jd/%jd, errno=%d", nSaved, req->nContentsLength, errno);
+		return response400(req, res);
+	}
+	DEBUG("File %s saved. (%jd/%jd)", req->pszRequestPath, nSaved, req->nContentsLength);
+
+	// response
+	return response201(req, res);
 }
 
 /*

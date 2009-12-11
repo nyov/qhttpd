@@ -58,8 +58,8 @@ ssize_t streamRead(void *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs) {
  *		0 Å¸ÀÓ¾Æ¿ô½Ã
  *		-1 ¿¡·¯(¿¬°á ²÷±è µî)
  */
-ssize_t streamGets(char *pszStr, int nSockFd, size_t nSize, int nTimeoutMs) {
-	ssize_t nReaded = qSocketGets(pszStr, nSockFd, nSize, nTimeoutMs);
+ssize_t streamGets(char *pszStr, size_t nSize, int nSockFd, int nTimeoutMs) {
+	ssize_t nReaded = qSocketGets(pszStr, nSize, nSockFd, nTimeoutMs);
 	if(nReaded > 0) DEBUG("[RX] %s", pszStr);
 	return nReaded;
 }

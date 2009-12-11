@@ -53,7 +53,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	if(req->pHeaders == NULL) return req;
 
 	//
-	// 헤더 파싱
+	// Parse HTTP header
 	//
 
 	// Parse request line : "method uri protocol"
@@ -62,7 +62,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		char *pszReqMethod, *pszReqUri, *pszHttpVer, *pszTmp;
 
 		// read line
-		nStreamStatus = streamGets(szLineBuf, nSockFd, sizeof(szLineBuf), nTimeout*1000);
+		nStreamStatus = streamGets(szLineBuf, sizeof(szLineBuf), nSockFd, nTimeout*1000);
 		if(nStreamStatus == 0) { // timeout
 			req->nReqStatus = -1;
 			return req;
@@ -157,7 +157,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	// Parse parameter headers : "key: value"
 	while(true) {
 		// read line
-		if(streamGets(szLineBuf, nSockFd, sizeof(szLineBuf), nTimeout*1000) <= 0) return req;
+		if(streamGets(szLineBuf, sizeof(szLineBuf), nSockFd, nTimeout*1000) <= 0) return req;
 		if(strlen(szLineBuf) == 0) break; // detect line-feed
 
 		// separate :

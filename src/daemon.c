@@ -39,6 +39,9 @@ void daemonStart(bool nDaemonize) {
 	// init signal
 	daemonSignalInit(daemonSignal);
 
+	// set mask
+	umask(0);
+
 	// open log
 	g_errlog = qLog(g_conf.szErrorLog, g_conf.nLogRotate, true);
 	g_acclog = qLog(g_conf.szAccessLog, g_conf.nLogRotate, true);
@@ -437,7 +440,7 @@ static bool ignoreConnection(int nSockFd, long int nTimeoutMs) {
 	if((nNewSockFd = accept(nSockFd, (struct sockaddr *)&connAddr, &nConnLen)) == -1) return false;
 
 	// caughted connection
-	streamPrintf(nNewSockFd, "%s %d %s\r\n", HTTP_PROTOCOL_11, HTTP_RESCODE_SERVICE_UNAVAILABLE, httpResponseGetMsg(HTTP_RESCODE_SERVICE_UNAVAILABLE));
+	streamPrintf(nNewSockFd, "%s %d %s\r\n", HTTP_PROTOCOL_11, HTTP_CODE_SERVICE_UNAVAILABLE, httpResponseGetMsg(HTTP_CODE_SERVICE_UNAVAILABLE));
 	streamPrintf(nNewSockFd, "Content-Length: 0\r\n");
 	streamPrintf(nNewSockFd, "Connection: close\r\n");
 	streamPrintf(nNewSockFd, "\r\n");

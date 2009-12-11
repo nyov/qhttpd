@@ -248,22 +248,22 @@ void httpResponseFree(struct HttpResponse *res) {
 
 const char *httpResponseGetMsg(int nResCode) {
 	switch(nResCode) {
-		case HTTP_CONTINUE			: return "Continue";
-		case HTTP_RESCODE_OK			: return "Ok";
-		case HTTP_RESCODE_CREATED		: return "Created";
-		case HTTP_NO_CONTENT			: return "No content";
-		case HTTP_MULTI_STATUS			: return "Multi status";
-		case HTTP_RESCODE_MOVED_TEMPORARILY	: return "Moved temporarily";
-		case HTTP_RESCODE_NOT_MODIFIED		: return "Not modified";
-		case HTTP_RESCODE_BAD_REQUEST		: return "Bad request";
-		case HTTP_RESCODE_FORBIDDEN		: return "Forbidden";
-		case HTTP_RESCODE_NOT_FOUND		: return "Not found";
-		case HTTP_RESCODE_METHOD_NOT_ALLOWED	: return "Method not allowed";
-		case HTTP_RESCODE_REQUEST_TIME_OUT	: return "Request time out";
-		case HTTP_RESCODE_REQUEST_URI_TOO_LONG	: return "Request URI too long";
-		case HTTP_RESCODE_INTERNAL_SERVER_ERROR	: return "Internal server error";
-		case HTTP_RESCODE_NOT_IMPLEMENTED	: return "Not implemented";
-		case HTTP_RESCODE_SERVICE_UNAVAILABLE	: return "Service unavailable";
+		case HTTP_CODE_CONTINUE			: return "Continue";
+		case HTTP_CODE_OK			: return "Ok";
+		case HTTP_CODE_CREATED			: return "Created";
+		case HTTP_CODE_NO_CONTENT			: return "No content";
+		case HTTP_CODE_MULTI_STATUS			: return "Multi status";
+		case HTTP_CODE_MOVED_TEMPORARILY	: return "Moved temporarily";
+		case HTTP_CODE_NOT_MODIFIED		: return "Not modified";
+		case HTTP_CODE_BAD_REQUEST		: return "Bad request";
+		case HTTP_CODE_FORBIDDEN		: return "Forbidden";
+		case HTTP_CODE_NOT_FOUND		: return "Not found";
+		case HTTP_CODE_METHOD_NOT_ALLOWED	: return "Method not allowed";
+		case HTTP_CODE_REQUEST_TIME_OUT		: return "Request time out";
+		case HTTP_CODE_REQUEST_URI_TOO_LONG	: return "Request URI too long";
+		case HTTP_CODE_INTERNAL_SERVER_ERROR	: return "Internal server error";
+		case HTTP_CODE_NOT_IMPLEMENTED		: return "Not implemented";
+		case HTTP_CODE_SERVICE_UNAVAILABLE	: return "Service unavailable";
 		default : LOG_WARN("PLEASE DEFINE THE MESSAGE FOR %d RESPONSE", nResCode);
 	}
 	return "";

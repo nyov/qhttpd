@@ -105,7 +105,9 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 
 	fetch2Str(entry, pConf->szAllowedMethods, "AllowedMethods");
 	qStrUpper(pConf->szAllowedMethods);
-	if(!strcmp(pConf->szAllowedMethods, "ALL")) strncpy(pConf->szAllowedMethods, "OPTIONS,HEAD,GET,PUT", sizeof(pConf->szAllowedMethods));
+	if(!strcmp(pConf->szAllowedMethods, "ALL")) {
+		strncpy(pConf->szAllowedMethods, "OPTIONS,HEAD,GET,PUT", sizeof(pConf->szAllowedMethods));
+	}
 	if(strstr(pConf->szAllowedMethods, "OPTIONS") != NULL) pConf->methods.bOptions = true;
 	if(strstr(pConf->szAllowedMethods, "HEAD") != NULL) pConf->methods.bHead = true;
 	if(strstr(pConf->szAllowedMethods, "GET") != NULL) pConf->methods.bGet = true;

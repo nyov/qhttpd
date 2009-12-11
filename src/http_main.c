@@ -91,7 +91,7 @@ int httpMain(int nSockFd) {
 #endif
 				}
 			} else { // bad request
-				httpResponseSetCode(res, HTTP_RESCODE_BAD_REQUEST, req, false);
+				httpResponseSetCode(res, HTTP_CODE_BAD_REQUEST, req, false);
 				httpResponseSetContentHtml(res, "Your browser sent a request that this server could not understand.");
 			}
 
@@ -154,10 +154,12 @@ int httpRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
 	// native method handlers
 	if(!strcmp(req->pszRequestMethod, "OPTIONS")) {
 		nResCode = httpMethodOptions(req, res);
-	} else if(!strcmp(req->pszRequestMethod, "GET")) {
-		nResCode = httpMethodGet(req, res);
 	} else if(!strcmp(req->pszRequestMethod, "HEAD")) {
 		nResCode = httpMethodHead(req, res);
+	} else if(!strcmp(req->pszRequestMethod, "GET")) {
+		nResCode = httpMethodGet(req, res);
+	} else if(!strcmp(req->pszRequestMethod, "PUT")) {
+		nResCode = httpMethodPut(req, res);
 	} else {
 		nResCode = httpMethodNotImplemented(req, res);
 	}
@@ -173,7 +175,7 @@ int httpSpecialRequestHandler(struct HttpRequest *req, struct HttpResponse *res)
 		Q_OBSTACK *obHtml = httpGetStatusHtml();
 		if(obHtml == NULL) return response500(req, res);
 
-		httpResponseSetCode(res, HTTP_RESCODE_OK, req, true);
+		httpResponseSetCode(res, HTTP_CODE_OK, req, true);
 		size_t nHtmlSize = 0;
 		char *pszHtml = obHtml->getFinal(obHtml, &nHtmlSize);
 
@@ -181,7 +183,7 @@ int httpSpecialRequestHandler(struct HttpRequest *req, struct HttpResponse *res)
 
 		obHtml->free(obHtml);
 
-		return HTTP_RESCODE_OK;
+		return HTTP_CODE_OK;
 	}
 
 	return 0;

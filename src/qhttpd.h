@@ -81,22 +81,22 @@
 // HTTP RESPONSE CODES
 //
 #define HTTP_NO_RESPONSE			(0)
-#define HTTP_CONTINUE				(100)
-#define HTTP_RESCODE_OK				(200)
-#define HTTP_RESCODE_CREATED			(201)
-#define	HTTP_NO_CONTENT				(204)
-#define HTTP_MULTI_STATUS			(207)
-#define HTTP_RESCODE_MOVED_TEMPORARILY		(302)
-#define HTTP_RESCODE_NOT_MODIFIED		(304)
-#define HTTP_RESCODE_BAD_REQUEST		(400)
-#define HTTP_RESCODE_FORBIDDEN			(403)
-#define HTTP_RESCODE_NOT_FOUND			(404)
-#define HTTP_RESCODE_METHOD_NOT_ALLOWED		(405)
-#define HTTP_RESCODE_REQUEST_TIME_OUT		(408)
-#define HTTP_RESCODE_REQUEST_URI_TOO_LONG	(414)
-#define HTTP_RESCODE_INTERNAL_SERVER_ERROR	(500)
-#define HTTP_RESCODE_NOT_IMPLEMENTED		(501)
-#define HTTP_RESCODE_SERVICE_UNAVAILABLE	(503)
+#define HTTP_CODE_CONTINUE			(100)
+#define HTTP_CODE_OK				(200)
+#define HTTP_CODE_CREATED			(201)
+#define	HTTP_CODE_NO_CONTENT			(204)
+#define HTTP_CODE_MULTI_STATUS			(207)
+#define HTTP_CODE_MOVED_TEMPORARILY		(302)
+#define HTTP_CODE_NOT_MODIFIED			(304)
+#define HTTP_CODE_BAD_REQUEST			(400)
+#define HTTP_CODE_FORBIDDEN			(403)
+#define HTTP_CODE_NOT_FOUND			(404)
+#define HTTP_CODE_METHOD_NOT_ALLOWED		(405)
+#define HTTP_CODE_REQUEST_TIME_OUT		(408)
+#define HTTP_CODE_REQUEST_URI_TOO_LONG		(414)
+#define HTTP_CODE_INTERNAL_SERVER_ERROR		(500)
+#define HTTP_CODE_NOT_IMPLEMENTED		(501)
+#define HTTP_CODE_SERVICE_UNAVAILABLE		(503)
 
 #define	HTTP_PROTOCOL_09			"HTTP/0.9"
 #define	HTTP_PROTOCOL_10			"HTTP/1.0"
@@ -368,18 +368,18 @@ extern	int		httpResponseOutChunk(int nSockFd, const char *pszData, int nSize);
 extern	void		httpResponseFree(struct HttpResponse *res);
 extern	const char*	httpResponseGetMsg(int nResCode);
 
-#define response201(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_CREATED, true, httpResponseGetMsg(HTTP_RESCODE_CREATED));
-#define response204(req, res)	httpResponseSetSimple(req, res, HTTP_NO_CONTENT, true, NULL);
-#define response304(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_NOT_MODIFIED, true, NULL);
-#define response400(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_BAD_REQUEST, false, httpResponseGetMsg(HTTP_RESCODE_BAD_REQUEST))
-#define response403(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_FORBIDDEN, true, httpResponseGetMsg(HTTP_RESCODE_FORBIDDEN))
-#define response404(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_NOT_FOUND, true, httpResponseGetMsg(HTTP_RESCODE_NOT_FOUND))
-#define response404nc(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_NOT_FOUND, true, NULL)
-#define response405(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_METHOD_NOT_ALLOWED, true, httpResponseGetMsg(HTTP_RESCODE_METHOD_NOT_ALLOWED))
-#define response414(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_REQUEST_URI_TOO_LONG, true, httpResponseGetMsg(HTTP_RESCODE_REQUEST_URI_TOO_LONG))
-#define response500(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_INTERNAL_SERVER_ERROR, false, httpResponseGetMsg(HTTP_RESCODE_INTERNAL_SERVER_ERROR))
-#define response501(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_NOT_IMPLEMENTED, false, httpResponseGetMsg(HTTP_RESCODE_NOT_IMPLEMENTED))
-#define response503(req, res)	httpResponseSetSimple(req, res, HTTP_RESCODE_SERVICE_UNAVAILABLE, true, httpResponseGetMsg(HTTP_RESCODE_SERVICE_UNAVAILABLE))
+#define response201(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_CREATED, true, httpResponseGetMsg(HTTP_CODE_CREATED));
+#define response204(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_NO_CONTENT, true, NULL);
+#define response304(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_NOT_MODIFIED, true, NULL);
+#define response400(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_BAD_REQUEST, false, httpResponseGetMsg(HTTP_CODE_BAD_REQUEST))
+#define response403(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_FORBIDDEN, true, httpResponseGetMsg(HTTP_CODE_FORBIDDEN))
+#define response404(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_NOT_FOUND, true, httpResponseGetMsg(HTTP_CODE_NOT_FOUND))
+#define response404nc(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_NOT_FOUND, true, NULL)
+#define response405(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_METHOD_NOT_ALLOWED, true, httpResponseGetMsg(HTTP_CODE_METHOD_NOT_ALLOWED))
+#define response414(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_REQUEST_URI_TOO_LONG, true, httpResponseGetMsg(HTTP_CODE_REQUEST_URI_TOO_LONG))
+#define response500(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_INTERNAL_SERVER_ERROR, false, httpResponseGetMsg(HTTP_CODE_INTERNAL_SERVER_ERROR))
+#define response501(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_NOT_IMPLEMENTED, false, httpResponseGetMsg(HTTP_CODE_NOT_IMPLEMENTED))
+#define response503(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_SERVICE_UNAVAILABLE, true, httpResponseGetMsg(HTTP_CODE_SERVICE_UNAVAILABLE))
 
 // http_header.c
 extern	const char*	httpHeaderGetStr(Q_ENTRY *entries, const char *pszName);
@@ -394,7 +394,9 @@ extern	bool		httpHeaderParseRange(const char *pszRangeHeader, off_t nFilesize, o
 extern	int		httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res);
 extern	int		httpMethodHead(struct HttpRequest *req, struct HttpResponse *res);
 extern	int		httpMethodGet(struct HttpRequest *req, struct HttpResponse *res);
+extern	int		httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, const char *pszContentType);
 extern	int		httpMethodPut(struct HttpRequest *req, struct HttpResponse *res);
+extern	int		httpRealPut(struct HttpRequest *req, struct HttpResponse *res, int nFd);
 extern	int		httpMethodNotImplemented(struct HttpRequest *req, struct HttpResponse *res);
 
 // http_status.c
@@ -411,7 +413,7 @@ extern	const char*	mimeDetect(const char *pszFilename);
 // stream.c
 extern	int		streamWaitReadable(int nSockFd, int nTimeoutMs);
 extern	ssize_t		streamRead(void *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs);
-extern	ssize_t		streamGets(char *pszStr, int nSockFd, size_t nSize, int nTimeoutMs);
+extern	ssize_t		streamGets(char *pszStr, size_t nSize, int nSockFd, int nTimeoutMs);
 extern	ssize_t		streamGetb(char *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs);
 extern	ssize_t		streamPrintf(int nSockFd, const char *format, ...);
 extern	ssize_t		streamPuts(int nSockFd, const char *pszStr);
