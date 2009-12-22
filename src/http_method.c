@@ -90,16 +90,24 @@ int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
 	// close file
 	close(nFd);
 
+	// response
+	if(nResCode != HTTP_CODE_OK) {
+		httpResponseSetSimple(req, res, nResCode, true, httpResponseGetMsg(nResCode));
+	}
+
 	return nResCode;
 }
 
+/*
+ * returns supposed response status except HTTP_CODE_OK.
+ */
 int httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, const char *pszContentType) {
 
 	// get info
 	struct stat filestat;
 	if (fstat(nFd, &filestat) < 0) {
 		LOG_INFO("File %s stat failed.", req->pszRequestPath);
-		return response404(req, res);
+		return HTTP_CODE_NOT_FOUND;
 	}
 
 	// get size
@@ -107,7 +115,7 @@ int httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, cons
 
 	// is normal file
 	if(S_ISREG(filestat.st_mode) == 0) {
-		return response403(req, res);
+		return HTTP_CODE_FORBIDDEN;
 	}
 
 	//
@@ -119,7 +127,7 @@ int httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, cons
 	if(pszIfModifiedSince != NULL) {
 		time_t nUnivTime = qTimeParseGmtStr(pszIfModifiedSince);
 		if(nUnivTime >= 0 && nUnivTime > filestat.st_mtime) { // succeed to parsing header && file does not modified
-			return response304(req, res); // Not modified
+			return HTTP_CODE_NOT_MODIFIED;
 		}
 	}
 
@@ -196,9 +204,16 @@ int httpMethodPut(struct HttpRequest *req, struct HttpResponse *res) {
 	// close file
 	close(nFd);
 
+	// response
+	bool bKeepAlive = false;
+	if(nResCode == HTTP_CODE_CREATED) bKeepAlive = true;
+	httpResponseSetSimple(req, res, nResCode, bKeepAlive, httpResponseGetMsg(nResCode));
 	return nResCode;
 }
 
+/*
+ * Only return supposed response status, does not generate response message
+ */
 int httpRealPut(struct HttpRequest *req, struct HttpResponse *res, int nFd) {
 	// header check
 	if(httpHeaderHasStr(req->pHeaders, "EXPECT", "100-CONTINUE") == true) {
@@ -211,12 +226,12 @@ int httpRealPut(struct HttpRequest *req, struct HttpResponse *res, int nFd) {
 
 	if(nSaved != req->nContentsLength) {
 		LOG_INFO("Broken pipe. %jd/%jd, errno=%d", nSaved, req->nContentsLength, errno);
-		return response400(req, res);
+		return HTTP_CODE_BAD_REQUEST;
 	}
 	DEBUG("File %s saved. (%jd/%jd)", req->pszRequestPath, nSaved, req->nContentsLength);
 
 	// response
-	return response201(req, res);
+	return HTTP_CODE_CREATED;
 }
 
 /*
