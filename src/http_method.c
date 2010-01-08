@@ -172,7 +172,11 @@ int httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, cons
 	// send file
 	//
 	if(nFilesize > 0) {
-		off_t nSent = streamSendfile(req->nSockFd, nFd, nRangeOffset1, nRangeSize);
+		if(nRangeOffset1 > 0) {
+			lseek(nFd, nRangeOffset1, SEEK_SET);
+		}
+
+		off_t nSent = streamSend(req->nSockFd, nFd, nRangeSize);
 		if(nSent != nRangeSize) {
 			LOG_INFO("Connection closed by foreign host. (%s/%jd/%jd/%jd)", req->pszRequestPath, nSent, nRangeOffset1, nRangeSize);
 		}

@@ -434,7 +434,7 @@ static bool ignoreConnection(int nSockFd, long int nTimeoutMs) {
 	int nNewSockFd;
 
 	// wait connection
-        if(qSocketWaitReadable(nSockFd, nTimeoutMs) <= 0) return false;
+        if(qIoWaitReadable(nSockFd, nTimeoutMs) <= 0) return false;
 
 	// accept connection
 	if((nNewSockFd = accept(nSockFd, (struct sockaddr *)&connAddr, &nConnLen)) == -1) return false;

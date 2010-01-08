@@ -74,21 +74,25 @@ int httpMain(int nSockFd) {
 			if(req->nReqStatus > 0) {
 				int nResCode = 0;
 
+				// check if the request is for server status page
+				nResCode = httpSpecialRequestHandler(req, res);
+
 #ifdef ENABLE_LUA
-				if(g_conf.bEnableLua == true) {
+				if(nResCode == 0 && g_conf.bEnableLua == true) { // if response does not set
 					nResCode = luaRequestHandler(req, res);
 				}
 #endif
+#ifdef ENABLE_HOOK
 				if(nResCode == 0) { // if response does not set
-#ifdef ENABLE_HOOK
 					nResCode = hookRequestHandler(req, res);
-					if(nResCode == 0) { // if nothing done, call native handler
+				}
 #endif
-						nResCode =  httpRequestHandler(req, res);
-						if(nResCode == 0) LOG_ERR("An error occured while processing method.");
-#ifdef ENABLE_HOOK
-					}
-#endif
+				if(nResCode == 0) { // if nothing done, call native handler
+					nResCode =  httpRequestHandler(req, res);
+				}
+
+				if(nResCode == 0) {
+					LOG_ERR("An error occured while processing method.");
 				}
 			} else { // bad request
 				httpResponseSetCode(res, HTTP_CODE_BAD_REQUEST, req, false);
@@ -147,11 +151,8 @@ int httpMain(int nSockFd) {
 int httpRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
 	if(req == NULL || res == NULL) return 0;
 
-	// check if the request is for server status page
-	int nResCode = httpSpecialRequestHandler(req, res);
-	if(nResCode != 0) return nResCode;
-
 	// native method handlers
+	int nResCode = 0;
 	if(!strcmp(req->pszRequestMethod, "OPTIONS")) {
 		nResCode = httpMethodOptions(req, res);
 	} else if(!strcmp(req->pszRequestMethod, "HEAD")) {

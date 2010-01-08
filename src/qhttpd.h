@@ -419,7 +419,7 @@ extern	ssize_t		streamPrintf(int nSockFd, const char *format, ...);
 extern	ssize_t		streamPuts(int nSockFd, const char *pszStr);
 extern	ssize_t		streamWrite(int nSockFd, const void *pszBuffer, size_t nSize);
 extern	off_t		streamSave(int nFd, int nSockFd, off_t nSize, int nTimeoutMs);
-extern	off_t		streamSendfile(int nSockFd, int nFd, off_t nOffset, off_t nSize);
+extern	off_t		streamSend(int nSockFd, int nFd, off_t nSize);
 
 // hook.c
 #ifdef ENABLE_HOOK

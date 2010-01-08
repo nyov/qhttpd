@@ -64,7 +64,7 @@ void childStart(int nSockFd) {
 		//
 
                 // wait connection
-		int nStatus = qSocketWaitReadable(nSockFd, 1000); // wait 1 sec
+		int nStatus = qIoWaitReadable(nSockFd, 1000); // wait 1 sec
 		if(nStatus < 0) break;
                 else if(nStatus == 0) {
                         //
