@@ -401,6 +401,7 @@ extern	int		httpMethodGet(struct HttpRequest *req, struct HttpResponse *res);
 extern	int		httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, const char *pszContentType);
 extern	int		httpMethodPut(struct HttpRequest *req, struct HttpResponse *res);
 extern	int		httpRealPut(struct HttpRequest *req, struct HttpResponse *res, int nFd);
+extern	int		httpMethodDelete(struct HttpRequest *req, struct HttpResponse *res);
 extern	int		httpMethodNotImplemented(struct HttpRequest *req, struct HttpResponse *res);
 
 // http_status.c

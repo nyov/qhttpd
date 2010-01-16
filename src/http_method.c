@@ -238,7 +238,7 @@ int httpRealPut(struct HttpRequest *req, struct HttpResponse *res, int nFd) {
 }
 
 /*
- * http(WebDAV) method - DELETE
+ * extended HTTP method - DELETE
  */
 int httpMethodDelete(struct HttpRequest *req, struct HttpResponse *res) {
 	if(g_conf.methods.bDelete == false) return response403(req, res);
@@ -253,7 +253,7 @@ int httpMethodDelete(struct HttpRequest *req, struct HttpResponse *res) {
 
 	// remove
 	if(S_ISDIR(filestat.st_mode)) {
-		if(rmdir(szFilePath) != 0)) {
+		if(rmdir(szFilePath) != 0) {
 			return response403(req, res);
 		}
 	} else {

@@ -161,6 +161,8 @@ int httpRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
 		nResCode = httpMethodGet(req, res);
 	} else if(!strcmp(req->pszRequestMethod, "PUT")) {
 		nResCode = httpMethodPut(req, res);
+	} else if(!strcmp(req->pszRequestMethod, "DELETE")) {
+		nResCode = httpMethodDelete(req, res);
 	} else {
 		nResCode = httpMethodNotImplemented(req, res);
 	}
