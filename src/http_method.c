@@ -249,7 +249,9 @@ int httpMethodDelete(struct HttpRequest *req, struct HttpResponse *res) {
 
 	// file info
 	struct stat filestat;
-	if (stat(szFilePath, &filestat) < 0) return response404(req, res);
+	if (stat(szFilePath, &filestat) < 0) {
+		return response404(req, res);
+	}
 
 	// remove
 	if(S_ISDIR(filestat.st_mode)) {
