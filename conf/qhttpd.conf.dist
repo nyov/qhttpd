@@ -63,11 +63,13 @@ ResponseExpires		= 300
 
 ##
 ## Allowed methods
+##   HTTP methods     : OPTIONS,HEAD,GET,PUT
+##   Extended methods : DELETE
+##   "ALL" for HTTP + Extended methods
 ##
-
-## allowed methods, (ALL = OPTIONS,HEAD,GET,PUT,...)
 AllowedMethods		= ALL
-#AllowedMethods		= OPTIONS,HEAD,GET,PUT
+#AllowedMethods		= OPTIONS,HEAD,GET
+#AllowedMethods		= OPTIONS,HEAD,GET,PUT,DELETE
 
 ##
 ## Lua Script Engine

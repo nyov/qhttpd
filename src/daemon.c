@@ -54,9 +54,9 @@ void daemonStart(bool nDaemonize) {
 
 	// entering daemon mode
 	if (nDaemonize) {
-		LOG_INFO("Entering daemon mode.");
 		daemon(false, false); // after this line, parent's pid will be changed.
 		g_errlog->duplicate(g_errlog, stdout, false); // do not screen out any more
+		LOG_INFO("Entering daemon mode.");
 	}
 
 	// save pid

@@ -135,10 +135,14 @@ struct ServerConfig {
 	// allowed methods
 	char	szAllowedMethods[PATH_MAX];
 	struct {
+		// HTTP methods
 		bool bOptions;
 		bool bHead;
 		bool bGet;
 		bool bPut;
+
+		// extended methods
+		bool bDelete;
 	} methods;
 
 	bool	bEnableLua;

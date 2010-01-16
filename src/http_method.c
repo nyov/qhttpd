@@ -44,13 +44,12 @@ int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
 int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
 	if(g_conf.methods.bHead == false) return response403(req, res);
 
-	struct stat filestat;
-	char szFilePath[PATH_MAX];
-
 	// file path
+	char szFilePath[PATH_MAX];
 	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
 
 	// file info
+	struct stat filestat;
 	if (stat(szFilePath, &filestat) < 0) return response404(req, res);
 
 	// print out response
@@ -236,6 +235,34 @@ int httpRealPut(struct HttpRequest *req, struct HttpResponse *res, int nFd) {
 
 	// response
 	return HTTP_CODE_CREATED;
+}
+
+/*
+ * http(WebDAV) method - DELETE
+ */
+int httpMethodDelete(struct HttpRequest *req, struct HttpResponse *res) {
+	if(g_conf.methods.bDelete == false) return response403(req, res);
+
+	// file path
+	char szFilePath[PATH_MAX];
+	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
+
+	// file info
+	struct stat filestat;
+	if (stat(szFilePath, &filestat) < 0) return response404(req, res);
+
+	// remove
+	if(S_ISDIR(filestat.st_mode)) {
+		if(rmdir(szFilePath) != 0)) {
+			return response403(req, res);
+		}
+	} else {
+		if(unlink(szFilePath) != 0) {
+			return response403(req, res);
+		}
+	}
+
+	return response204(req, res); // no contents
 }
 
 /*
