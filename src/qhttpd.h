@@ -64,13 +64,13 @@
 
 #define MAX_CHILDS				(256)
 #define MAX_SEMAPHORES				(1+2)
-#define MAX_SEMAPHORES_LOCK_SECS		(10)		// maximum secondes which semaphores can be locked
+#define MAX_SEMAPHORES_LOCK_SECS		(10)		// maximum secondes that semaphores can hold lock in
 
-#define MAX_HTTP_MEMORY_CONTENTS		(1024*1024)	// if the contents size is less than this, do not use temporary file
+#define MAX_HTTP_MEMORY_CONTENTS		(1024*1024)	// if the contents size is less than this, handle it in memory otherwise it will be stored in a temporary file
 #define	MAX_SHUTDOWN_WAIT			(5000)		// maximum ms for waiting input stream after socket shutdown
 #define	MAX_LINGER_TIMEOUT			(15)
 
-#define	MAX_USERCOUNTER				(10)		// amount of custom counter in shared memory for customizing purpose
+#define	MAX_USERCOUNTER				(10)		// amount of custom counters in shared memory for 3rd party customizing purpose
 
 #define MAX_LOGLEVEL				(4)
 
