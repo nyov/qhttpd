@@ -59,6 +59,12 @@ DEFS	+= -DENABLE_LUA
 INCLUDE	+= ${LUA_INC}
 LIB	+= ${LUA_LIB}
 
+## For release build
+ifeq ($(BUILD), debug)
+	CFLAGS += -g -O
+	DEFS   += -DBUILD_DEBUG
+endif
+
 ## Make Library
 all:	qhttpd
 
@@ -68,7 +74,7 @@ qhttpd: ${OBJ}
 reall: clean all
 
 debug:
-	$(MAKE) CFLAGS="-Wall -g -O" DEFS_CT="-DBUILD_DEBUG"
+	$(MAKE) BUILD="debug"
 
 install: all
 	install -m 0755 qhttpd ../bin/

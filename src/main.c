@@ -111,6 +111,7 @@ int main(int argc, char *argv[]) {
 	if(bConfigLoadStatus == false) {
 		fprintf(stderr, "ERROR: Can't load configuration.\n");
 		fprintf(stderr, "       Use '-d' option to see more details.\n");
+		fprintf(stderr, "       Use '-h' option for help messages.\n");
 		//printUsages();
 		return EXIT_FAILURE;
 	}
