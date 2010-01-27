@@ -36,7 +36,7 @@ bool httpAccessLog(struct HttpRequest *req, struct HttpResponse *res) {
 	g_acclog->writef(g_acclog, "%s - - [%s] \"%s http://%s%s %s\" %d %jd \"%s\" \"%s\" \"%s\"",
 		poolGetConnAddr(),  qTimeGetLocalStaticStr(poolGetConnReqTime()),
 		req->pszRequestMethod, pszHost, req->pszRequestUri, req->pszHttpVersion,
-		res->nResponseCode, res->nContentLength,
+		res->nResponseCode, res->nContentsLength,
 		(pszReferer != NULL) ? pszReferer : "-",
 		(pszAgent != NULL) ? pszAgent : "-",
 		(pszLocation != NULL) ? pszLocation : "-"

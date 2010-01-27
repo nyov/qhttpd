@@ -27,7 +27,6 @@ QDECODER_LIB = /usr/local/lib/libqDecoder.a
 
 LUA_INC = -I/usr/local/include
 LUA_LIB = /usr/local/lib/liblua.a -lm
-## comment out -ldl option on FreeBSD
 LUA_LIB += -ldl
 
 ## Compiler arguments

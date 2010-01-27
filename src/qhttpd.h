@@ -56,7 +56,7 @@
 //
 #define PRG_INFO				"The qDecoder Project"
 #define PRG_NAME				"qhttpd"
-#define PRG_VERSION				"1.2.3"
+#define PRG_VERSION				"1.2.2"
 
 //
 // MAXIMUM INTERNAL LIMITATIONS
@@ -226,7 +226,7 @@ struct HttpRequest {
 	Q_ENTRY *pHeaders;		// request headers
 
 	// contents
-	size_t	nContentsLength;	// contents length 0:no contents, n>0:has contents
+	off_t	nContentsLength;	// contents length 0:no contents, n>0:has contents
 	char*	pContents;		// contents data if parsed (if contents does not parsed : nContentsLength>0 && pContents==NULL)
 };
 
@@ -239,7 +239,7 @@ struct HttpResponse {
 	Q_ENTRY* pHeaders;		// response headers
 
 	char	*pszContentType;	// contents mime type
-	size_t	nContentLength;		// contents length
+	off_t	nContentsLength;	// contents length
 	char*	pContent;		// contents data
 	bool	bChunked;		// flag for chunked data out
 };
@@ -364,7 +364,7 @@ extern	bool		httpRequestFree(struct HttpRequest *req);
 extern	struct HttpResponse* httpResponseCreate(void);
 extern	int		httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int nResCode, bool nKeepAlive, const char *format, ...);
 extern	bool		httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequest *req, bool bKeepAlive);
-extern	bool		httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, const char *pContent, size_t nContentLength);
+extern	bool		httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, const char *pContent, off_t nContentsLength);
 extern	bool		httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg);
 extern	bool		httpResponseSetContentChunked(struct HttpResponse *res, bool bChunked);
 extern	bool		httpResponseOut(struct HttpResponse *res, int nSockFd);

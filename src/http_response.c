@@ -101,7 +101,7 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 	return true;
 }
 
-bool httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, const char *pContent, size_t nContentLength) {
+bool httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, const char *pContent, off_t nContentsLength) {
 	// content-type
 	if(res->pszContentType != NULL) free(res->pszContentType);
 	res->pszContentType = (pszContentType != NULL) ? strdup(pszContentType) : NULL;
@@ -111,14 +111,14 @@ bool httpResponseSetContent(struct HttpResponse *res, const char *pszContentType
 	if(pContent == NULL) {
 		res->pContent = NULL;
 	} else {
-		res->pContent = (char *)malloc(nContentLength + 1);
+		res->pContent = (char *)malloc(nContentsLength + 1);
 		if(res->pContent == NULL) return false;
-		memcpy((void *)res->pContent, pContent, nContentLength);
-		res->pContent[nContentLength] = '\0';
+		memcpy((void *)res->pContent, pContent, nContentsLength);
+		res->pContent[nContentsLength] = '\0';
 	}
 
 	// content-length
-	res->nContentLength = nContentLength;
+	res->nContentsLength = nContentsLength;
 
 	return true;
 }
@@ -131,8 +131,8 @@ bool httpResponseSetContentChunked(struct HttpResponse *res, bool bChunked) {
 			res->pContent = NULL;
 		}
 
-		if(res->nContentLength != 0) {
-			res->nContentLength = 0;
+		if(res->nContentsLength != 0) {
+			res->nContentsLength = 0;
 		}
 	}
 
@@ -175,7 +175,7 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	if(res->bChunked == true) {
 		httpHeaderSetStr(res->pHeaders, "Transfer-Encoding", "chunked");
 	} else {
-		httpHeaderSetStrf(res->pHeaders, "Content-Length", "%jd", res->nContentLength);
+		httpHeaderSetStrf(res->pHeaders, "Content-Length", "%jd", res->nContentsLength);
 	}
 
 	// Content-Type 헤더
@@ -211,8 +211,8 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	streamPrintf(nSockFd, "\r\n");
 
 	// 컨텐츠 출력
-	if(res->nContentLength > 0 && res->pContent != NULL) {
-		streamWrite(nSockFd, res->pContent, res->nContentLength);
+	if(res->nContentsLength > 0 && res->pContent != NULL) {
+		streamWrite(nSockFd, res->pContent, res->nContentsLength);
 		//streamPrintf(nSockFd, "\r\n");
 	}
 
