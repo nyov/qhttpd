@@ -56,7 +56,7 @@
 //
 #define PRG_INFO				"The qDecoder Project"
 #define PRG_NAME				"qhttpd"
-#define PRG_VERSION				"1.2.2"
+#define PRG_VERSION				"1.2.3"
 
 //
 // MAXIMUM INTERNAL LIMITATIONS
