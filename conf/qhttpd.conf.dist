@@ -88,10 +88,10 @@ StatusUrl		= /qhttpd/server-status
 ##
 
 ## error log format
-ErrorLog			= qhttpd-%Y%m%d.err
+ErrorLog		= ${LogDir}/qhttpd-%Y%m%d.err
 
 ## access log format
-AccessLog		= qhttpd-%Y%m%d.log
+AccessLog		= ${LogDir}/qhttpd-%Y%m%d.log
 
 ## number of seconds to rotate log
 LogRotate		= 86400
