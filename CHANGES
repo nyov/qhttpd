@@ -1,6 +1,13 @@
 qHttpd Changes
 --------------
 
+[v1.2.1]
+o Support PUT, DELETE methods
+o control allowed methods.
+  [configuration file]
+  AllowedMethods         = OPTIONS,HEAD,GET,PUT,DELETE
+o Bug fixes
+
 [v1.2.0]
 o Embedded LUA script engine.
   see conf/qhttpd.lua.dist
