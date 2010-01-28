@@ -28,12 +28,12 @@ QDECODER_LIB = /usr/local/lib/libqDecoder.a
 LUA_INC = -I/usr/local/include
 LUA_LIB = /usr/local/lib/liblua.a -lm
 ## comment out below line on FreeBSD
-LUA_LIB += -ldl
+#LUA_LIB += -ldl
 
 ## Compiler arguments
 CC	= gcc
-CFLAGS  = -Wall
-DEFS	+= ${DEFS_CT}
+CFLAGS  = -Wall ${CFLAGS_ADD}
+DEFS	+= ${DEFS_ADD}
 DEFS	+= -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 
 INCLUDE = -I./				\
@@ -59,12 +59,6 @@ DEFS	+= -DENABLE_LUA
 INCLUDE	+= ${LUA_INC}
 LIB	+= ${LUA_LIB}
 
-## For release build
-ifeq ($(BUILD), debug)
-	CFLAGS += -g -O
-	DEFS   += -DBUILD_DEBUG
-endif
-
 ## Make Library
 all:	qhttpd
 
@@ -74,7 +68,7 @@ qhttpd: ${OBJ}
 reall: clean all
 
 debug:
-	$(MAKE) BUILD="debug"
+	$(MAKE) CFLAGS_ADD="-g -O" DEFS_ADD="-DBUILD_DEBUG"
 
 install: all
 	install -m 0755 qhttpd ../bin/
