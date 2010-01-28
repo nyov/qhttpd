@@ -1,7 +1,7 @@
 qHttpd Changes
 --------------
 
-[v1.2.1]
+[v1.2.3]
 o Support PUT, DELETE methods
 o control allowed methods.
   [configuration file]
