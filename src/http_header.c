@@ -85,7 +85,6 @@ bool httpHeaderParseRange(const char *pszRangeHeader, off_t nFilesize, off_t *pn
 	if(p3 == NULL) p3 = pszRange + strlen(pszRange);
 	else *p3 = '\0';
 
-
 	// parse
 	p1 += 1;
 	*p2 = '\0';
@@ -104,4 +103,15 @@ bool httpHeaderParseRange(const char *pszRangeHeader, off_t nFilesize, off_t *pn
 
 	if(*pnRangeOffset1 > *pnRangeOffset2) return false;
 	return true;
+}
+
+bool httpHeaderSetExpire(Q_ENTRY *entries, int nExpire) {
+	// cache control
+	if(nExpire > 0) {
+		httpHeaderSetStrf(entries, "Cache-Control", "max-age=%d", nExpire);
+		httpHeaderSetStrf(entries, "Expires", "%s", qTimeGetGmtStaticStr(time(NULL) + nExpire));
+		return true;
+	}
+
+	return false;
 }

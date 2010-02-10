@@ -33,7 +33,7 @@ static char *_getCorrectedHostname(const char *pszRequestHost);
  */
 struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	struct HttpRequest *req;
-	char szLineBuf[LINEBUF_SIZE*4];
+	char szLineBuf[URI_MAX + 32];
 
 	// Request 구조체 생성
 	req = (struct HttpRequest*)malloc(sizeof(struct HttpRequest));

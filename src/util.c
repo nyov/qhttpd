@@ -25,6 +25,13 @@
 
 #include "qhttpd.h"
 
+char *getEtag(char *pszBuf, size_t nBufSize, char *pszFilepath, struct stat *pStat) {
+	unsigned int nFilepathHash = qHashFnv32(0, (void*)pszFilepath, strlen(pszFilepath));
+	snprintf(pszBuf, nBufSize, "%08x-%08x-%08x", nFilepathHash, (unsigned int)pStat->st_size, (unsigned int)pStat->st_mtime);
+	pszBuf[nBufSize - 1] = '\0';
+	return pszBuf;
+}
+
 unsigned int getIp2Uint(const char *szIp) {
 	char szBuf[15+1];
 	char *pszToken;

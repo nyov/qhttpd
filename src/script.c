@@ -231,7 +231,7 @@ static int lualib_request_setRequest(lua_State *lua) {
 	if(pszNewUri != NULL) {
 		strcpy(pszNewUri, m_req->pszRequestPath);
 		qEncodeUrl(pszNewUri);
-		if(strlen(m_req->pszQueryString) > 0) {
+		if(IS_EMPTY_STRING(m_req->pszQueryString) == false) {
 			strcat(pszNewUri, "?");
 			strcat(pszNewUri, m_req->pszQueryString);
 		}

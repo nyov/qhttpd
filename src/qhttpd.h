@@ -72,10 +72,10 @@
 
 #define	MAX_USERCOUNTER				(10)		// amount of custom counter in shared memory for customizing purpose
 
-#define MAX_LOGLEVEL				(4)
+#define MAX_LOGLEVEL				(4)		// maximum log level
 
-#define URL_MAX					(PATH_MAX)
-#define LINEBUF_SIZE				(1024)
+#define URI_MAX					(1024 * 4)	// maximum request uri length
+#define ETAG_MAX				(8+1+8+1+8+1)	// maximum etag string length including NULL termination
 
 //
 // HTTP RESPONSE CODES
@@ -85,6 +85,7 @@
 #define HTTP_CODE_OK				(200)
 #define HTTP_CODE_CREATED			(201)
 #define	HTTP_CODE_NO_CONTENT			(204)
+#define	HTTP_CODE_PARTIAL_CONTENT		(206)
 #define HTTP_CODE_MULTI_STATUS			(207)
 #define HTTP_CODE_MOVED_TEMPORARILY		(302)
 #define HTTP_CODE_NOT_MODIFIED			(304)
@@ -149,7 +150,7 @@ struct ServerConfig {
 	char	szLuaScript[PATH_MAX];
 
 	bool	bStatusEnable;
-	char	szStatusUrl[URL_MAX];
+	char	szStatusUrl[URI_MAX];
 
 	char	szErrorLog[PATH_MAX];
 	char	szAccessLog[PATH_MAX];
@@ -248,13 +249,14 @@ struct HttpResponse {
 // DEFINITION FUNCTIONS
 //
 #define	CONST_STRLEN(x)		(sizeof(x) - 1)
+#define IS_EMPTY_STRING(x)	(x == NULL || (x[0] == '\0') ? true : false )
 
 #define _LOG(log, level, prestr, fmt, args...)	do {					\
 	if (g_loglevel >= level) {							\
 		char _timestr[14+1];							\
 		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
 		if(log != NULL)								\
-			log->writef(log, "%s(%d):" prestr fmt					\
+			log->writef(log, "%s(%d):" prestr fmt				\
 			, _timestr, getpid(), ##args);					\
 		else 									\
 			printf("%s(%d):" prestr fmt "\n"				\
@@ -267,7 +269,7 @@ struct HttpResponse {
 		char _timestr[14+1];							\
 		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
 		if(log != NULL)								\
-			log->writef(log, "%s(%d):" prestr fmt " (%s:%d)"			\
+			log->writef(log, "%s(%d):" prestr fmt " (%s:%d)"		\
 			, _timestr, getpid(), ##args, __FILE__, __LINE__);		\
 		else									\
 			printf("%s(%d):" prestr fmt " (%s:%d)\n"			\
@@ -393,12 +395,13 @@ extern	bool		httpHeaderSetStrf(Q_ENTRY *entries, const char *pszName, const char
 extern	bool		httpHeaderRemove(Q_ENTRY *entries, const char *pszName);
 extern	bool		httpHeaderHasStr(Q_ENTRY *entries, const char *pszName, const char *pszValue);
 extern	bool		httpHeaderParseRange(const char *pszRangeHeader, off_t nFilesize, off_t *pnRangeOffset1, off_t *pnRangeOffset2, off_t *pnRangeSize);
+extern	bool		httpHeaderSetExpire(Q_ENTRY *entries, int nExpire);
 
 // http_method.c
 extern	int		httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res);
 extern	int		httpMethodHead(struct HttpRequest *req, struct HttpResponse *res);
 extern	int		httpMethodGet(struct HttpRequest *req, struct HttpResponse *res);
-extern	int		httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, const char *pszContentType);
+extern	int		httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, struct stat *pStat, const char *pszContentType);
 extern	int		httpMethodPut(struct HttpRequest *req, struct HttpResponse *res);
 extern	int		httpRealPut(struct HttpRequest *req, struct HttpResponse *res, int nFd);
 extern	int		httpMethodDelete(struct HttpRequest *req, struct HttpResponse *res);
@@ -453,6 +456,7 @@ extern	bool		luaResponseHandler(struct HttpRequest *req, struct HttpResponse *re
 #endif
 
 // util.c
+extern	char*		getEtag(char *pszBuf, size_t nBufSize, char *pszFilepath, struct stat *pStat);
 extern	unsigned int	getIp2Uint(const char *szIp);
 extern	float		getDiffTimeval(struct timeval *t1, struct timeval *t0);
 extern	bool		isValidPathname(const char *pszPath);

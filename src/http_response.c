@@ -28,11 +28,10 @@
 struct HttpResponse *httpResponseCreate(void) {
 	struct HttpResponse *res;
 
-	// Response 구조체 생성
+	// initialize response structure
 	res = (struct HttpResponse *)malloc(sizeof(struct HttpResponse));
 	if(res == NULL) return NULL;
 
-	// Response 구조체 초기화
 	memset((void *)res, 0, sizeof(struct HttpResponse));
 	res->bOut = false;
 	res->pHeaders = qEntry();
@@ -60,8 +59,8 @@ int httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int
 }
 
 /**
- * @param pszHttpVer 응답 프로토콜 버젼, NULL시 요청 프로토콜 버젼으로 설정
- * @param bKeepAlive Keep-Alive 여부, true시에도 요청이 HTTP/1.1이 아니거나, Keep-Alive 요청이 없을경우엔 자동 false 됨
+ * @param pszHttpVer response protocol version, can be NULL to set response protocol as request protocol
+ * @param bKeepAlive Keep-Alive. automatically turned of if request is not HTTP/1.1 or there is no keep-alive request.
  */
 bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequest *req, bool bKeepAlive) {
 	char *pszHttpVer;
@@ -76,9 +75,11 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 
 	// decide to turn on/off keep-alive
 	if(g_conf.bKeepAliveEnable == true && bKeepAlive == true) {
-		//if(strcmp(pszHttpVer, HTTP_PROTOCOL_11)) bKeepAlive = false; // HTTP/1.1이 아니면 - Jaguar 5000 호환성 문제로 제거
-		if(httpHeaderHasStr(req->pHeaders, "CONNECTION", "KEEP-ALIVE") == false
-		&& httpHeaderHasStr(req->pHeaders, "CONNECTION", "TE") == false) bKeepAlive = false; // 요청이 keep-alive가 아니면
+		bKeepAlive = false;
+		if(httpHeaderHasStr(req->pHeaders, "CONNECTION", "KEEP-ALIVE") == true
+		|| httpHeaderHasStr(req->pHeaders, "CONNECTION", "TE") == true) {
+			bKeepAlive = true;
+		}
 	} else {
 		bKeepAlive = false;
 	}
@@ -162,28 +163,25 @@ bool httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg) {
 	return httpResponseSetContent(res, "text/html", szContent, strlen(szContent));
 }
 
-/**
- * @param value NULL일 경우 name에 해당하는 헤더를 삭제
- */
 bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	if(res->pszHttpVersion == NULL || res->nResponseCode == 0 || res->bOut == true) return false;
 
 	//
-	// 헤더 설정 및 조정
+	// set headers
 	//
 
 	if(res->bChunked == true) {
 		httpHeaderSetStr(res->pHeaders, "Transfer-Encoding", "chunked");
-	} else {
+	} else if(res->nContentsLength > 0) {
 		httpHeaderSetStrf(res->pHeaders, "Content-Length", "%jd", res->nContentsLength);
 	}
 
-	// Content-Type 헤더
+	// Content-Type header
 	if(res->pszContentType != NULL) {
 		httpHeaderSetStr(res->pHeaders, "Content-Type", res->pszContentType);
 	}
 
-	// Date 헤더 - 서버 시각
+	// Date header
 	httpHeaderSetStr(res->pHeaders, "Date", qTimeGetGmtStaticStr(0));
 
 	//
@@ -207,10 +205,10 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	}
 	tbl->unlock(tbl);
 
-	// 헤더 끝. 공백 라인
+	// end of headers
 	streamPrintf(nSockFd, "\r\n");
 
-	// 컨텐츠 출력
+	// print out contents binary
 	if(res->nContentsLength > 0 && res->pContent != NULL) {
 		streamWrite(nSockFd, res->pContent, res->nContentsLength);
 		//streamPrintf(nSockFd, "\r\n");
@@ -221,9 +219,9 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 }
 
 /*
- * chunk 데이터를 모두 보낸후엔 nSize를 0으로 설정하여 콜
+ * call after sending every chunk data with nSize 0.
  *
- * @return	요청 데이터 중 스트림으로 발송을 한 옥텟 수 (발송한 청크 헤더는 포함하지 않음)
+ * @return	a number of octets sent (do not include bytes which are sent for chunk boundary string)
  */
 int httpResponseOutChunk(int nSockFd, const char *pszData, int nSize) {
 	int nSent = 0;
@@ -249,22 +247,24 @@ void httpResponseFree(struct HttpResponse *res) {
 const char *httpResponseGetMsg(int nResCode) {
 	switch(nResCode) {
 		case HTTP_CODE_CONTINUE			: return "Continue";
-		case HTTP_CODE_OK			: return "Ok";
+		case HTTP_CODE_OK			: return "OK";
 		case HTTP_CODE_CREATED			: return "Created";
-		case HTTP_CODE_NO_CONTENT			: return "No content";
-		case HTTP_CODE_MULTI_STATUS			: return "Multi status";
-		case HTTP_CODE_MOVED_TEMPORARILY	: return "Moved temporarily";
-		case HTTP_CODE_NOT_MODIFIED		: return "Not modified";
-		case HTTP_CODE_BAD_REQUEST		: return "Bad request";
+		case HTTP_CODE_NO_CONTENT		: return "No content";
+		case HTTP_CODE_PARTIAL_CONTENT		: return "Partial Content";
+		case HTTP_CODE_MULTI_STATUS		: return "Multi Status";
+		case HTTP_CODE_MOVED_TEMPORARILY	: return "Moved Temporarily";
+		case HTTP_CODE_NOT_MODIFIED		: return "Not Modified";
+		case HTTP_CODE_BAD_REQUEST		: return "Bad Request";
 		case HTTP_CODE_FORBIDDEN		: return "Forbidden";
-		case HTTP_CODE_NOT_FOUND		: return "Not found";
-		case HTTP_CODE_METHOD_NOT_ALLOWED	: return "Method not allowed";
-		case HTTP_CODE_REQUEST_TIME_OUT		: return "Request time out";
-		case HTTP_CODE_REQUEST_URI_TOO_LONG	: return "Request URI too long";
-		case HTTP_CODE_INTERNAL_SERVER_ERROR	: return "Internal server error";
-		case HTTP_CODE_NOT_IMPLEMENTED		: return "Not implemented";
-		case HTTP_CODE_SERVICE_UNAVAILABLE	: return "Service unavailable";
+		case HTTP_CODE_NOT_FOUND		: return "Not Found";
+		case HTTP_CODE_METHOD_NOT_ALLOWED	: return "Method Not Allowed";
+		case HTTP_CODE_REQUEST_TIME_OUT		: return "Request Time Out";
+		case HTTP_CODE_REQUEST_URI_TOO_LONG	: return "Request URI Too Long";
+		case HTTP_CODE_INTERNAL_SERVER_ERROR	: return "Internal Server Error";
+		case HTTP_CODE_NOT_IMPLEMENTED		: return "Not Implemented";
+		case HTTP_CODE_SERVICE_UNAVAILABLE	: return "Service Unavailable";
 		default : LOG_WARN("PLEASE DEFINE THE MESSAGE FOR %d RESPONSE", nResCode);
 	}
+
 	return "";
 }
