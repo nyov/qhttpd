@@ -35,14 +35,14 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	struct HttpRequest *req;
 	char szLineBuf[URI_MAX + 32];
 
-	// Request 구조체 생성
+	// initialize request structure
 	req = (struct HttpRequest*)malloc(sizeof(struct HttpRequest));
 	if(req == NULL) return NULL;
 
-	// Request 구조체 초기화
+	// initialize response structure
 	memset((void *)req, 0, sizeof(struct HttpRequest));
-	// 0과 NULL 이외의 초기값이 들어가야 하는 부분 초기화
 
+	// set initial values
 	req->nSockFd = nSockFd;
 	req->nTimeout = nTimeout;
 
