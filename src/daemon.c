@@ -91,10 +91,14 @@ void daemonStart(bool nDaemonize) {
 		daemonEnd(EXIT_FAILURE);
 	} else {
 		int so_reuseaddr = 1;
+		int so_keepalive = 0;
+		//int so_tcpnodelay = 1;
 		int so_sndbufsize = 0;
 		int so_rcvbufsize = 0;
 
 		if (so_reuseaddr > 0) setsockopt(nSockFd, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr, sizeof(so_reuseaddr));
+		if (so_keepalive > 0) setsockopt(nSockFd, SOL_SOCKET, SO_KEEPALIVE, &so_keepalive, sizeof(so_keepalive));
+		//if (so_tcpnodelay > 0) setsockopt(nSockFd, IPPROTO_TCP, TCP_NODELAY, &so_tcpnodelay, sizeof(so_tcpnodelay));
 		if (so_sndbufsize > 0) setsockopt(nSockFd, SOL_SOCKET, SO_SNDBUF, &so_sndbufsize, sizeof(so_sndbufsize));
 		if (so_rcvbufsize > 0) setsockopt(nSockFd, SOL_SOCKET, SO_RCVBUF, &so_rcvbufsize, sizeof(so_rcvbufsize));
 	}

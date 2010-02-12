@@ -76,6 +76,13 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 	// decide to turn on/off keep-alive
 	if(g_conf.bKeepAliveEnable == true && bKeepAlive == true) {
 		bKeepAlive = false;
+
+		/*
+		if(!strcmp(req->pszHttpVersion, HTTP_PROTOCOL_11)
+		&& httpHeaderHasStr(req->pHeaders, "CONNECTION", "CLOSE") == false) {
+			bKeepAlive = true;
+		}
+		*/
 		if(httpHeaderHasStr(req->pHeaders, "CONNECTION", "KEEP-ALIVE") == true
 		|| httpHeaderHasStr(req->pHeaders, "CONNECTION", "TE") == true) {
 			bKeepAlive = true;

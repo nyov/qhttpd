@@ -78,8 +78,8 @@ off_t streamSave(int nFd, int nSockFd, off_t nSize, int nTimeoutMs) {
 	return nSaved;
 }
 
-off_t streamSend(int nSockFd, int nFd, off_t nSize) {
-	off_t nSent = qIoSend(nSockFd, nFd, nSize, 0);
+off_t streamSend(int nSockFd, int nFd, off_t nSize, int nTimeoutMs) {
+	off_t nSent = qIoSend(nSockFd, nFd, nSize, nTimeoutMs);
         DEBUG("[TX] (send %jd/%jd bytes)", nSent, nSize);
 	return nSent;
 }

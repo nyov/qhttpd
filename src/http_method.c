@@ -204,7 +204,7 @@ int httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, stru
 			lseek(nFd, nRangeOffset1, SEEK_SET);
 		}
 
-		off_t nSent = streamSend(req->nSockFd, nFd, nRangeSize);
+		off_t nSent = streamSend(req->nSockFd, nFd, nRangeSize, req->nTimeout*1000);
 		if(nSent != nRangeSize) {
 			LOG_INFO("Connection closed by foreign host. (%s/%jd/%jd/%jd)", req->pszRequestPath, nSent, nRangeOffset1, nRangeSize);
 		}
