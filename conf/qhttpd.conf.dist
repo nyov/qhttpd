@@ -36,7 +36,7 @@ MaxSpareServers		= 5
 MaxIdleSeconds		= 300
 
 ## maximum number of server processes allowed to start
-MaxClients		= 50
+MaxClients		= 150
 
 ## maximum number of requests a server process serves
 MaxRequestsPerChild	= 3000
@@ -59,7 +59,9 @@ IgnoreOverConnection     = NO
 ##
 
 ## number of seconds of contents expiration
-ResponseExpires		= 300
+## if the value is greater than 0, qhttpd will generate
+## Cache-Control and Expires response headers.
+ResponseExpires		= 0
 
 ##
 ## Allowed methods
@@ -81,7 +83,7 @@ LuaScript		= ${ConfDir}/qhttpd.lua
 ## Server Status Setting
 ##
 StatusEnable		= YES
-StatusUrl		= /qhttpd/server-status
+StatusUrl		= /server-status
 
 ##
 ## Log Setting
