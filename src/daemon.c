@@ -29,6 +29,11 @@
 // PRIVATE FUNCTION PROTOTYPES
 /////////////////////////////////////////////////////////////////////////
 static int m_nBindSockFd = -1;
+
+static void daemonEnd(int nStatus);
+static void daemonSignalInit(void *func);
+static void daemonSignal(int signo);
+static void daemonSignalHandler(void);
 static bool ignoreConnection(int nSockFd, long int nTimeoutMs);
 
 /////////////////////////////////////////////////////////////////////////
@@ -49,14 +54,13 @@ void daemonStart(bool nDaemonize) {
 		printf("Can't open log file.\n");
 		daemonEnd(EXIT_FAILURE);
 	}
-	g_errlog->duplicate(g_errlog, stdout,  true);
-	g_acclog->duplicate(g_acclog, stdout, false);
 
 	// entering daemon mode
 	if (nDaemonize) {
 		daemon(false, false); // after this line, parent's pid will be changed.
-		g_errlog->duplicate(g_errlog, stdout, false); // do not screen out any more
-		LOG_INFO("Entering daemon mode.");
+	} else {
+		g_errlog->duplicate(g_errlog, stdout, true);
+		//g_acclog->duplicate(g_acclog, stdout, false);
 	}
 
 	// save pid
@@ -151,67 +155,71 @@ void daemonStart(bool nDaemonize) {
 
 		// get child count
 		int nTotalLaunched = poolGetTotalLaunched();
-		int nCurrentChilds = poolGetCurrentChilds();
-		int nWorkingChilds = poolGetWorkingChilds();
-		int nIdleChilds = nCurrentChilds - nWorkingChilds;
+		int nRunningChilds, nWorkingChilds, nIdleChilds;
+		nRunningChilds = poolGetNumChilds(&nWorkingChilds, &nIdleChilds);
 
 		// increase or decrease childs
 		int nChildFlag = 0;
-		if(nCurrentChilds < g_conf.nStartServers) { // should be launched at least start servers
-			nChildFlag = 1;
+		if(nRunningChilds < g_conf.nStartServers) { // should be launched at least start servers
+			nChildFlag = g_conf.nStartServers - nRunningChilds;
 		} else {
 			if(nIdleChilds < g_conf.nMinSpareServers) { // not enough idle childs
-				if(nCurrentChilds < g_conf.nMaxClients) nChildFlag = 1;
-				else if(nIdleChilds <= 0 && g_conf.bIgnoreOverConnection == true) { // ignore connectin
+				if(nRunningChilds < g_conf.nMaxClients) {
+					nChildFlag = g_conf.nMinSpareServers - nIdleChilds;
+					if(nChildFlag + nRunningChilds > g_conf.nMaxClients) {
+						nChildFlag = g_conf.nMaxClients - nRunningChilds;
+					}
+				} else if(nIdleChilds <= 0 && g_conf.bIgnoreOverConnection == true) { // ignore connectin
 					while(ignoreConnection(nSockFd, 0) == true) {
 						nIgnoredConn++;
 						LOG_WARN("Maximum connection reached. Connection ignored. (%d)", nIgnoredConn);
 					}
 				}
 			} else if(nIdleChilds > g_conf.nMaxSpareServers) { // too much idle childs
-				if(nCurrentChilds > g_conf.nStartServers) nChildFlag = -1;
+				if(nRunningChilds > g_conf.nStartServers) nChildFlag = -1;
 			}
 		}
 
-		//DEBUG("%d %d %d %d", nCurrentChilds, nWorkingChilds, nIdleChilds, nChildFlag);
+		//DEBUG("%d %d %d %d", nRunningChilds, nWorkingChilds, nIdleChilds, nChildFlag);
 
 		// launch or kill childs
 		if(nChildFlag > 0) {
 			// launching  spare server
-			DEBUG("Launching spare server. (working:%d, total:%d)", nWorkingChilds, nCurrentChilds);
-			int nCpid = fork();
-			if (nCpid < 0) { // error
-				LOG_ERR("Can't create child.");
-				sleep(1);
-			} else if (nCpid == 0) { // this is child
-				DEBUG("Child %d launched", getpid());
+			DEBUG("Launching %d spare server. (working:%d, running:%d)", nChildFlag, nWorkingChilds, nRunningChilds);
+			int i;
+			for(i = 0; i < nChildFlag; i++) {
+				int nCpid = fork();
+				if (nCpid < 0) { // error
+					LOG_ERR("Can't create child.");
+					usleep(100 * 1000);
+				} else if (nCpid == 0) { // this is child
+					DEBUG("Child %d launched", getpid());
 
-				// main job
-				childStart(nSockFd);
+					// main job
+					childStart(nSockFd);
 
-				// safety code, never reached.
-				exit(EXIT_FAILURE);
+					// safety code, never reached.
+					exit(EXIT_FAILURE);
 
-			} else { // this is parent
-				int nWait;
-
-				// wait for the child register itself to shared pool.
-				for(nWait = 0; nWait < 1000; nWait++) {
-					//DEBUG("%d %d", nTotalLaunched, poolGetTotalLaunched());
-					if(nTotalLaunched != poolGetTotalLaunched()) break;
-					DEBUG("Waiting child registered at pool. [%d]", nWait+1);
-					usleep(1*1000);
-				}
-				if(nWait == 1000) {
-					LOG_WARN("Delayed child launching.");
+				} else { // this is parent
+					// wait for the child register itself to shared pool.
+					int nWait;
+					for(nWait = 0; nWait < 10000; nWait++) {
+						//DEBUG("%d %d", nTotalLaunched, poolGetTotalLaunched());
+						if(nTotalLaunched != poolGetTotalLaunched()) break;
+						DEBUG("Waiting child registered at pool. [%d]", nWait+1);
+						usleep(1*100);
+					}
+					if(nWait == 10000) {
+						LOG_WARN("Delayed child launching.");
+					}
 				}
 			}
 		} else if(nChildFlag < 0) { // removing child
 			static time_t nLastSec = 0;
-
 			// removing 1 child per sec
 			if(nLastSec != time(NULL)) {
-				if(poolSetIdleExitReqeust(1) != 1) {
+				if(poolSetIdleExitReqeust(nChildFlag * -1) <= 0) {
 					LOG_WARN("Can't set exit flag.");
 				}
 				nLastSec = time(NULL);
@@ -219,65 +227,66 @@ void daemonStart(bool nDaemonize) {
 				usleep(1 * 1000);
 			}
 		} else { // no need to increase spare server
-			static time_t nLastSec = 0;
+			//DEBUG("sleeping...");
+			usleep(1 * 1000);
+		}
 
-			// periodic job here
-			if(nLastSec != time(NULL)) {
-				// safety code : check semaphore dead-lock bug
-				static int nSemLockCnt[MAX_SEMAPHORES];
-				int i;
-				for(i = 0; i < MAX_SEMAPHORES; i++) {
-					if(qSemCheck(g_semid, i) == true) {
-						nSemLockCnt[i]++;
-						if(nSemLockCnt[i] > MAX_SEMAPHORES_LOCK_SECS) {
-							LOG_ERR("Force to unlock semaphore no %d", i);
-							qSemLeave(g_semid, i);	// force to unlock
-							nSemLockCnt[i] = 0;
-						}
-					} else {
+		// periodic job here
+		static time_t nLastSec = 0;
+		if(nLastSec != time(NULL)) {
+			DEBUG("Launching %d spare server. (working:%d, running:%d)\n", nChildFlag, nWorkingChilds, nRunningChilds);
+
+			// safety code : check semaphore dead-lock bug
+			static int nSemLockCnt[MAX_SEMAPHORES];
+			int i;
+			for(i = 0; i < MAX_SEMAPHORES; i++) {
+				if(qSemCheck(g_semid, i) == true) {
+					nSemLockCnt[i]++;
+					if(nSemLockCnt[i] > MAX_SEMAPHORES_LOCK_SECS) {
+						LOG_ERR("Force to unlock semaphore no %d", i);
+						qSemLeave(g_semid, i);	// force to unlock
 						nSemLockCnt[i] = 0;
 					}
+				} else {
+					nSemLockCnt[i] = 0;
 				}
+			}
 
-				// check pool
-				if(poolCheck() == true) {
-					LOG_WARN("Child count mismatch. fixed.");
-				}
+			// check pool
+			if(poolCheck() == true) {
+				LOG_WARN("Child count mismatch. fixed.");
+			}
 
 #ifdef ENABLE_HOOK
-				if(hookWhileDaemonIdle() < 0) {
-					LOG_ERR("Hook failed.");
-				}
+			if(hookWhileDaemonIdle() < 0) {
+				LOG_ERR("Hook failed.");
+			}
 #endif
 
-				// update running time
-				nLastSec = time(NULL);
-			} else {
-				//DEBUG("sleeping...");
-				usleep(1 * 1000);
-			}
+			// update running time
+			nLastSec = time(NULL);
 		}
 	}
 
 	daemonEnd(EXIT_SUCCESS);
 }
 
-void daemonEnd(int nStatus) {
+static void daemonEnd(int nStatus) {
 	static bool bAlready = false;
 
 	if(bAlready == true) return;
 	bAlready = true;
 
-	int nCurrentChilds, nWait;
-	for(nWait = 15; nWait >= 0 && (nCurrentChilds = poolGetCurrentChilds()) > 0; nWait--) {
+	int nRunningChilds, nWait;
+	for(nWait = 15; nWait >= 0 && (nRunningChilds = poolGetNumChilds(NULL, NULL)) > 0; nWait--) {
 		if(nWait > 5) {
-			LOG_INFO("Soft shutting down [%d]. Waiting %d childs.", nWait-5, nCurrentChilds);
-			poolSetIdleExitReqeust(nCurrentChilds);
+			LOG_INFO("Soft shutting down [%d]. Waiting %d childs.", nWait-5, nRunningChilds);
+			poolSetIdleExitReqeust(nRunningChilds);
 		} else if(nWait > 0) {
-			LOG_INFO("Hard shutting down [%d]. Waiting %d childs.", nWait, nCurrentChilds);
+			LOG_INFO("Hard shutting down [%d]. Waiting %d childs.", nWait, nRunningChilds);
 			kill(0, SIGTERM);
 		} else {
-			LOG_WARN("%d childs are still alive. Give up!", nCurrentChilds);
+			LOG_WARN("%d childs are still alive. Give up!", nRunningChilds);
 		}
 
 		// sleep
@@ -335,7 +344,7 @@ void daemonEnd(int nStatus) {
 	exit(nStatus);
 }
 
-void daemonSignalInit(void *func) {
+static void daemonSignalInit(void *func) {
 	// init sigaction
 	struct sigaction sa;
 	sa.sa_handler = func;
@@ -358,11 +367,11 @@ void daemonSignalInit(void *func) {
 	sigemptyset(&g_sigflags);
 }
 
-void daemonSignal(int signo) {
+static void daemonSignal(int signo) {
 	sigaddset(&g_sigflags, signo);
 }
 
-void daemonSignalHandler(void) {
+static void daemonSignalHandler(void) {
 	if(sigismember(&g_sigflags, SIGCHLD)) {
 		sigdelset(&g_sigflags, SIGCHLD);
 		DEBUG("Caughted SIGCHLD");
@@ -449,11 +458,26 @@ static bool ignoreConnection(int nSockFd, long int nTimeoutMs) {
 	// accept connection
 	if((nNewSockFd = accept(nSockFd, (struct sockaddr *)&connAddr, &nConnLen)) == -1) return false;
 
+	//
 	// caughted connection
-	streamPrintf(nNewSockFd, "%s %d %s\r\n", HTTP_PROTOCOL_11, HTTP_CODE_SERVICE_UNAVAILABLE, httpResponseGetMsg(HTTP_CODE_SERVICE_UNAVAILABLE));
-	streamPrintf(nNewSockFd, "Content-Length: 0\r\n");
-	streamPrintf(nNewSockFd, "Connection: close\r\n");
-	streamPrintf(nNewSockFd, "\r\n");
+	//
+
+	// create response
+	struct HttpResponse *res = httpResponseCreate();
+	if(res == NULL) {
+		LOG_ERR("Can't create response.");
+		return false;
+	}
+
+	// set response
+	res->pszHttpVersion = strdup(HTTP_PROTOCOL_11);
+	res->nResponseCode = HTTP_CODE_SERVICE_UNAVAILABLE;
+	httpHeaderSetStr(res->pHeaders, "Connection", "close");
+
+	// serialize & stream out
+	httpResponseOut(res, nSockFd);
+
+	// close connection immediately
 	close(nNewSockFd);
 
 	return true;

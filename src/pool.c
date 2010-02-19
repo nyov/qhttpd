@@ -108,17 +108,27 @@ bool poolCheck(void) {
 
 	if(qSemEnterNowait(g_semid, POOL_SEM_ID) == false) return false;
 
-	int i, nTotal;
-	for (i = nTotal = 0; i < m_nMaxChild; i++) {
+	int i, nTotal, nWorking;
+	for (i = nTotal = nWorking = 0; i < m_nMaxChild; i++) {
 		if (m_pShm->child[i].nPid > 0) {
 			nTotal++;
+			if(m_pShm->child[i].conn.bConnected == true) {
+				nWorking++;
+			}
 		}
 	}
 
 	// check current child
 	bool bFixed = false;
-	if(m_pShm->nCurrentChilds != nTotal) {
-		m_pShm->nCurrentChilds = nTotal;
+	if(m_pShm->nRunningChilds != nTotal) {
+		m_pShm->nRunningChilds = nTotal;
+		LOG_WARN("Child counter adjusted to %d.", nTotal);
+		bFixed = true;
+	}
+
+	if(m_pShm->nWorkingChilds != nWorking) {
+		m_pShm->nWorkingChilds = nWorking;
+		LOG_WARN("Working counter adjusted to %d.", nWorking);
 		bFixed = true;
 	}
 
@@ -142,26 +152,18 @@ int poolGetTotalLaunched(void) {
  *
  * @return 구동중인 프로세스 수
  */
-int poolGetCurrentChilds(void) {
-	if(m_pShm == NULL) return 0;
+int poolGetNumChilds(int *nWorking, int *nIdling) {
+	if(m_pShm == NULL) return false;
 
-	return m_pShm->nCurrentChilds;
-}
-
-/*
- * 서비스중인 프로세스 수를 얻음
- *
- * @return 서비스중인 프로세스 수
- */
-int poolGetWorkingChilds(void) {
-	if(m_pShm == NULL) return 0;
-
-	int i, nWorking;
-	for (i = nWorking = 0; i < m_nMaxChild; i++) {
-		if (m_pShm->child[i].nPid > 0 && m_pShm->child[i].conn.bConnected == true) nWorking++;
+	if(m_pShm->nRunningChilds < 0 || m_pShm->nWorkingChilds < 0
+	|| m_pShm->nRunningChilds < m_pShm->nWorkingChilds) {
+		poolCheck();
 	}
 
-	return nWorking;
+	if(nWorking != NULL) *nWorking = m_pShm->nWorkingChilds;
+	if(nIdling != NULL) *nIdling = (m_pShm->nRunningChilds - m_pShm->nWorkingChilds);
+
+	return m_pShm->nRunningChilds;
 }
 
 /*
@@ -173,7 +175,9 @@ int poolSetIdleExitReqeust(int nNum) {
 	int i, nCnt = 0;
 	for (i = 0; i < m_nMaxChild; i++) {
 		if (m_pShm->child[i].nPid > 0 && m_pShm->child[i].conn.bConnected == false) {
-			m_pShm->child[i].bExit = true;
+			if(m_pShm->child[i].bExit == false) {
+				m_pShm->child[i].bExit = true;
+			}
 			nCnt++;
 			if(nCnt >= nNum) break;
 		}
@@ -236,7 +240,7 @@ bool poolChildReg(void) {
 
 	// set global info
 	m_pShm->nTotalLaunched++;
-	m_pShm->nCurrentChilds++;
+	m_pShm->nRunningChilds++;
 
 	// set member variable
 	m_nMySlotId = nSlot;
@@ -261,7 +265,7 @@ bool poolChildDel(int nPid) {
 	// clear rest of all
 	//poolInitSlot(nSlot);
 	m_pShm->child[nSlot].nPid = 0; // data cleaning will be executed at the time when it is reused.
-	m_pShm->nCurrentChilds--;
+	m_pShm->nRunningChilds--;
 
 	qSemLeave(g_semid, POOL_SEM_ID);
 	return true;
@@ -325,6 +329,8 @@ bool poolSetConnInfo(int nSockFd) {
 
 	// set global info
 	m_pShm->nTotalConnected++;
+	m_pShm->nWorkingChilds++;
+
 	return true;
 }
 
@@ -363,6 +369,9 @@ bool poolClearConnInfo(void) {
 
 	m_pShm->child[m_nMySlotId].conn.bConnected = false;
 	m_pShm->child[m_nMySlotId].conn.nEndTime = time(NULL); // set endtime
+
+	m_pShm->nWorkingChilds--;
+
 	return true;
 }
 
@@ -404,7 +413,8 @@ static bool poolInitData(void) {
 	// set start time
 	m_pShm->nStartTime = time(NULL);
 	m_pShm->nTotalLaunched = 0;
-	m_pShm->nCurrentChilds = 0;
+	m_pShm->nRunningChilds = 0;
+	m_pShm->nWorkingChilds = 0;
 
 	// clear child. we clear all available slot even we do not use slot over m_nMaxChild
 	int i;

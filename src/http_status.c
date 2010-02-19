@@ -57,8 +57,8 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 	obHtml->growStrf(obHtml,"  <dt>Total Connections : %d\r\n", pShm->nTotalConnected);
 	obHtml->growStrf(obHtml,"  , Total Requests : %d</dt>\r\n", pShm->nTotalRequests);
 	obHtml->growStrf(obHtml,"  , Total Launched: %d\r\n", pShm->nTotalLaunched);
-	obHtml->growStrf(obHtml,"  , Current Servers: %d</dt>\r\n", pShm->nCurrentChilds);
-	obHtml->growStrf(obHtml,"  , Working Servers: %d</dt>\r\n", poolGetWorkingChilds());
+	obHtml->growStrf(obHtml,"  , Running Servers: %d</dt>\r\n", pShm->nRunningChilds);
+	obHtml->growStrf(obHtml,"  , Working Servers: %d</dt>\r\n", pShm->nWorkingChilds);
 	obHtml->growStrf(obHtml,"  <dt>Start Servers: %d\r\n", g_conf.nStartServers);
 	obHtml->growStrf(obHtml,"  , Min Spare Servers: %d\r\n", g_conf.nMinSpareServers);
 	obHtml->growStrf(obHtml,"  , Max Spare Servers: %d\r\n", g_conf.nMaxSpareServers);

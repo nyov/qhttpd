@@ -40,19 +40,11 @@ struct HttpResponse *httpResponseCreate(void) {
 	return res;
 }
 
-int httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int nResCode, bool nKeepAlive, const char *format, ...) {
+int httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int nResCode, bool nKeepAlive, const char *pszText) {
 	httpResponseSetCode(res, nResCode, req, nKeepAlive);
 
-	if(format != NULL) {
-		char szMsg[1024];
-		va_list arglist;
-
-		va_start(arglist, format);
-		vsnprintf(szMsg, sizeof(szMsg)-1, format, arglist);
-		szMsg[sizeof(szMsg)-1] = '\0';
-		va_end(arglist);
-
-		httpResponseSetContentHtml(res, szMsg);
+	if(pszText != NULL) {
+		httpResponseSetContentHtml(res, pszText);
 	}
 
 	return res->nResponseCode;
@@ -63,10 +55,8 @@ int httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int
  * @param bKeepAlive Keep-Alive. automatically turned of if request is not HTTP/1.1 or there is no keep-alive request.
  */
 bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequest *req, bool bKeepAlive) {
-	char *pszHttpVer;
-
-	// Version setting
-	pszHttpVer = req->pszHttpVersion;
+	// version setting
+	char *pszHttpVer = pszHttpVer = req->pszHttpVersion;
 	if(pszHttpVer == NULL) pszHttpVer = HTTP_PROTOCOL_11;
 
 	// default headers
@@ -77,7 +67,7 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 	if(g_conf.bKeepAliveEnable == true && bKeepAlive == true) {
 		bKeepAlive = false;
 
-		if(!strcmp(req->pszHttpVersion, HTTP_PROTOCOL_11)) {
+		if(!strcmp(pszHttpVer, HTTP_PROTOCOL_11)) {
 			if(httpHeaderHasStr(req->pHeaders, "CONNECTION", "CLOSE") == false) {
 				bKeepAlive = true;
 			}
@@ -95,8 +85,6 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 	if(bKeepAlive == true) {
 		httpHeaderSetStr(res->pHeaders, "Connection", "Keep-Alive");
 		httpHeaderSetStrf(res->pHeaders, "Keep-Alive", "timeout=%d", req->nTimeout);
-
-		pszHttpVer = HTTP_PROTOCOL_11;
 	} else {
 		httpHeaderSetStr(res->pHeaders, "Connection", "close");
 	}
@@ -122,7 +110,7 @@ bool httpResponseSetContent(struct HttpResponse *res, const char *pszContentType
 		res->pContent = (char *)malloc(nContentsLength + 1);
 		if(res->pContent == NULL) return false;
 		memcpy((void *)res->pContent, pContent, nContentsLength);
-		res->pContent[nContentsLength] = '\0';
+		res->pContent[nContentsLength] = '\0'; // for debugging purpose
 	}
 
 	// content-length
@@ -195,8 +183,10 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	// Print out
 	//
 
+	Q_OBSTACK *outBuf = qObstack();
+
 	// first line is response code
-	streamPrintf(nSockFd, "%s %d %s\r\n",
+	outBuf->growStrf(outBuf, "%s %d %s\r\n",
 		res->pszHttpVersion,
 		res->nResponseCode,
 		httpResponseGetMsg(res->nResponseCode)
@@ -208,12 +198,18 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	memset((void*)&obj, 0, sizeof(obj)); // must be cleared before call
 	tbl->lock(tbl);
 	while(tbl->getNext(tbl, &obj, NULL, false) == true) {
-		streamPrintf(nSockFd, "%s: %s\r\n", obj.name, (char*)obj.data);
+		outBuf->growStrf(outBuf, "%s: %s\r\n", obj.name, (char*)obj.data);
 	}
 	tbl->unlock(tbl);
 
 	// end of headers
-	streamPrintf(nSockFd, "\r\n");
+	outBuf->growStrf(outBuf, "\r\n");
+
+	// buf flush
+	streamStackOut(nSockFd, outBuf);
+
+	// free buf
+	outBuf->free(outBuf);
 
 	// print out contents binary
 	if(res->nContentsLength > 0 && res->pContent != NULL) {

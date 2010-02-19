@@ -60,23 +60,26 @@
 #define PRG_VERSION				"1.2.3"
 
 //
-// MAXIMUM INTERNAL LIMITATIONS
+// HARD-CODED INTERNAL LIMITATIONS
 //
 
 #define MAX_CHILDS				(256)
 #define MAX_SEMAPHORES				(1+2)
 #define MAX_SEMAPHORES_LOCK_SECS		(10)		// maximum secondes which semaphores can be locked
-
 #define MAX_HTTP_MEMORY_CONTENTS		(1024*1024)	// if the contents size is less than this, do not use temporary file
-#define	MAX_SHUTDOWN_WAIT			(5000)		// maximum ms for waiting input stream after socket shutdown
-#define	MAX_LINGER_TIMEOUT			(15)
-
 #define	MAX_USERCOUNTER				(10)		// amount of custom counter in shared memory for customizing purpose
 
 #define MAX_LOGLEVEL				(4)		// maximum log level
 
+#define	MAX_SHUTDOWN_WAIT			(5000)		// maximum ms for waiting input stream after socket shutdown
+#define	MAX_LINGER_TIMEOUT			(15)		// TCP linger timeout. 0 for disable
+
 #define URI_MAX					(1024 * 4)	// maximum request uri length
 #define ETAG_MAX				(8+1+8+1+8+1)	// maximum etag string length including NULL termination
+
+// TCP options
+#define	SET_TCP_LINGER_TIMEOUT			(15)		// 0 for disable
+#define SET_TCP_NODELAY				(1)		// 0 for disable
 
 //
 // HTTP RESPONSE CODES
@@ -167,7 +170,8 @@ struct SharedData {
 	// daemon info
 	time_t	nStartTime;
 	int	nTotalLaunched;			// total launched childs counter
-	int	nCurrentChilds;			// currently working childs counter
+	int	nRunningChilds;			// number of running servers
+	int	nWorkingChilds;			// number of working servers
 
 	int	nTotalConnected;		// total connection counter
 	int	nTotalRequests;			// total processed requests counter
@@ -247,72 +251,6 @@ struct HttpResponse {
 };
 
 //
-// DEFINITION FUNCTIONS
-//
-#define	CONST_STRLEN(x)		(sizeof(x) - 1)
-#define IS_EMPTY_STRING(x)	(x == NULL || (x[0] == '\0') ? true : false )
-
-#define STOPWATCH_START									\
-	int _swno = 0;									\
-	struct timeval _tv1, _tv2;							\
-	gettimeofday(&_tv1, NULL)
-
-#define STOPWATCH_STOP	{								\
-	gettimeofday(&_tv2, NULL);							\
-	_swno++;									\
-	struct timeval _diff;								\
-	_diff.tv_sec = _tv2.tv_sec - _tv1.tv_sec;					\
-	if(_tv2.tv_usec >= _tv1.tv_usec) _diff.tv_usec = _tv2.tv_usec - _tv1.tv_usec;	\
-	else { _diff.tv_sec += 1; _diff.tv_usec = _tv1.tv_usec - _tv2.tv_usec; }	\
-	printf("STOPWATCH(%d,%d): %zus %dus (%s:%d)\n", getpid(), _swno, _diff.tv_sec, (int)(_diff.tv_usec), __FILE__, __LINE__);	\
-	gettimeofday(&_tv1, NULL);							\
-}
-
-#define _LOG(log, level, prestr, fmt, args...)	do {					\
-	if (g_loglevel >= level) {							\
-		char _timestr[14+1];							\
-		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
-		if(log != NULL)								\
-			log->writef(log, "%s(%d):" prestr fmt				\
-			, _timestr, getpid(), ##args);					\
-		else 									\
-			printf("%s(%d):" prestr fmt "\n"				\
-			, _timestr, getpid(), ##args);					\
-	}										\
-} while(0)
-
-#define _LOG2(log, level, prestr, fmt, args...)	do {					\
-	if (g_loglevel >= level) {							\
-		char _timestr[14+1];							\
-		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
-		if(log != NULL)								\
-			log->writef(log, "%s(%d):" prestr fmt " (%s:%d)"		\
-			, _timestr, getpid(), ##args, __FILE__, __LINE__);		\
-		else									\
-			printf("%s(%d):" prestr fmt " (%s:%d)\n"			\
-			, _timestr, getpid(), ##args, __FILE__, __LINE__);		\
-	}										\
-} while(0)
-
-#define LOG_SYS(fmt, args...)	_LOG(g_errlog, 0, " ", fmt, ##args)
-#define LOG_ERR(fmt, args...)	_LOG2(g_errlog, 1, " [ERROR] ", fmt, ##args)
-#define LOG_WARN(fmt, args...)	_LOG2(g_errlog, 2, " [WARN] ", fmt, ##args)
-#define LOG_INFO(fmt, args...)	_LOG(g_errlog, 3, " [INFO] ", fmt, ##args)
-
-#ifdef DEBUG
-#undef DEBUG
-#endif
-
-#ifdef BUILD_DEBUG
-#define DEBUG(fmt, args...)								\
-	do {										\
-		_LOG2(g_errlog, MAX_LOGLEVEL, " [DEBUG] ", fmt, ##args);		\
-	} while (false)
-#else
-#define DEBUG(fms, args...)
-#endif // BUILD_DEBUG
-
-//
 // PROTO-TYPES
 //
 
@@ -328,10 +266,6 @@ extern	bool		loadConfig(struct ServerConfig *pConf, char *pszFilePath);
 
 // daemon.c
 extern	void		daemonStart(bool nDaemonize);
-extern	void		daemonEnd(int nStatus);
-extern	void		daemonSignalInit(void *func);
-extern	void		daemonSignal(int signo);
-extern	void		daemonSignalHandler(void);
 
 // pool.c
 extern	bool		poolInit(int nMaxChild);
@@ -341,8 +275,7 @@ extern	int		poolSendSignal(int signo);
 
 extern	bool		poolCheck(void);
 extern	int		poolGetTotalLaunched(void);
-extern	int		poolGetCurrentChilds(void);
-extern	int		poolGetWorkingChilds(void);
+extern	int		poolGetNumChilds(int *nWorking, int *nIdling);
 extern	int		poolSetIdleExitReqeust(int nNum);
 extern	int		poolSetExitReqeustAll(void);
 
@@ -365,10 +298,6 @@ extern	time_t		poolGetConnReqTime(void);
 
 // child.c
 extern	void		childStart(int nSockFd);
-extern	void		childEnd(int nStatus);
-extern	void		childSignalInit(void *func);
-extern	void		childSignal(int signo);
-extern	void		childSignalHandler(void);
 
 // http_main.c
 extern	int		httpMain(int nSockFd);
@@ -381,7 +310,7 @@ extern	bool		httpRequestFree(struct HttpRequest *req);
 
 // http_response.c
 extern	struct HttpResponse* httpResponseCreate(void);
-extern	int		httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int nResCode, bool nKeepAlive, const char *format, ...);
+extern	int		httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int nResCode, bool nKeepAlive, const char *pszText);
 extern	bool		httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequest *req, bool bKeepAlive);
 extern	bool		httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, const char *pContent, off_t nContentsLength);
 extern	bool		httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg);
@@ -440,10 +369,11 @@ extern	int		streamWaitReadable(int nSockFd, int nTimeoutMs);
 extern	ssize_t		streamRead(void *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs);
 extern	ssize_t		streamGets(char *pszStr, size_t nSize, int nSockFd, int nTimeoutMs);
 extern	ssize_t		streamGetb(char *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs);
+extern	off_t		streamSave(int nFd, int nSockFd, off_t nSize, int nTimeoutMs);
 extern	ssize_t		streamPrintf(int nSockFd, const char *format, ...);
 extern	ssize_t		streamPuts(int nSockFd, const char *pszStr);
+extern	ssize_t		streamStackOut(int nSockFd, Q_OBSTACK *obstack);
 extern	ssize_t		streamWrite(int nSockFd, const void *pszBuffer, size_t nSize);
-extern	off_t		streamSave(int nFd, int nSockFd, off_t nSize, int nTimeoutMs);
 extern	off_t		streamSend(int nSockFd, int nFd, off_t nSize, int nTimeoutMs);
 
 // hook.c
@@ -494,5 +424,101 @@ extern int		g_semid;
 extern Q_LOG*		g_errlog;
 extern Q_LOG*		g_acclog;
 extern int		g_loglevel;
+
+//
+// DEFINITION FUNCTIONS
+//
+#define	CONST_STRLEN(x)		(sizeof(x) - 1)
+#define IS_EMPTY_STRING(x)	(x == NULL || (x[0] == '\0') ? true : false )
+
+#define	DYNAMIC_VSPRINTF(s, f)								\
+do {											\
+	size_t _strsize;								\
+	for(_strsize = 1024; ; _strsize *= 2) {						\
+		s = (char*)malloc(_strsize);						\
+		if(s == NULL) {								\
+			DEBUG("DYNAMIC_VSPRINTF(): can't allocate memory.");		\
+			break;								\
+		}									\
+		va_list _arglist;							\
+		va_start(_arglist, f);							\
+		int _n = vsnprintf(s, _strsize, f, _arglist);				\
+		va_end(_arglist);							\
+		if(_n >= 0 && _n < _strsize) break;					\
+		free(s);								\
+	}										\
+} while(0)
+
+#define _LOG(log, level, prestr, fmt, args...)	do {					\
+	if (g_loglevel >= level) {							\
+		char _timestr[14+1];							\
+		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
+		if(log != NULL)								\
+			log->writef(log, "%s(%d):" prestr fmt				\
+			, _timestr, getpid(), ##args);					\
+		else 									\
+			printf("%s(%d):" prestr fmt "\n"				\
+			, _timestr, getpid(), ##args);					\
+	}										\
+} while(0)
+
+#define _LOG2(log, level, prestr, fmt, args...)	do {					\
+	if (g_loglevel >= level) {							\
+		char _timestr[14+1];							\
+		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
+		if(log != NULL)								\
+			log->writef(log, "%s(%d):" prestr fmt " (%s:%d)"		\
+			, _timestr, getpid(), ##args, __FILE__, __LINE__);		\
+		else									\
+			printf("%s(%d):" prestr fmt " (%s:%d)\n"			\
+			, _timestr, getpid(), ##args, __FILE__, __LINE__);		\
+	}										\
+} while(0)
+
+#define LOG_SYS(fmt, args...)	_LOG(g_errlog, 0, " ", fmt, ##args)
+#define LOG_ERR(fmt, args...)	_LOG2(g_errlog, 1, " [ERROR] ", fmt, ##args)
+#define LOG_WARN(fmt, args...)	_LOG2(g_errlog, 2, " [WARN] ", fmt, ##args)
+#define LOG_INFO(fmt, args...)	_LOG(g_errlog, 3, " [INFO] ", fmt, ##args)
+
+#ifdef DEBUG
+#undef DEBUG
+#endif
+
+#ifdef BUILD_DEBUG
+
+//
+// DEBUG build
+//
+#define DEBUG(fmt, args...)								\
+	do {										\
+		_LOG2(g_errlog, MAX_LOGLEVEL, " [DEBUG] ", fmt, ##args);		\
+	} while (false)
+
+#define STOPWATCH_START									\
+	int _swno = 0;									\
+	struct timeval _tv1, _tv2;							\
+	gettimeofday(&_tv1, NULL)
+
+#define STOPWATCH_STOP	{								\
+	gettimeofday(&_tv2, NULL);							\
+	_swno++;									\
+	struct timeval _diff;								\
+	_diff.tv_sec = _tv2.tv_sec - _tv1.tv_sec;					\
+	if(_tv2.tv_usec >= _tv1.tv_usec) _diff.tv_usec = _tv2.tv_usec - _tv1.tv_usec;	\
+	else { _diff.tv_sec += 1; _diff.tv_usec = _tv1.tv_usec - _tv2.tv_usec; }	\
+	DEBUG("STOPWATCH(%d,%d): %zus %dus (%s:%d)", getpid(), _swno, _diff.tv_sec, (int)(_diff.tv_usec), __FILE__, __LINE__);	\
+	gettimeofday(&_tv1, NULL);							\
+}
+
+#else
+
+//
+// RELEASE build
+//
+#define DEBUG(fms, args...)
+#define STOPWATCH_START
+#define STOPWATCH_STOP
+
+#endif // BUILD_DEBUG
 
 #endif	// _QHTTPD_H

@@ -174,16 +174,26 @@ int httpSpecialRequestHandler(struct HttpRequest *req, struct HttpResponse *res)
 	if(req == NULL || res == NULL) return 0;
 
 	// check if the request is for server status page
-	if(g_conf.bStatusEnable == true && !strcmp(req->pszRequestMethod, "GET") && !strcmp(req->pszRequestPath, g_conf.szStatusUrl)) {
+	if(g_conf.bStatusEnable == true
+	&& !strcmp(req->pszRequestMethod, "GET")
+	&& !strcmp(req->pszRequestPath, g_conf.szStatusUrl)) {
 		Q_OBSTACK *obHtml = httpGetStatusHtml();
 		if(obHtml == NULL) return response500(req, res);
 
+		// get size
+		size_t nHtmlSize = obHtml->getSize(obHtml);
+
+		// set response
 		httpResponseSetCode(res, HTTP_CODE_OK, req, true);
-		size_t nHtmlSize = 0;
-		char *pszHtml = obHtml->getFinal(obHtml, &nHtmlSize);
+		httpResponseSetContent(res, "text/html; charset=\"utf-8\"", NULL, nHtmlSize);
 
-		httpResponseSetContent(res, "text/html; charset=\"utf-8\"", pszHtml, nHtmlSize);
+		// print out header
+		httpResponseOut(res, req->nSockFd);
 
+		// print out contents
+		streamStackOut(req->nSockFd, obHtml);
+
+		// free
 		obHtml->free(obHtml);
 
 		return HTTP_CODE_OK;

@@ -26,6 +26,15 @@
 #include "qhttpd.h"
 
 /////////////////////////////////////////////////////////////////////////
+// PRIVATE FUNCTION PROTOTYPES
+/////////////////////////////////////////////////////////////////////////
+static void childEnd(int nStatus);
+static void childSignalInit(void *func);
+static void childSignal(int signo);
+static void childSignalHandler(void);
+static void setSocketOption(int nSockFd);
+
+/////////////////////////////////////////////////////////////////////////
 // PUBLIC FUNCTIONS
 /////////////////////////////////////////////////////////////////////////
 
@@ -82,10 +91,13 @@ void childStart(int nSockFd) {
 
                         // idle time check
                         nIdleCnt++;
-                        if(g_conf.nMaxIdleSeconds > 0 && nIdleCnt > g_conf.nMaxIdleSeconds
-                        	&& poolGetCurrentChilds() > g_conf.nStartServers) {
-                        	DEBUG("Maximum idle seconds(%d) are reached.", g_conf.nMaxIdleSeconds);
-                        	break;
+                        if(g_conf.nMaxIdleSeconds > 0 && nIdleCnt > g_conf.nMaxIdleSeconds) {
+                        	int nRunningChilds, nIdleChilds;
+                        	nRunningChilds = poolGetNumChilds(NULL, &nIdleChilds);
+                        	if(nRunningChilds > g_conf.nStartServers && nIdleChilds > g_conf.nMinSpareServers) {
+                        		DEBUG("Maximum idle seconds(%d) are reached.", g_conf.nMaxIdleSeconds);
+                        		break;
+                        	}
                 	}
 
                 	// check maximum requests
@@ -118,14 +130,7 @@ void childStart(int nSockFd) {
 		DEBUG("Connection established.");
 
 		// set socket option
-		if(MAX_LINGER_TIMEOUT > 0) {
-			struct linger li;
-			li.l_onoff = 1;
-			li.l_linger = MAX_LINGER_TIMEOUT;
-			if(setsockopt(nNewSockFd, SOL_SOCKET, SO_LINGER, &li, sizeof(struct linger)) < 0) {
-				LOG_WARN("Socket option(SO_LINGER) set failed.");
-			}
-		}
+		setSocketOption(nNewSockFd);
 
 #ifdef ENABLE_HOOK
 		// connection hook
@@ -162,7 +167,7 @@ void childStart(int nSockFd) {
 	childEnd(EXIT_SUCCESS);
 }
 
-void childEnd(int nStatus) {
+static void childEnd(int nStatus) {
 	static bool bAlready = false;
 
 	if(bAlready == true) return;
@@ -190,7 +195,7 @@ void childEnd(int nStatus) {
 	exit(nStatus);
 }
 
-void childSignalInit(void *func) {
+static void childSignalInit(void *func) {
 	// init sigaction
 	struct sigaction sa;
 	sa.sa_handler = func;
@@ -212,12 +217,12 @@ void childSignalInit(void *func) {
 	sigemptyset(&g_sigflags);
 }
 
-void childSignal(int signo) {
+static void childSignal(int signo) {
 	sigaddset(&g_sigflags, signo);
 	if(signo == SIGTERM || signo == SIGINT) childSignalHandler();
 }
 
-void childSignalHandler(void) {
+static void childSignalHandler(void) {
 	if(sigismember(&g_sigflags, SIGHUP)) {
 		sigdelset(&g_sigflags, SIGHUP);
 		LOG_INFO("Child : Caughted SIGHUP ");
@@ -246,5 +251,25 @@ void childSignalHandler(void) {
 
 		if(g_loglevel > 0) g_loglevel--;
 		LOG_INFO("Decreasing log-level to %d.", g_loglevel);
+	}
+}
+
+static void setSocketOption(int nSockFd) {
+	// linger option
+	if(SET_TCP_LINGER_TIMEOUT > 0) {
+		struct linger li;
+		li.l_onoff = 1;
+		li.l_linger = MAX_LINGER_TIMEOUT;
+		if(setsockopt(nSockFd, SOL_SOCKET, SO_LINGER, &li, sizeof(struct linger)) < 0) {
+			LOG_WARN("Socket option(SO_LINGER) set failed.");
+		}
+	}
+
+	// nodelay option
+	if(SET_TCP_NODELAY > 0) {
+		int so_tcpnodelay = 1;
+		if(setsockopt(nSockFd, IPPROTO_TCP, TCP_NODELAY, &so_tcpnodelay, sizeof(so_tcpnodelay)) < 0) {
+			LOG_WARN("Socket option(TCP_NODELAY) set failed.");
+		}
 	}
 }

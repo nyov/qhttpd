@@ -27,13 +27,17 @@
 
 ssize_t streamRead(void *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs) {
 	ssize_t nReaded = qIoRead(pszBuffer, nSockFd, nSize, nTimeoutMs);
+#ifdef BUILD_DEBUG
 	if(nReaded > 0) DEBUG("[RX] (binary, readed %zd bytes)", nReaded);
+#endif
 	return nReaded;
 }
 
 ssize_t streamGets(char *pszStr, size_t nSize, int nSockFd, int nTimeoutMs) {
 	ssize_t nReaded = qIoGets(pszStr, nSize, nSockFd, nTimeoutMs);
+#ifdef BUILD_DEBUG
 	if(nReaded > 0) DEBUG("[RX] %s", pszStr);
+#endif
 	return nReaded;
 }
 
@@ -43,43 +47,66 @@ ssize_t streamGetb(char *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs) {
 	return nReaded;
 }
 
-ssize_t streamPrintf(int nSockFd, const char *format, ...) {
-	char szBuf[1024];
-	va_list arglist;
-
-	va_start(arglist, format);
-	vsnprintf(szBuf, sizeof(szBuf)-1, format, arglist);
-	szBuf[sizeof(szBuf)-1] = '\0';
-	va_end(arglist);
-
-	ssize_t nSent = qIoWrite(nSockFd, szBuf, strlen(szBuf), 0);
-	if(nSent >= 0) DEBUG("[TX] %s", qStrTrim(szBuf));
-	else DEBUG("[TX-ERR] %s", qStrTrim(szBuf));
-
-	return nSent;
-}
-
-ssize_t streamPuts(int nSockFd, const char *pszStr) {
-	ssize_t nSent = qIoPuts(nSockFd, pszStr, 0);
-	if(nSent >= 0) DEBUG("[TX] %s", pszStr);
-	else DEBUG("[TX-ERR] %s", pszStr);
-	return nSent;
-}
-
-ssize_t streamWrite(int nSockFd, const void *pszBuffer, size_t nSize) {
-	ssize_t nSent = qIoWrite(nSockFd, pszBuffer, nSize, 0);
-	DEBUG("[TX] (binary, sent/request=%zd/%zu bytes)\n%s", nSent, nSize, (char *)pszBuffer);
-	return nSent;
-}
-
 off_t streamSave(int nFd, int nSockFd, off_t nSize, int nTimeoutMs) {
 	off_t nSaved = qIoSend(nFd, nSockFd, nSize, nTimeoutMs);
 	DEBUG("[RX] (save %jd/%jd bytes)", nSaved, nSize);
 	return nSaved;
 }
 
+ssize_t streamPrintf(int nSockFd, const char *format, ...) {
+        char *pszBuf;
+        DYNAMIC_VSPRINTF(pszBuf, format);
+        if(pszBuf == NULL) return -1;
+
+	ssize_t nSent = qIoWrite(nSockFd, pszBuf, strlen(pszBuf), 0);
+        free(pszBuf);
+
+#ifdef BUILD_DEBUG
+	if(nSent >= 0) DEBUG("[TX] %s", qStrTrim(szBuf));
+	else DEBUG("[TX-ERR] %s", qStrTrim(szBuf));
+#endif
+
+	return nSent;
+}
+
+ssize_t streamPuts(int nSockFd, const char *pszStr) {
+	ssize_t nSent = qIoPuts(nSockFd, pszStr, 0);
+
+#ifdef BUILD_DEBUG
+	if(nSent >= 0) DEBUG("[TX] %s", pszStr);
+	else DEBUG("[TX-ERR] %s", pszStr);
+#endif
+
+	return nSent;
+}
+
+ssize_t streamStackOut(int nSockFd, Q_OBSTACK *obstack) {
+	ssize_t nWritten = obstack->writeFinal(obstack, nSockFd);
+
+#ifdef BUILD_DEBUG
+	if(g_debug) {
+		char *pszStr = (char *)obstack->getFinal(obstack, NULL);
+		if(pszStr != NULL) {
+			if(nWritten >= 0) DEBUG("[TX] %s", pszStr);
+			else DEBUG("[TX-ERR] %s", pszStr);
+			free(pszStr);
+		}
+	}
+#endif
+
+	return nWritten;
+}
+
+ssize_t streamWrite(int nSockFd, const void *pszBuffer, size_t nSize) {
+	ssize_t nWritten = qIoWrite(nSockFd, pszBuffer, nSize, 0);
+	DEBUG("[TX] (binary, written/request=%zd/%zu bytes)\n%s", nWritten, nSize, (char *)pszBuffer);
+
+	return nWritten;
+}
+
 off_t streamSend(int nSockFd, int nFd, off_t nSize, int nTimeoutMs) {
 	off_t nSent = qIoSend(nSockFd, nFd, nSize, nTimeoutMs);
         DEBUG("[TX] (send %jd/%jd bytes)", nSent, nSize);
+
 	return nSent;
 }
