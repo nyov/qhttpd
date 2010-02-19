@@ -33,16 +33,23 @@
 
 bool hookBeforeMainInit(void) {
 
+	// changing program name example
 	/*
-	g_prginfo = "PROGRAM_INFO"
-	g_prgname = "PROGRAM_NAME";
-	g_prgversion = "PROGRAM_VERSION";
+	g_prginfo = "YOUR_PROGRAM_INFO"
+	g_prgname = "YOUR_PROGRAM_NAME";
+	g_prgversion = "YOUR_PROGRAM_VERSION";
 	*/
 
 	return true;
 }
 
 bool hookAfterConfigLoaded(struct ServerConfig *config, bool bConfigLoadSucceed) {
+
+	// configuration overing example
+	/*
+	config->nPort = 8080;
+	*/
+
 	return true;
 }
 
@@ -94,6 +101,16 @@ bool hookAfterConnEstablished(int nSockFd) {
 // return response code, only when you set response code.
 // in case of modifying headers and such modifications, return 0.
 int hookRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
+	// method hooking example
+	/*
+	int nResCode = 0;
+	if(!strcmp(req->pszRequestMethod, "YOUR_METHOD_XXX")) {
+		nResCode = hookMethodXXX(req, res);
+	}
+
+	return nResCode;
+	*/
+
 	return 0;
 }
 
