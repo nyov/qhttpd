@@ -141,7 +141,6 @@ void childStart(int nSockFd) {
 			LOG_ERR("Hook failed.");
 		}
 #endif
-
 		// close connection
 		if(shutdown(nNewSockFd, SHUT_WR) == 0) {
 			char szDummyBuf[1024];

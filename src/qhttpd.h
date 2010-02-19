@@ -48,6 +48,7 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include "qDecoder.h"
 
@@ -250,6 +251,22 @@ struct HttpResponse {
 //
 #define	CONST_STRLEN(x)		(sizeof(x) - 1)
 #define IS_EMPTY_STRING(x)	(x == NULL || (x[0] == '\0') ? true : false )
+
+#define STOPWATCH_START									\
+	int _swno = 0;									\
+	struct timeval _tv1, _tv2;							\
+	gettimeofday(&_tv1, NULL)
+
+#define STOPWATCH_STOP	{								\
+	gettimeofday(&_tv2, NULL);							\
+	_swno++;									\
+	struct timeval _diff;								\
+	_diff.tv_sec = _tv2.tv_sec - _tv1.tv_sec;					\
+	if(_tv2.tv_usec >= _tv1.tv_usec) _diff.tv_usec = _tv2.tv_usec - _tv1.tv_usec;	\
+	else { _diff.tv_sec += 1; _diff.tv_usec = _tv1.tv_usec - _tv2.tv_usec; }	\
+	printf("STOPWATCH(%d,%d): %zus %dus (%s:%d)\n", getpid(), _swno, _diff.tv_sec, (int)(_diff.tv_usec), __FILE__, __LINE__);	\
+	gettimeofday(&_tv1, NULL);							\
+}
 
 #define _LOG(log, level, prestr, fmt, args...)	do {					\
 	if (g_loglevel >= level) {							\

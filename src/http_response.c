@@ -77,15 +77,15 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 	if(g_conf.bKeepAliveEnable == true && bKeepAlive == true) {
 		bKeepAlive = false;
 
-		/*
-		if(!strcmp(req->pszHttpVersion, HTTP_PROTOCOL_11)
-		&& httpHeaderHasStr(req->pHeaders, "CONNECTION", "CLOSE") == false) {
-			bKeepAlive = true;
-		}
-		*/
-		if(httpHeaderHasStr(req->pHeaders, "CONNECTION", "KEEP-ALIVE") == true
-		|| httpHeaderHasStr(req->pHeaders, "CONNECTION", "TE") == true) {
-			bKeepAlive = true;
+		if(!strcmp(req->pszHttpVersion, HTTP_PROTOCOL_11)) {
+			if(httpHeaderHasStr(req->pHeaders, "CONNECTION", "CLOSE") == false) {
+				bKeepAlive = true;
+			}
+		} else {
+			if(httpHeaderHasStr(req->pHeaders, "CONNECTION", "KEEP-ALIVE") == true
+			|| httpHeaderHasStr(req->pHeaders, "CONNECTION", "TE") == true) {
+				bKeepAlive = true;
+			}
 		}
 	} else {
 		bKeepAlive = false;

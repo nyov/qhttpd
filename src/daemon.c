@@ -70,18 +70,24 @@ void daemonStart(bool nDaemonize) {
 		LOG_ERR("Can't initialize semaphore.");
 		daemonEnd(EXIT_FAILURE);
 	}
-	LOG_INFO("  - Semaphore created.");
+	LOG_INFO("Semaphore created.");
 
 	// init shared memory
 	if (poolInit(g_conf.nMaxClients) == false) {
 		LOG_ERR("Can't initialize child management pool.");
 		daemonEnd(EXIT_FAILURE);
 	}
-	LOG_INFO("  - Child management pool created.");
+	LOG_INFO("Child management pool created.");
 
 	// load mime
-	if(mimeInit(g_conf.szMimeFile) == false) {
-		LOG_WARN("Can't load mimetypes from %s", g_conf.szMimeFile);
+	if(IS_EMPTY_STRING(g_conf.szMimeFile) == false) {
+		if(mimeInit(g_conf.szMimeFile) == true) {
+			LOG_INFO("Mimetypes loaded.");
+		} else {
+			LOG_WARN("Can't load mimetypes from %s", g_conf.szMimeFile);
+		}
+	} else {
+		LOG_WARN("No mimetype configuration file set.");
 	}
 
 	// init socket
@@ -92,13 +98,13 @@ void daemonStart(bool nDaemonize) {
 	} else {
 		int so_reuseaddr = 1;
 		int so_keepalive = 0;
-		//int so_tcpnodelay = 1;
-		int so_sndbufsize = 0;
-		int so_rcvbufsize = 0;
+		int so_tcpnodelay = 0;
+		int so_sndbufsize = 0; //32 * 1024;
+		int so_rcvbufsize = 0; //32 * 1024;
 
 		if (so_reuseaddr > 0) setsockopt(nSockFd, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr, sizeof(so_reuseaddr));
 		if (so_keepalive > 0) setsockopt(nSockFd, SOL_SOCKET, SO_KEEPALIVE, &so_keepalive, sizeof(so_keepalive));
-		//if (so_tcpnodelay > 0) setsockopt(nSockFd, IPPROTO_TCP, TCP_NODELAY, &so_tcpnodelay, sizeof(so_tcpnodelay));
+		if (so_tcpnodelay > 0) setsockopt(nSockFd, IPPROTO_TCP, TCP_NODELAY, &so_tcpnodelay, sizeof(so_tcpnodelay));
 		if (so_sndbufsize > 0) setsockopt(nSockFd, SOL_SOCKET, SO_SNDBUF, &so_sndbufsize, sizeof(so_sndbufsize));
 		if (so_rcvbufsize > 0) setsockopt(nSockFd, SOL_SOCKET, SO_RCVBUF, &so_rcvbufsize, sizeof(so_rcvbufsize));
 	}
@@ -118,7 +124,7 @@ void daemonStart(bool nDaemonize) {
 		LOG_ERR("Can't bind port %d (errno: %d)", g_conf.nPort, errno);
 		daemonEnd(EXIT_FAILURE);
 	}
-	LOG_INFO("  - Binding port %d succeed.", g_conf.nPort);
+	LOG_INFO("Binding port %d succeed.", g_conf.nPort);
 
 	// listen
 	if (listen(nSockFd, g_conf.nMaxPending) == -1) {
