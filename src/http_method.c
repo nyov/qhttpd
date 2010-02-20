@@ -259,13 +259,55 @@ int httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd) {
 	}
 
 	// save
-	off_t nSaved = streamSave(nFd, pReq->nSockFd, pReq->nContentsLength, pReq->nTimeout*1000);
+	if(pReq->nContentsLength > 0) {
+		off_t nSaved = streamSave(nFd, pReq->nSockFd, pReq->nContentsLength, pReq->nTimeout*1000);
 
-	if(nSaved != pReq->nContentsLength) {
-		LOG_INFO("Broken pipe. %jd/%jd, errno=%d", nSaved, pReq->nContentsLength, errno);
+		if(nSaved != pReq->nContentsLength) {
+			LOG_INFO("Broken pipe. %jd/%jd, errno=%d", nSaved, pReq->nContentsLength, errno);
+			return HTTP_CODE_BAD_REQUEST;
+		}
+
+		DEBUG("File %s saved. (%jd/%jd)", pReq->pszRequestPath, nSaved, pReq->nContentsLength);
+
+	} else if(httpHeaderHasStr(pReq->pHeaders, "TRANSFER-ENCODING", "CHUNKED") == true) {
+		off_t nSaved = 0;
+		bool bCompleted = false;
+		while(true) {
+			// read chunk size
+			char szLineBuf[64];
+			if(streamGets(szLineBuf, sizeof(szLineBuf), pReq->nSockFd, pReq->nTimeout * 1000) <= 0) break;
+
+			// parse chunk size
+			int nChunkSize = 0;
+			sscanf(szLineBuf, "%x", &nChunkSize);
+			if(nChunkSize == 0) {
+				// end of transfer
+				bCompleted = true;
+				break;
+			} else if(nChunkSize < 0) {
+				// parsing failure
+				break;
+			}
+
+			// save chunk
+			off_t nChunkSaved = streamSave(nFd, pReq->nSockFd, (size_t)nChunkSize, pReq->nTimeout*1000);
+			if(nChunkSaved != nChunkSize) break;
+
+			nSaved += nChunkSaved;
+
+			// read tailing CRLF
+			if(streamGets(szLineBuf, sizeof(szLineBuf), pReq->nSockFd, pReq->nTimeout * 1000) <= 0) break;
+		}
+
+		if(bCompleted == false) {
+			LOG_INFO("Broken pipe. %jd/chunked, errno=%d", nSaved, errno);
+			return HTTP_CODE_BAD_REQUEST;
+		}
+
+		DEBUG("File %s saved. (%jd/chunked)", pReq->pszRequestPath, nSaved);
+	} else {
 		return HTTP_CODE_BAD_REQUEST;
 	}
-	DEBUG("File %s saved. (%jd/%jd)", pReq->pszRequestPath, nSaved, pReq->nContentsLength);
 
 	// response
 	return HTTP_CODE_CREATED;

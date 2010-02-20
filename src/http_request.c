@@ -62,7 +62,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		char *pszReqMethod, *pszReqUri, *pszHttpVer, *pszTmp;
 
 		// read line
-		nStreamStatus = streamGets(szLineBuf, sizeof(szLineBuf), nSockFd, nTimeout*1000);
+		nStreamStatus = streamGets(szLineBuf, sizeof(szLineBuf), nSockFd, pReq->nTimeout * 1000);
 		if(nStreamStatus == 0) { // timeout
 			pReq->nReqStatus = -1;
 			return pReq;
@@ -157,7 +157,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	// Parse parameter headers : "key: value"
 	while(true) {
 		// read line
-		if(streamGets(szLineBuf, sizeof(szLineBuf), nSockFd, nTimeout*1000) <= 0) return pReq;
+		if(streamGets(szLineBuf, sizeof(szLineBuf), nSockFd, pReq->nTimeout * 1000) <= 0) return pReq;
 		if(strlen(szLineBuf) == 0) break; // detect line-feed
 
 		// separate :
@@ -202,7 +202,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 				}
 
 				// save into memory
-				int nReaded = streamGetb(pReq->pContents, nSockFd, pReq->nContentsLength, nTimeout*1000);
+				int nReaded = streamGetb(pReq->pContents, nSockFd, pReq->nContentsLength, pReq->nTimeout * 1000);
 				if(nReaded >= 0) pReq->pContents[nReaded] = '\0';
 				DEBUG("%s", pReq->pContents);
 
