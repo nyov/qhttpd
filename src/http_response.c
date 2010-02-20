@@ -184,6 +184,7 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	//
 
 	Q_OBSTACK *outBuf = qObstack();
+	if(outBuf == NULL) return false;
 
 	// first line is response code
 	outBuf->growStrf(outBuf, "%s %d %s\r\n",
@@ -213,7 +214,7 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 
 	// print out contents binary
 	if(res->nContentsLength > 0 && res->pContent != NULL) {
-		streamWrite(nSockFd, res->pContent, res->nContentsLength);
+		streamWrite(nSockFd, res->pContent, res->nContentsLength, g_conf.nConnectionTimeout * 1000);
 		//streamPrintf(nSockFd, "\r\n");
 	}
 
@@ -230,7 +231,7 @@ int httpResponseOutChunk(int nSockFd, const char *pszData, int nSize) {
 	int nSent = 0;
 	streamPrintf(nSockFd, "%x\r\n", nSize);
 	if(nSize > 0) {
-		nSent = streamWrite(nSockFd, pszData, nSize);
+		nSent = streamWrite(nSockFd, pszData, nSize, g_conf.nConnectionTimeout * 1000);
 	}
 	streamPrintf(nSockFd, "\r\n");
 

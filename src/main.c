@@ -109,10 +109,13 @@ int main(int argc, char *argv[]) {
 	bConfigLoadStatus = hookAfterConfigLoaded(&g_conf, bConfigLoadStatus);
 #endif
 	if(bConfigLoadStatus == false) {
-		fprintf(stderr, "ERROR: Can't load configuration.\n");
-		fprintf(stderr, "       Use '-d' option to see more details.\n");
-		fprintf(stderr, "       Use '-h' option for help messages.\n");
-		//printUsages();
+		fprintf(stderr, "ERROR: Failed to load configuration.\n");
+		return EXIT_FAILURE;
+	}
+
+	// check & parse config
+	if(checkConfig(&g_conf) == false) {
+		fprintf(stderr, "ERROR: Failed to verify configuration.");
 		return EXIT_FAILURE;
 	}
 

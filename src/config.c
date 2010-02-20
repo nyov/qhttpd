@@ -104,15 +104,6 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	fetch2Int(entry, pConf->nResponseExpires, "ResponseExpires");
 
 	fetch2Str(entry, pConf->szAllowedMethods, "AllowedMethods");
-	qStrUpper(pConf->szAllowedMethods);
-	if(!strcmp(pConf->szAllowedMethods, "ALL")) {
-		strncpy(pConf->szAllowedMethods, "OPTIONS,HEAD,GET,PUT,DELETE", sizeof(pConf->szAllowedMethods));
-	}
-	if(strstr(pConf->szAllowedMethods, "OPTIONS") != NULL) pConf->methods.bOptions = true;
-	if(strstr(pConf->szAllowedMethods, "HEAD") != NULL) pConf->methods.bHead = true;
-	if(strstr(pConf->szAllowedMethods, "GET") != NULL) pConf->methods.bGet = true;
-	if(strstr(pConf->szAllowedMethods, "PUT") != NULL) pConf->methods.bPut = true;
-	if(strstr(pConf->szAllowedMethods, "DELETE") != NULL) pConf->methods.bDelete = true;
 
 	fetch2Bool(entry, pConf->bEnableLua, "EnableLua");
 	fetch2Str(entry, pConf->szLuaScript, "LuaScript");
@@ -129,6 +120,32 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	// free resources
 	//
 	entry->free(entry);
+
+	return true;
+}
+
+bool checkConfig(struct ServerConfig *pConf) {
+	// allowed methods parsing
+	qStrUpper(pConf->szAllowedMethods);
+	if(!strcmp(pConf->szAllowedMethods, "ALL")) {
+		qStrCpy(pConf->szAllowedMethods, sizeof(pConf->szAllowedMethods),
+		"OPTIONS,HEAD,GET,PUT"
+		","
+		"PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK");
+	}
+
+	if(strstr(pConf->szAllowedMethods, "OPTIONS") != NULL) pConf->methods.bOptions = true;
+	if(strstr(pConf->szAllowedMethods, "HEAD") != NULL) pConf->methods.bHead = true;
+	if(strstr(pConf->szAllowedMethods, "GET") != NULL) pConf->methods.bGet = true;
+	if(strstr(pConf->szAllowedMethods, "PUT") != NULL) pConf->methods.bPut = true;
+
+	if(strstr(pConf->szAllowedMethods, "PROPFIND") != NULL) pConf->methods.bPropfind = true;
+	if(strstr(pConf->szAllowedMethods, "PROPPATCH") != NULL) pConf->methods.bProppatch = true;
+	if(strstr(pConf->szAllowedMethods, "MKCOL") != NULL) pConf->methods.bMkcol = true;
+	if(strstr(pConf->szAllowedMethods, "MOVE") != NULL) pConf->methods.bMove = true;
+	if(strstr(pConf->szAllowedMethods, "DELETE") != NULL) pConf->methods.bDelete = true;
+	if(strstr(pConf->szAllowedMethods, "LOCK") != NULL) pConf->methods.bLock = true;
+	if(strstr(pConf->szAllowedMethods, "UNLOCK") != NULL) pConf->methods.Unlock = true;
 
 	return true;
 }

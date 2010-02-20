@@ -168,7 +168,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		}
 
 		*tmp = '\0';
-		char *name = qStrUpper(qStrTrim(szLineBuf)); // 헤더 필드는 대문자로 저장
+		char *name = qStrUpper(qStrTrim(szLineBuf)); // to capital letters
 		char *value = qStrTrim(tmp + 1);
 
 		// put
@@ -187,21 +187,21 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	if(httpHeaderGetStr(req->pHeaders, "CONTENT-LENGTH") != NULL) {
 		req->nContentsLength = (off_t)atoll(httpHeaderGetStr(req->pHeaders, "CONTENT-LENGTH"));
 
-		// PUT과 POST인 경우엔 메모리 로드하지 않음
-		if(req->nContentsLength <= MAX_HTTP_MEMORY_CONTENTS
-			&& strcmp(req->pszRequestMethod, "PUT")	&& strcmp(req->pszRequestMethod, "POST")) {
-
+		// do not load into memory in case of PUT and POST method
+		if(strcmp(req->pszRequestMethod, "PUT")
+		&& strcmp(req->pszRequestMethod, "POST")
+		&& req->nContentsLength <= MAX_HTTP_MEMORY_CONTENTS) {
 			if(req->nContentsLength == 0) {
 				req->pContents = strdup("");
 			} else {
-				// 메모리 할당
+				// allocate memory
 				req->pContents = (char *)malloc(req->nContentsLength + 1);
 				if(req->pContents == NULL) {
 					LOG_WARN("Memory allocation failed.");
 					return req;
 				}
 
-				// 메모리에 저장
+				// save into memory
 				int nReaded = streamGetb(req->pContents, nSockFd, req->nContentsLength, nTimeout*1000);
 				if(nReaded >= 0) req->pContents[nReaded] = '\0';
 				DEBUG("[Contents] %s", req->pContents);
@@ -216,7 +216,10 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		}
 	}
 
-	// 정상 요청으로 플래그 변경
+	// set document root
+	req->pszDocRoot = strdup(g_conf.szDataDir);
+
+	// change flag to normal state
 	req->nReqStatus = 1;
 
 	return req;
@@ -224,6 +227,9 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 
 bool httpRequestFree(struct HttpRequest *req) {
 	if(req == NULL) return false;
+
+	if(req->pszDocRoot != NULL) free(req->pszDocRoot);
+
 	if(req->pszRequestMethod != NULL) free(req->pszRequestMethod);
 	if(req->pszRequestUri != NULL) free(req->pszRequestUri);
 	if(req->pszHttpVersion != NULL) free(req->pszHttpVersion);
@@ -234,6 +240,7 @@ bool httpRequestFree(struct HttpRequest *req) {
 
 	if(req->pHeaders != NULL) req->pHeaders->free(req->pHeaders);
 	if(req->pContents != NULL) free(req->pContents);
+
 	free(req);
 
 	return true;
@@ -246,7 +253,7 @@ static char *_getCorrectedHostname(const char *pszRequestHost) {
 		pszHost = strdup(pszRequestHost);
 		qStrLower(pszHost);
 
-		// 디폴트 포트 80이 붙어온 경우엔 제거
+		// if port number is 80, take it off
 		char *pszTmp = strstr(pszHost, ":");
 		if(pszTmp != NULL && !strcmp(pszTmp, ":80")) *pszTmp = '\0';
 	}

@@ -91,12 +91,12 @@ int httpMain(int nSockFd) {
 					nResCode =  httpRequestHandler(req, res);
 				}
 
-				if(nResCode == 0) {
+				if(nResCode == 0) { // never reach here
+					nResCode = response500(req, res);
 					LOG_ERR("An error occured while processing method.");
 				}
 			} else { // bad request
-				httpResponseSetCode(res, HTTP_CODE_BAD_REQUEST, req, false);
-				httpResponseSetContentHtml(res, "Your browser sent a request that this server could not understand.");
+				httpResponseSetSimple(req, res, HTTP_CODE_BAD_REQUEST, false, "Your browser sent a request that this server could not understand.");
 			}
 
 			// hook response
@@ -146,13 +146,13 @@ int httpMain(int nSockFd) {
 
 /*
  * @return	response code
- *		0 : system error
  */
 int httpRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
 	if(req == NULL || res == NULL) return 0;
 
-	// native method handlers
 	int nResCode = 0;
+
+	// HTTP methods : OPTIONS,HEAD,GET,PUT
 	if(!strcmp(req->pszRequestMethod, "OPTIONS")) {
 		nResCode = httpMethodOptions(req, res);
 	} else if(!strcmp(req->pszRequestMethod, "HEAD")) {
@@ -161,9 +161,27 @@ int httpRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
 		nResCode = httpMethodGet(req, res);
 	} else if(!strcmp(req->pszRequestMethod, "PUT")) {
 		nResCode = httpMethodPut(req, res);
+	}
+	// WebDAV methods : PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK
+	/*
+	else if(!strcmp(req->pszRequestMethod, "PROPFIND")) {
+		nResCode = httpMethodPropfind(req, res);
+	} else if(!strcmp(req->pszRequestMethod, "PROPPATCH")) {
+		nResCode = httpMethodDelete(req, res);
+	} else if(!strcmp(req->pszRequestMethod, "MKCOL")) {
+		nResCode = httpMethodDelete(req, res);
+	} else if(!strcmp(req->pszRequestMethod, "MOVE")) {
+		nResCode = httpMethodDelete(req, res);
 	} else if(!strcmp(req->pszRequestMethod, "DELETE")) {
 		nResCode = httpMethodDelete(req, res);
-	} else {
+	} else if(!strcmp(req->pszRequestMethod, "LOCK")) {
+		nResCode = httpMethodDelete(req, res);
+	} else if(!strcmp(req->pszRequestMethod, "UNLOCK")) {
+		nResCode = httpMethodDelete(req, res);
+	}
+	*/
+	// unknown methods
+	else {
 		nResCode = httpMethodNotImplemented(req, res);
 	}
 

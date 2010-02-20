@@ -51,7 +51,7 @@ int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
 
 	// get file stat
 	struct stat filestat;
-	if (stat(szFilePath, &filestat) < 0) {
+	if (sysStat(szFilePath, &filestat) < 0) {
 		return response404(req, res);
 	}
 
@@ -88,12 +88,13 @@ int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
 
 	// generate abs path
 	char szFilePath[PATH_MAX];
-	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
+	//snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
+	snprintf(szFilePath, sizeof(szFilePath), "%s", req->pszRequestPath);
 	szFilePath[sizeof(szFilePath) - 1] = '\0';
 
 	// get file stat
 	struct stat filestat;
-	if (stat(szFilePath, &filestat) < 0) {
+	if (sysStat(szFilePath, &filestat) < 0) {
 		return response404(req, res);
 	}
 
@@ -101,14 +102,14 @@ int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
 	int nResCode = HTTP_CODE_FORBIDDEN;
 	if(S_ISREG(filestat.st_mode)) {
 		// open file
-		int nFd = open(szFilePath, O_RDONLY , 0);
+		int nFd = sysOpen(szFilePath, O_RDONLY , 0);
 		if(nFd < 0) return response404(req, res);
 
 		// send file
 		nResCode = httpRealGet(req, res, nFd, &filestat, mimeDetect(szFilePath));
 
 		// close file
-		close(nFd);
+		sysClose(nFd);
 	}
 
 	// set response except of 200 and 304
@@ -226,7 +227,7 @@ int httpMethodPut(struct HttpRequest *req, struct HttpResponse *res) {
 	szFilePath[sizeof(szFilePath) - 1] = '\0';
 
 	// open file for writing
-	int nFd = open(szFilePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	int nFd = sysOpen(szFilePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if(nFd < 0) {
 		return response403(req, res); // forbidden - can't open file
 	}
@@ -235,7 +236,7 @@ int httpMethodPut(struct HttpRequest *req, struct HttpResponse *res) {
 	int nResCode = httpRealPut(req, res, nFd);
 
 	// close file
-	close(nFd);
+	sysClose(nFd);
 
 	// response
 	bool bKeepAlive = false;
@@ -279,7 +280,7 @@ int httpMethodDelete(struct HttpRequest *req, struct HttpResponse *res) {
 
 	// file info
 	struct stat filestat;
-	if (stat(szFilePath, &filestat) < 0) {
+	if (sysStat(szFilePath, &filestat) < 0) {
 		return response404(req, res);
 	}
 

@@ -97,8 +97,8 @@ ssize_t streamStackOut(int nSockFd, Q_OBSTACK *obstack) {
 	return nWritten;
 }
 
-ssize_t streamWrite(int nSockFd, const void *pszBuffer, size_t nSize) {
-	ssize_t nWritten = qIoWrite(nSockFd, pszBuffer, nSize, 0);
+ssize_t streamWrite(int nSockFd, const void *pszBuffer, size_t nSize, int nTimeoutMs) {
+	ssize_t nWritten = qIoWrite(nSockFd, pszBuffer, nSize, nTimeoutMs);
 	DEBUG("[TX] (binary, written/request=%zd/%zu bytes)\n%s", nWritten, nSize, (char *)pszBuffer);
 
 	return nWritten;

@@ -71,15 +71,13 @@
 
 #define MAX_LOGLEVEL				(4)		// maximum log level
 
-#define	MAX_SHUTDOWN_WAIT			(5000)		// maximum ms for waiting input stream after socket shutdown
-#define	MAX_LINGER_TIMEOUT			(15)		// TCP linger timeout. 0 for disable
-
 #define URI_MAX					(1024 * 4)	// maximum request uri length
 #define ETAG_MAX				(8+1+8+1+8+1)	// maximum etag string length including NULL termination
 
 // TCP options
 #define	SET_TCP_LINGER_TIMEOUT			(15)		// 0 for disable
 #define SET_TCP_NODELAY				(1)		// 0 for disable
+#define	MAX_SHUTDOWN_WAIT			(5000)		// maximum ms for waiting input stream after socket shutdown
 
 //
 // HTTP RESPONSE CODES
@@ -146,8 +144,17 @@ struct ServerConfig {
 		bool bGet;
 		bool bPut;
 
-		// extended methods
+		// WebDAV methods
+		bool bPropfind;
+		bool bProppatch;
+		bool bMkcol;
+		bool bMove;
 		bool bDelete;
+		bool bLock;
+		bool Unlock;
+
+		// Custom methods HERE
+
 	} methods;
 
 	bool	bEnableLua;
@@ -217,6 +224,7 @@ struct HttpRequest {
 
 	// request status
 	int	nReqStatus;		// request status 1:ok, 0:bad request, -1:timeout, -2:connection closed
+	char*	pszDocRoot;		// document root for this request
 
 	// request line
 	char*	pszRequestMethod;	// request method		ex) GET
@@ -263,6 +271,7 @@ extern	void		printVersion(void);
 
 // config.c
 extern	bool		loadConfig(struct ServerConfig *pConf, char *pszFilePath);
+extern	bool		checkConfig(struct ServerConfig *pConf);
 
 // daemon.c
 extern	void		daemonStart(bool nDaemonize);
@@ -373,7 +382,7 @@ extern	off_t		streamSave(int nFd, int nSockFd, off_t nSize, int nTimeoutMs);
 extern	ssize_t		streamPrintf(int nSockFd, const char *format, ...);
 extern	ssize_t		streamPuts(int nSockFd, const char *pszStr);
 extern	ssize_t		streamStackOut(int nSockFd, Q_OBSTACK *obstack);
-extern	ssize_t		streamWrite(int nSockFd, const void *pszBuffer, size_t nSize);
+extern	ssize_t		streamWrite(int nSockFd, const void *pszBuffer, size_t nSize, int nTimeoutMs);
 extern	off_t		streamSend(int nSockFd, int nFd, off_t nSize, int nTimeoutMs);
 
 // hook.c
@@ -408,6 +417,16 @@ extern	unsigned int	getIp2Uint(const char *szIp);
 extern	float		getDiffTimeval(struct timeval *t1, struct timeval *t0);
 extern	bool		isValidPathname(const char *pszPath);
 extern	void		correctPathname(char *pszPath);
+
+// syscall.c
+#include <dirent.h>
+extern	int		sysOpen(const char *pathname, int flags, mode_t mode);
+extern	int		sysClose(int fd);
+extern	int		sysStat(const char *path, struct stat *buf);
+extern	int		sysFstat(int fd, struct stat *buf);
+extern	DIR*		sysOpendir(const char *name);
+extern	struct dirent*	sysReaddir(DIR *dir);int sysClosedir(DIR *dir);
+extern	int		sysClosedir(DIR *dir);
 
 //
 // GLOBAL VARIABLES
