@@ -15,7 +15,10 @@ MimeFile			= ${ConfDir}/mimetypes.conf
 PidFile			= ${RunDir}/qhttpd.pid
 
 ## document root
-DocRoot			= ${BaseDir}/htdocs
+DocumentRoot		= ${BaseDir}/htdocs
+
+## directory index file
+DirectoryIndex		= index.html
 
 ## listening port
 Port			= 8080
@@ -53,10 +56,6 @@ ConnectionTimeout	= 5
 ## 503 SERVICE_UNAVAILABLE, otherwise the coming connections will
 ## be pended and waiting the sequence.
 IgnoreOverConnection     = NO
-
-##
-## TTL Control
-##
 
 ## number of seconds of contents expiration
 ## if the value is greater than 0, qhttpd will generate

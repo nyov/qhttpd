@@ -95,6 +95,14 @@ int httpMethodGet(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 		return response404(pReq, pRes);
 	}
 
+ 	// is directory?
+ 	if(S_ISDIR(filestat.st_mode) && pReq->pszDirectoryIndex != NULL) {
+ 		qStrCatf(szFilePath, "/%s", pReq->pszDirectoryIndex);
+ 		if (sysStat(szFilePath, &filestat) < 0) {
+			return response404(pReq, pRes);
+		}
+ 	}
+
 	// do action
 	int nResCode = HTTP_CODE_FORBIDDEN;
 	if(S_ISREG(filestat.st_mode)) {

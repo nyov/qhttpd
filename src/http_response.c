@@ -167,7 +167,7 @@ bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
 
 	if(pRes->bChunked == true) {
 		httpHeaderSetStr(pRes->pHeaders, "Transfer-Encoding", "chunked");
-	} else if(pRes->pContent != NULL) {
+	} else if(pRes->nContentsLength > 0 || pRes->pContent != NULL) {
 		httpHeaderSetStrf(pRes->pHeaders, "Content-Length", "%jd", pRes->nContentsLength);
 	}
 

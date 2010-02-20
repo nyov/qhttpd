@@ -217,7 +217,10 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	}
 
 	// set document root
-	pReq->pszDocRoot = strdup(g_conf.szDocRoot);
+	pReq->pszDocumentRoot = strdup(g_conf.szDocumentRoot);
+	if(IS_EMPTY_STRING(g_conf.szDirectoryIndex) == false) {
+		pReq->pszDirectoryIndex = strdup(g_conf.szDirectoryIndex);
+	}
 
 	// change flag to normal state
 	pReq->nReqStatus = 1;
@@ -229,7 +232,7 @@ char *httpRequestGetSysPath(struct HttpRequest *pReq, char *pszBuf, size_t nBufS
 	if(pReq == NULL || pReq->nReqStatus != 1) return NULL;
 
 	// generate abs path
-	snprintf(pszBuf, nBufSize, "%s%s", pReq->pszDocRoot, pszPath);
+	snprintf(pszBuf, nBufSize, "%s%s", pReq->pszDocumentRoot, pszPath);
 	pszBuf[nBufSize - 1] = '\0';
 
 	return pszBuf;
@@ -238,7 +241,8 @@ char *httpRequestGetSysPath(struct HttpRequest *pReq, char *pszBuf, size_t nBufS
 bool httpRequestFree(struct HttpRequest *pReq) {
 	if(pReq == NULL) return false;
 
-	if(pReq->pszDocRoot != NULL) free(pReq->pszDocRoot);
+	if(pReq->pszDocumentRoot != NULL) free(pReq->pszDocumentRoot);
+	if(pReq->pszDirectoryIndex != NULL) free(pReq->pszDirectoryIndex);
 
 	if(pReq->pszRequestMethod != NULL) free(pReq->pszRequestMethod);
 	if(pReq->pszRequestUri != NULL) free(pReq->pszRequestUri);

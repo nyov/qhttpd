@@ -122,7 +122,9 @@ struct ServerConfig {
 
 	char	szMimeFile[PATH_MAX];
 	char	szPidFile[PATH_MAX];
-	char	szDocRoot[PATH_MAX];
+
+	char	szDocumentRoot[PATH_MAX];
+	char	szDirectoryIndex[NAME_MAX];
 
 	int	nPort;
 	int	nMaxPending;
@@ -228,7 +230,8 @@ struct HttpRequest {
 
 	// request status
 	int	nReqStatus;		// request status 1:ok, 0:bad request, -1:timeout, -2:connection closed
-	char*	pszDocRoot;		// document root for this request
+	char*	pszDocumentRoot;	// document root for this request
+	char*	pszDirectoryIndex;	// directory index file
 
 	// request line
 	char*	pszRequestMethod;	// request method		ex) GET

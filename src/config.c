@@ -87,7 +87,9 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 
 	fetch2Str(entry, pConf->szMimeFile, "MimeFile");
 	fetch2Str(entry, pConf->szPidFile, "PidFile");
-	fetch2Str(entry, pConf->szDocRoot, "DocRoot");
+
+	fetch2Str(entry, pConf->szDocumentRoot, "DocumentRoot");
+	fetch2Str(entry, pConf->szDirectoryIndex, "DirectoryIndex");
 
 	fetch2Int(entry, pConf->nPort, "Port");
 	fetch2Int(entry, pConf->nMaxPending, "MaxPending");
