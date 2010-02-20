@@ -1,101 +1,91 @@
 ##
-## qHttpd Setting
+## This is the main qHttpd configuration file.  It contains the
+## configuration directives that give the server its instructions.
+## See <URL:http://www.qdecoder.org/> for detailed information.
 ##
 
+## These are variables and not configuration mandatory entries.
 BaseDir			= /usr/local/qhttpd
-BinDir			= ${BaseDir}/bin
 RunDir			= ${BaseDir}/run
 LogDir			= ${BaseDir}/logs
-TmpDir			= /tmp
 
-## the mimetype file
-MimeFile			= ${ConfDir}/mimetypes.conf
-
-## the pid file which is recorded by egisdavd when it starts
+## PidFile: The file in which the server should record its process
+## identification number when it starts.
 PidFile			= ${RunDir}/qhttpd.pid
 
-## document root
+## MimeFile: The location of the mime-types file.
+MimeFile		= ${ConfDir}/mimetypes.conf
+
+## DocumentRoot: The directory out of which you will serve your
+## documents. By default, all requests are taken from this directory.
 DocumentRoot		= ${BaseDir}/htdocs
 
-## directory index file
+## DirectoryIndex: sets the filename that will be served if a
+## directory is requested. Set to empty to disable.
 DirectoryIndex		= index.html
 
-## listening port
+## Port: listening port to serve.
 Port			= 8080
 
-## number of connection queuing
+## MaxPending: defines the maximum length the queue of pending connections
+## may grow tonumber of connection queuing.
 MaxPending		= 5
 
-## number of server processes to start
+## StartServers:    number of server processes to start.
+## MinSpareServers: minimum number of server processes which are kept spare.
+## MaxSpareServers: maximum number of server processes which are kept spare.
+## MaxIdleSeconds:  maximum number of seconds which idle server process waits.
+## MaxClients:      maximum number of server processes allowed to start.
+## MaxRequestsPerChild: maximum number of requests a server process serves.
 StartServers		= 5
-
-## minimum number of server processes which are kept spare
 MinSpareServers		= 3
-
-## maximum number of server processes which are kept spare
 MaxSpareServers		= 15
-
-## maximum number of idle seconds
 MaxIdleSeconds		= 300
-
-## maximum number of server processes allowed to start
 MaxClients		= 150
-
-## maximum number of requests a server process serves
 MaxRequestsPerChild	= 3000
 
-## number of seconds to wait for the next request
+## KeepAliveEnable: Whether or not to allow persistent connections.
+## Set to "NO" to deactivate.
 KeepAliveEnable		= YES
 
-## number of seconds before receives and sends time out.
-ConnectionTimeout	= 5
+## ConnectionTimeout: Number of seconds to wait for the request from the
+## same client on the same connection. Also used for Keep-Alive timeout.
+ConnectionTimeout	= 10
 
-## allows you to handle coming connections while maximum childs
-## are reached and all childs are working. set to YES, then the
-## coming connections will be closed immediately with to response
-## 503 SERVICE_UNAVAILABLE, otherwise the coming connections will
-## be pended and waiting the sequence.
+## IgnoreOverConnection: allows to handle over coming connections
+## than MaxClients setting. set to YES to response 503(SERVICE_UNAVAILABLE)
+## and drop over coming connections immediately.
 IgnoreOverConnection     = NO
 
-## number of seconds of contents expiration
-## if the value is greater than 0, qhttpd will generate
-## Cache-Control and Expires response headers.
+## ResponseExpires: number of seconds of contents expiration.
+## Cache-Control and Expires response headers will be appended, if it's
+## greater than 0. Set to 0 to deactivate.
 ResponseExpires		= 0
 
-##
-## Allowed methods
-##   HTTP methods     : OPTIONS,HEAD,GET,PUT
-##   Extended methods : PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK
-## "ALL" = HTTP + Extended methods
-##
+## Allowed methods: List up methods you want to activate.
+## Set to "ALL" to activate all supported methods.
+## - HTTP methods     : OPTIONS,HEAD,GET,PUT
+## - Extended methods : PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK
 AllowedMethods		= ALL
 #AllowedMethods		= OPTIONS,HEAD,GET
 #AllowedMethods		= OPTIONS,HEAD,GET,PUT,PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK
 
-##
-## Lua Script Engine
-##
+## EnableLua: Whether or not to allow LUA script engine.
+## LuaScript: The file which contains LUA script for hooking connection.
 EnableLua		= NO
 LuaScript		= ${ConfDir}/qhttpd.lua
 
-##
-## Server Status Setting
-##
+## StatusEnable: Whether or not to allow server status reports.
+## StatusUrl: The URL for retrieving server status reports.
 StatusEnable		= YES
 StatusUrl		= /server-status
 
-##
-## Log Setting
-##
-
-## error log format
+## ErrorLog:  The location of the error log file.
+## AccessLog: The location of the access log file.
+## LogRotate: The time period for automatic log file rotation.
+## LogLevel:  Control the number of messages logged to the ErrorLog.
+##            0:SYSTEM, 1:ERROR, 2:WARNING, 3:INFO, 4:DEBUG
 ErrorLog		= ${LogDir}/qhttpd-%Y%m%d.err
-
-## access log format
 AccessLog		= ${LogDir}/qhttpd-%Y%m%d.log
-
-## number of seconds to rotate log
 LogRotate		= 86400
-
-## log level, 0:SYSTEM, 1:ERROR, 2:WARNING, 3:INFO, 4:DEBUG
 LogLevel		= 2

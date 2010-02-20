@@ -81,12 +81,8 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	// copy to structure
 	qStrCpy(pConf->szConfigFile, sizeof(pConf->szConfigFile), pszFilePath);
 
-	fetch2Str(entry, pConf->szRunDir, "RunDir");
-	fetch2Str(entry, pConf->szLogDir, "LogDir");
-	fetch2Str(entry, pConf->szTmpDir, "TmpDir");
-
-	fetch2Str(entry, pConf->szMimeFile, "MimeFile");
 	fetch2Str(entry, pConf->szPidFile, "PidFile");
+	fetch2Str(entry, pConf->szMimeFile, "MimeFile");
 
 	fetch2Str(entry, pConf->szDocumentRoot, "DocumentRoot");
 	fetch2Str(entry, pConf->szDirectoryIndex, "DirectoryIndex");

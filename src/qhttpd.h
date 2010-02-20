@@ -116,12 +116,8 @@
 struct ServerConfig {
 	char	szConfigFile[PATH_MAX];
 
-	char	szRunDir[PATH_MAX];
-	char	szLogDir[PATH_MAX];
-	char	szTmpDir[PATH_MAX];
-
-	char	szMimeFile[PATH_MAX];
 	char	szPidFile[PATH_MAX];
+	char	szMimeFile[PATH_MAX];
 
 	char	szDocumentRoot[PATH_MAX];
 	char	szDirectoryIndex[NAME_MAX];
