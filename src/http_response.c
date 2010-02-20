@@ -26,54 +26,54 @@
 #include "qhttpd.h"
 
 struct HttpResponse *httpResponseCreate(void) {
-	struct HttpResponse *res;
+	struct HttpResponse *pRes;
 
 	// initialize response structure
-	res = (struct HttpResponse *)malloc(sizeof(struct HttpResponse));
-	if(res == NULL) return NULL;
+	pRes = (struct HttpResponse *)malloc(sizeof(struct HttpResponse));
+	if(pRes == NULL) return NULL;
 
-	memset((void *)res, 0, sizeof(struct HttpResponse));
-	res->bOut = false;
-	res->pHeaders = qEntry();
-	if(res->pHeaders == NULL) return NULL;
+	memset((void *)pRes, 0, sizeof(struct HttpResponse));
+	pRes->bOut = false;
+	pRes->pHeaders = qEntry();
+	if(pRes->pHeaders == NULL) return NULL;
 
-	return res;
+	return pRes;
 }
 
-int httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int nResCode, bool nKeepAlive, const char *pszText) {
-	httpResponseSetCode(res, nResCode, req, nKeepAlive);
+int httpResponseSetSimple(struct HttpRequest *pReq, struct HttpResponse *pRes, int nResCode, bool nKeepAlive, const char *pszText) {
+	httpResponseSetCode(pRes, nResCode, pReq, nKeepAlive);
 
 	if(pszText != NULL) {
-		httpResponseSetContentHtml(res, pszText);
+		httpResponseSetContentHtml(pRes, pszText);
 	}
 
-	return res->nResponseCode;
+	return pRes->nResponseCode;
 }
 
 /**
  * @param pszHttpVer response protocol version, can be NULL to set response protocol as request protocol
  * @param bKeepAlive Keep-Alive. automatically turned of if request is not HTTP/1.1 or there is no keep-alive request.
  */
-bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequest *req, bool bKeepAlive) {
+bool httpResponseSetCode(struct HttpResponse *pRes, int nResCode, struct HttpRequest *pReq, bool bKeepAlive) {
 	// version setting
-	char *pszHttpVer = pszHttpVer = req->pszHttpVersion;
+	char *pszHttpVer = pszHttpVer = pReq->pszHttpVersion;
 	if(pszHttpVer == NULL) pszHttpVer = HTTP_PROTOCOL_11;
 
 	// default headers
-	httpHeaderSetStr(res->pHeaders, "Date", qTimeGetGmtStaticStr(0));
-	httpHeaderSetStrf(res->pHeaders, "Server", "%s/%s (%s)", g_prgname, g_prgversion, g_prginfo);
+	httpHeaderSetStr(pRes->pHeaders, "Date", qTimeGetGmtStaticStr(0));
+	httpHeaderSetStrf(pRes->pHeaders, "Server", "%s/%s (%s)", g_prgname, g_prgversion, g_prginfo);
 
 	// decide to turn on/off keep-alive
 	if(g_conf.bKeepAliveEnable == true && bKeepAlive == true) {
 		bKeepAlive = false;
 
 		if(!strcmp(pszHttpVer, HTTP_PROTOCOL_11)) {
-			if(httpHeaderHasStr(req->pHeaders, "CONNECTION", "CLOSE") == false) {
+			if(httpHeaderHasStr(pReq->pHeaders, "CONNECTION", "CLOSE") == false) {
 				bKeepAlive = true;
 			}
 		} else {
-			if(httpHeaderHasStr(req->pHeaders, "CONNECTION", "KEEP-ALIVE") == true
-			|| httpHeaderHasStr(req->pHeaders, "CONNECTION", "TE") == true) {
+			if(httpHeaderHasStr(pReq->pHeaders, "CONNECTION", "KEEP-ALIVE") == true
+			|| httpHeaderHasStr(pReq->pHeaders, "CONNECTION", "TE") == true) {
 				bKeepAlive = true;
 			}
 		}
@@ -83,59 +83,59 @@ bool httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequ
 
 	// Set keep-alive header
 	if(bKeepAlive == true) {
-		httpHeaderSetStr(res->pHeaders, "Connection", "Keep-Alive");
-		httpHeaderSetStrf(res->pHeaders, "Keep-Alive", "timeout=%d", req->nTimeout);
+		httpHeaderSetStr(pRes->pHeaders, "Connection", "Keep-Alive");
+		httpHeaderSetStrf(pRes->pHeaders, "Keep-Alive", "timeout=%d", pReq->nTimeout);
 	} else {
-		httpHeaderSetStr(res->pHeaders, "Connection", "close");
+		httpHeaderSetStr(pRes->pHeaders, "Connection", "close");
 	}
 
 	// Set response code
-	if(res->pszHttpVersion != NULL) free(res->pszHttpVersion);
-	res->pszHttpVersion = strdup(pszHttpVer);
-	res->nResponseCode = nResCode;
+	if(pRes->pszHttpVersion != NULL) free(pRes->pszHttpVersion);
+	pRes->pszHttpVersion = strdup(pszHttpVer);
+	pRes->nResponseCode = nResCode;
 
 	return true;
 }
 
-bool httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, const char *pContent, off_t nContentsLength) {
+bool httpResponseSetContent(struct HttpResponse *pRes, const char *pszContentType, const char *pContent, off_t nContentsLength) {
 	// content-type
-	if(res->pszContentType != NULL) free(res->pszContentType);
-	res->pszContentType = (pszContentType != NULL) ? strdup(pszContentType) : NULL;
+	if(pRes->pszContentType != NULL) free(pRes->pszContentType);
+	pRes->pszContentType = (pszContentType != NULL) ? strdup(pszContentType) : NULL;
 
 	// content
-	if(res->pContent != NULL) free(res->pContent);
+	if(pRes->pContent != NULL) free(pRes->pContent);
 	if(pContent == NULL) {
-		res->pContent = NULL;
+		pRes->pContent = NULL;
 	} else {
-		res->pContent = (char *)malloc(nContentsLength + 1);
-		if(res->pContent == NULL) return false;
-		memcpy((void *)res->pContent, pContent, nContentsLength);
-		res->pContent[nContentsLength] = '\0'; // for debugging purpose
+		pRes->pContent = (char *)malloc(nContentsLength + 1);
+		if(pRes->pContent == NULL) return false;
+		memcpy((void *)pRes->pContent, pContent, nContentsLength);
+		pRes->pContent[nContentsLength] = '\0'; // for debugging purpose
 	}
 
 	// content-length
-	res->nContentsLength = nContentsLength;
+	pRes->nContentsLength = nContentsLength;
 
 	return true;
 }
 
-bool httpResponseSetContentChunked(struct HttpResponse *res, bool bChunked) {
-	res->bChunked = bChunked;
+bool httpResponseSetContentChunked(struct HttpResponse *pRes, bool bChunked) {
+	pRes->bChunked = bChunked;
 	if(bChunked == true) {
-		if(res->pContent != NULL) {
-			free(res->pContent);
-			res->pContent = NULL;
+		if(pRes->pContent != NULL) {
+			free(pRes->pContent);
+			pRes->pContent = NULL;
 		}
 
-		if(res->nContentsLength != 0) {
-			res->nContentsLength = 0;
+		if(pRes->nContentsLength != 0) {
+			pRes->nContentsLength = 0;
 		}
 	}
 
 	return true;
 }
 
-bool httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg) {
+bool httpResponseSetContentHtml(struct HttpResponse *pRes, const char *pszMsg) {
 	char szContent[1024];
 
 	snprintf(szContent, sizeof(szContent)-1,
@@ -148,36 +148,36 @@ bool httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg) {
 		"<hr>\r\n"
 		"<address>%s %s/%s</address>\r\n"
 		"</body></html>",
-		res->nResponseCode, httpResponseGetMsg(res->nResponseCode),
-		res->nResponseCode, httpResponseGetMsg(res->nResponseCode),
+		pRes->nResponseCode, httpResponseGetMsg(pRes->nResponseCode),
+		pRes->nResponseCode, httpResponseGetMsg(pRes->nResponseCode),
 		pszMsg,
 		g_prginfo, g_prgname, g_prgversion
 	);
 	//szContent[sizeof(szContent)-1] = '\0';
 
-	return httpResponseSetContent(res, "text/html", szContent, strlen(szContent));
+	return httpResponseSetContent(pRes, "text/html", szContent, strlen(szContent));
 }
 
-bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
-	if(res->pszHttpVersion == NULL || res->nResponseCode == 0 || res->bOut == true) return false;
+bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
+	if(pRes->pszHttpVersion == NULL || pRes->nResponseCode == 0 || pRes->bOut == true) return false;
 
 	//
 	// set headers
 	//
 
-	if(res->bChunked == true) {
-		httpHeaderSetStr(res->pHeaders, "Transfer-Encoding", "chunked");
-	} else if(res->nContentsLength > 0) {
-		httpHeaderSetStrf(res->pHeaders, "Content-Length", "%jd", res->nContentsLength);
+	if(pRes->bChunked == true) {
+		httpHeaderSetStr(pRes->pHeaders, "Transfer-Encoding", "chunked");
+	} else if(pRes->pContent != NULL) {
+		httpHeaderSetStrf(pRes->pHeaders, "Content-Length", "%jd", pRes->nContentsLength);
 	}
 
 	// Content-Type header
-	if(res->pszContentType != NULL) {
-		httpHeaderSetStr(res->pHeaders, "Content-Type", res->pszContentType);
+	if(pRes->pszContentType != NULL) {
+		httpHeaderSetStr(pRes->pHeaders, "Content-Type", pRes->pszContentType);
 	}
 
 	// Date header
-	httpHeaderSetStr(res->pHeaders, "Date", qTimeGetGmtStaticStr(0));
+	httpHeaderSetStr(pRes->pHeaders, "Date", qTimeGetGmtStaticStr(0));
 
 	//
 	// Print out
@@ -188,13 +188,13 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 
 	// first line is response code
 	outBuf->growStrf(outBuf, "%s %d %s\r\n",
-		res->pszHttpVersion,
-		res->nResponseCode,
-		httpResponseGetMsg(res->nResponseCode)
+		pRes->pszHttpVersion,
+		pRes->nResponseCode,
+		httpResponseGetMsg(pRes->nResponseCode)
 	);
 
 	// print out headers
-	Q_ENTRY *tbl = res->pHeaders;
+	Q_ENTRY *tbl = pRes->pHeaders;
 	Q_NLOBJ_T obj;
 	memset((void*)&obj, 0, sizeof(obj)); // must be cleared before call
 	tbl->lock(tbl);
@@ -213,12 +213,12 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
 	outBuf->free(outBuf);
 
 	// print out contents binary
-	if(res->nContentsLength > 0 && res->pContent != NULL) {
-		streamWrite(nSockFd, res->pContent, res->nContentsLength, g_conf.nConnectionTimeout * 1000);
+	if(pRes->nContentsLength > 0 && pRes->pContent != NULL) {
+		streamWrite(nSockFd, pRes->pContent, pRes->nContentsLength, g_conf.nConnectionTimeout * 1000);
 		//streamPrintf(nSockFd, "\r\n");
 	}
 
-	res->bOut = true;
+	pRes->bOut = true;
 	return true;
 }
 
@@ -227,25 +227,27 @@ bool httpResponseOut(struct HttpResponse *res, int nSockFd) {
  *
  * @return	a number of octets sent (do not include bytes which are sent for chunk boundary string)
  */
-int httpResponseOutChunk(int nSockFd, const char *pszData, int nSize) {
+int httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize) {
 	int nSent = 0;
+
 	streamPrintf(nSockFd, "%x\r\n", nSize);
 	if(nSize > 0) {
-		nSent = streamWrite(nSockFd, pszData, nSize, g_conf.nConnectionTimeout * 1000);
+		nSent = streamWrite(nSockFd, pData, nSize, g_conf.nConnectionTimeout * 1000);
+		DEBUG("[TX] %s", (char*) pData);
 	}
 	streamPrintf(nSockFd, "\r\n");
 
 	return nSent;
 }
 
-void httpResponseFree(struct HttpResponse *res) {
-	if(res == NULL) return;
+void httpResponseFree(struct HttpResponse *pRes) {
+	if(pRes == NULL) return;
 
-	if(res->pszHttpVersion != NULL) free(res->pszHttpVersion);
-	if(res->pHeaders) res->pHeaders->free(res->pHeaders);
-	if(res->pszContentType != NULL) free(res->pszContentType);
-	if(res->pContent != NULL) free(res->pContent);
-	free(res);
+	if(pRes->pszHttpVersion != NULL) free(pRes->pszHttpVersion);
+	if(pRes->pHeaders) pRes->pHeaders->free(pRes->pHeaders);
+	if(pRes->pszContentType != NULL) free(pRes->pszContentType);
+	if(pRes->pContent != NULL) free(pRes->pContent);
+	free(pRes);
 }
 
 const char *httpResponseGetMsg(int nResCode) {

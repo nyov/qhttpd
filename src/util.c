@@ -25,8 +25,8 @@
 
 #include "qhttpd.h"
 
-char *getEtag(char *pszBuf, size_t nBufSize, char *pszFilepath, struct stat *pStat) {
-	unsigned int nFilepathHash = qHashFnv32(0, (void*)pszFilepath, strlen(pszFilepath));
+char *getEtag(char *pszBuf, size_t nBufSize, const char *pszPath, struct stat *pStat) {
+	unsigned int nFilepathHash = qHashFnv32(0, (const void*)pszPath, strlen(pszPath));
 	snprintf(pszBuf, nBufSize, "%08x-%08x-%08x", nFilepathHash, (unsigned int)pStat->st_size, (unsigned int)pStat->st_mtime);
 	pszBuf[nBufSize - 1] = '\0';
 	return pszBuf;

@@ -28,12 +28,12 @@
 /*
  * http method - OPTIONS
  */
-int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
-	if(g_conf.methods.bOptions == false) return response405(req, res);
+int httpMethodOptions(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	if(g_conf.methods.bOptions == false) return response405(pReq, pRes);
 
-	httpResponseSetCode(res, HTTP_CODE_OK, req, true);
-	httpHeaderSetStr(res->pHeaders, "Allow", g_conf.szAllowedMethods);
-	httpResponseSetContent(res, "httpd/unix-directory", NULL, 0);
+	httpResponseSetCode(pRes, HTTP_CODE_OK, pReq, true);
+	httpHeaderSetStr(pRes->pHeaders, "Allow", g_conf.szAllowedMethods);
+	httpResponseSetContent(pRes, "httpd/unix-directory", "", 0);
 
 	return HTTP_CODE_OK;
 }
@@ -41,18 +41,17 @@ int httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res) {
 /*
  * http method - HEAD
  */
-int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
-	if(g_conf.methods.bHead == false) return response405(req, res);
+int httpMethodHead(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	if(g_conf.methods.bHead == false) return response405(pReq, pRes);
 
 	// generate abs path
 	char szFilePath[PATH_MAX];
-	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
-	szFilePath[sizeof(szFilePath) - 1] = '\0';
+	httpRequestGetSysPath(pReq, szFilePath, sizeof(szFilePath), pReq->pszRequestPath);
 
 	// get file stat
 	struct stat filestat;
 	if (sysStat(szFilePath, &filestat) < 0) {
-		return response404(req, res);
+		return response404(pReq, pRes);
 	}
 
 	// do action
@@ -64,38 +63,36 @@ int httpMethodHead(struct HttpRequest *req, struct HttpResponse *res) {
 
 		// get Etag
 		char szEtag[ETAG_MAX];
-		getEtag(szEtag, sizeof(szEtag), req->pszRequestPath, &filestat);
+		getEtag(szEtag, sizeof(szEtag), pReq->pszRequestPath, &filestat);
 
 		// set headers
-		httpHeaderSetStr(res->pHeaders, "Accept-Ranges", "bytes");
-		httpHeaderSetStrf(res->pHeaders, "Last-Modified", "%s", qTimeGetGmtStaticStr(filestat.st_mtime));
-		httpHeaderSetStrf(res->pHeaders, "ETag", "\"%s\"", szEtag);
-		httpHeaderSetExpire(res->pHeaders, g_conf.nResponseExpires);
+		httpHeaderSetStr(pRes->pHeaders, "Accept-Ranges", "bytes");
+		httpHeaderSetStrf(pRes->pHeaders, "Last-Modified", "%s", qTimeGetGmtStaticStr(filestat.st_mtime));
+		httpHeaderSetStrf(pRes->pHeaders, "ETag", "\"%s\"", szEtag);
+		httpHeaderSetExpire(pRes->pHeaders, g_conf.nResponseExpires);
 	} else {
 		pszHtmlMsg = httpResponseGetMsg(nResCode);
 	}
 
 	// set response
-	httpResponseSetSimple(req, res, nResCode, true, pszHtmlMsg);
+	httpResponseSetSimple(pReq, pRes, nResCode, true, pszHtmlMsg);
 	return nResCode;
 }
 
 /*
  * http method - GET
  */
-int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
-	if(g_conf.methods.bGet == false) return response405(req, res);
+int httpMethodGet(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	if(g_conf.methods.bGet == false) return response405(pReq, pRes);
 
 	// generate abs path
 	char szFilePath[PATH_MAX];
-	//snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
-	snprintf(szFilePath, sizeof(szFilePath), "%s", req->pszRequestPath);
-	szFilePath[sizeof(szFilePath) - 1] = '\0';
+	httpRequestGetSysPath(pReq, szFilePath, sizeof(szFilePath), pReq->pszRequestPath);
 
 	// get file stat
 	struct stat filestat;
 	if (sysStat(szFilePath, &filestat) < 0) {
-		return response404(req, res);
+		return response404(pReq, pRes);
 	}
 
 	// do action
@@ -103,18 +100,18 @@ int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
 	if(S_ISREG(filestat.st_mode)) {
 		// open file
 		int nFd = sysOpen(szFilePath, O_RDONLY , 0);
-		if(nFd < 0) return response404(req, res);
+		if(nFd < 0) return response404(pReq, pRes);
 
 		// send file
-		nResCode = httpRealGet(req, res, nFd, &filestat, mimeDetect(szFilePath));
+		nResCode = httpRealGet(pReq, pRes, nFd, &filestat, mimeDetect(szFilePath));
 
 		// close file
 		sysClose(nFd);
 	}
 
 	// set response except of 200 and 304
-	if(res->nResponseCode == 0) {
-		httpResponseSetSimple(req, res, nResCode, true, httpResponseGetMsg(nResCode));
+	if(pRes->nResponseCode == 0) {
+		httpResponseSetSimple(pReq, pRes, nResCode, true, httpResponseGetMsg(nResCode));
 	}
 
 	return nResCode;
@@ -123,42 +120,42 @@ int httpMethodGet(struct HttpRequest *req, struct HttpResponse *res) {
 /*
  * returns expected response code. it do not send response except of HTTP_CODE_OK and HTTP_CODE_NOT_MODIFIED.
  */
-int httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, struct stat *pStat, const char *pszContentType) {
+int httpRealGet(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd, struct stat *pStat, const char *pszContentType) {
 	// get size
 	off_t nFilesize = pStat->st_size;
 
 	// get Etag
 	char szEtag[ETAG_MAX];
-	getEtag(szEtag, sizeof(szEtag), req->pszRequestPath, pStat);
+	getEtag(szEtag, sizeof(szEtag), pReq->pszRequestPath, pStat);
 
 	//
 	// header handling section
 	//
 
 	// check If-Modified-Since header
-	const char *pszIfModifiedSince = httpHeaderGetStr(req->pHeaders, "IF-MODIFIED-SINCE");
+	const char *pszIfModifiedSince = httpHeaderGetStr(pReq->pHeaders, "IF-MODIFIED-SINCE");
 	if(pszIfModifiedSince != NULL) {
 		time_t nUnivTime = qTimeParseGmtStr(pszIfModifiedSince);
 
 		// if succeed to parsing header && file does not modified
 		if(nUnivTime >= 0 && nUnivTime > pStat->st_mtime) {
-			httpHeaderSetStrf(res->pHeaders, "ETag", "\"%s\"", szEtag);
-			httpHeaderSetExpire(res->pHeaders, g_conf.nResponseExpires);
-			return httpResponseSetSimple(req, res, HTTP_CODE_NOT_MODIFIED, true, NULL);
+			httpHeaderSetStrf(pRes->pHeaders, "ETag", "\"%s\"", szEtag);
+			httpHeaderSetExpire(pRes->pHeaders, g_conf.nResponseExpires);
+			return httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_MODIFIED, true, NULL);
 		}
 	}
 
 	// check If-None-Match header
-	const char *pszIfNoneMatch = httpHeaderGetStr(req->pHeaders, "IF-NONE-MATCH");
+	const char *pszIfNoneMatch = httpHeaderGetStr(pReq->pHeaders, "IF-NONE-MATCH");
 	if(pszIfNoneMatch != NULL) {
 		char *pszMatchEtag = strdup(pszIfNoneMatch);
 		qStrUnchar(pszMatchEtag, '"', '"');
 
 		// if ETag is same
 		if(!strcmp(pszMatchEtag, szEtag)) {
-			httpHeaderSetStrf(res->pHeaders, "ETag", "\"%s\"", szEtag);
-			httpHeaderSetExpire(res->pHeaders, g_conf.nResponseExpires);
-			return httpResponseSetSimple(req, res, HTTP_CODE_NOT_MODIFIED, true, NULL);
+			httpHeaderSetStrf(pRes->pHeaders, "ETag", "\"%s\"", szEtag);
+			httpHeaderSetExpire(pRes->pHeaders, g_conf.nResponseExpires);
+			return httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_MODIFIED, true, NULL);
 		}
 		free(pszMatchEtag);
 	}
@@ -166,7 +163,7 @@ int httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, stru
 	// check Range header
 	off_t nRangeOffset1, nRangeOffset2, nRangeSize;
 	bool bRangeRequest = false;
-	const char *pszRange = httpHeaderGetStr(req->pHeaders, "RANGE");
+	const char *pszRange = httpHeaderGetStr(pReq->pHeaders, "RANGE");
 	if(pszRange != NULL) {
 		bRangeRequest = httpHeaderParseRange(pszRange, nFilesize, &nRangeOffset1, &nRangeOffset2, &nRangeSize);
 	}
@@ -182,20 +179,20 @@ int httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, stru
 	// set response headers
 	//
 
-	httpResponseSetCode(res, (bRangeRequest == false) ? HTTP_CODE_OK : HTTP_CODE_PARTIAL_CONTENT, req, true);
-	httpResponseSetContent(res, pszContentType, NULL, nRangeSize);
+	httpResponseSetCode(pRes, (bRangeRequest == false) ? HTTP_CODE_OK : HTTP_CODE_PARTIAL_CONTENT, pReq, true);
+	httpResponseSetContent(pRes, pszContentType, NULL, nRangeSize);
 
-	httpHeaderSetStr(res->pHeaders, "Accept-Ranges", "bytes");
-	httpHeaderSetStrf(res->pHeaders, "Last-Modified", "%s", qTimeGetGmtStaticStr(pStat->st_mtime));
-	httpHeaderSetStrf(res->pHeaders, "ETag", "\"%s\"", szEtag);
-	httpHeaderSetExpire(res->pHeaders, g_conf.nResponseExpires);
+	httpHeaderSetStr(pRes->pHeaders, "Accept-Ranges", "bytes");
+	httpHeaderSetStrf(pRes->pHeaders, "Last-Modified", "%s", qTimeGetGmtStaticStr(pStat->st_mtime));
+	httpHeaderSetStrf(pRes->pHeaders, "ETag", "\"%s\"", szEtag);
+	httpHeaderSetExpire(pRes->pHeaders, g_conf.nResponseExpires);
 
 	if(bRangeRequest == true) {
-		httpHeaderSetStrf(res->pHeaders, "Content-Range", "bytes %jd-%jd/%jd", nRangeOffset1, nRangeOffset2, nFilesize);
+		httpHeaderSetStrf(pRes->pHeaders, "Content-Range", "bytes %jd-%jd/%jd", nRangeOffset1, nRangeOffset2, nFilesize);
 	}
 
 	// print out headers
-	httpResponseOut(res, req->nSockFd);
+	httpResponseOut(pRes, pReq->nSockFd);
 
 	//
 	// print out data
@@ -205,9 +202,9 @@ int httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, stru
 			lseek(nFd, nRangeOffset1, SEEK_SET);
 		}
 
-		off_t nSent = streamSend(req->nSockFd, nFd, nRangeSize, req->nTimeout*1000);
+		off_t nSent = streamSend(pReq->nSockFd, nFd, nRangeSize, pReq->nTimeout*1000);
 		if(nSent != nRangeSize) {
-			LOG_INFO("Connection closed by foreign host. (%s/%jd/%jd/%jd)", req->pszRequestPath, nSent, nRangeOffset1, nRangeSize);
+			LOG_INFO("Connection closed by foreign host. (%s/%jd/%jd/%jd)", pReq->pszRequestPath, nSent, nRangeOffset1, nRangeSize);
 		}
 	}
 
@@ -217,23 +214,22 @@ int httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, stru
 /*
  * http method - PUT
  */
-int httpMethodPut(struct HttpRequest *req, struct HttpResponse *res) {
-	if(g_conf.methods.bPut == false) return response405(req, res);
-	if(req->nContentsLength < 0) return response400(req, res);
+int httpMethodPut(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	if(g_conf.methods.bPut == false) return response405(pReq, pRes);
+	if(pReq->nContentsLength < 0) return response400(pReq, pRes);
 
 	// generate abs path
 	char szFilePath[PATH_MAX];
-	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
-	szFilePath[sizeof(szFilePath) - 1] = '\0';
+	httpRequestGetSysPath(pReq, szFilePath, sizeof(szFilePath), pReq->pszRequestPath);
 
 	// open file for writing
-	int nFd = sysOpen(szFilePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	int nFd = sysOpen(szFilePath, O_WRONLY|O_CREAT|O_TRUNC, DEF_FILE_MODE);
 	if(nFd < 0) {
-		return response403(req, res); // forbidden - can't open file
+		return response403(pReq, pRes); // forbidden - can't open file
 	}
 
 	// receive file
-	int nResCode = httpRealPut(req, res, nFd);
+	int nResCode = httpRealPut(pReq, pRes, nFd);
 
 	// close file
 	sysClose(nFd);
@@ -241,66 +237,35 @@ int httpMethodPut(struct HttpRequest *req, struct HttpResponse *res) {
 	// response
 	bool bKeepAlive = false;
 	if(nResCode == HTTP_CODE_CREATED) bKeepAlive = true;
-	httpResponseSetSimple(req, res, nResCode, bKeepAlive, httpResponseGetMsg(nResCode));
+	httpResponseSetSimple(pReq, pRes, nResCode, bKeepAlive, httpResponseGetMsg(nResCode));
 	return nResCode;
 }
 
 /*
  * Only return supposed response status, does not generate response message
  */
-int httpRealPut(struct HttpRequest *req, struct HttpResponse *res, int nFd) {
+int httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd) {
 	// header check
-	if(httpHeaderHasStr(req->pHeaders, "EXPECT", "100-CONTINUE") == true) {
-		streamPrintf(req->nSockFd, "%s %d %s\r\n\r\n", req->pszHttpVersion, HTTP_CODE_CONTINUE, httpResponseGetMsg(HTTP_CODE_CONTINUE));
+	if(httpHeaderHasStr(pReq->pHeaders, "EXPECT", "100-CONTINUE") == true) {
+		streamPrintf(pReq->nSockFd, "%s %d %s\r\n\r\n", pReq->pszHttpVersion, HTTP_CODE_CONTINUE, httpResponseGetMsg(HTTP_CODE_CONTINUE));
 	}
 
 	// save
-	off_t nSaved = streamSave(nFd, req->nSockFd, req->nContentsLength, req->nTimeout*1000);
+	off_t nSaved = streamSave(nFd, pReq->nSockFd, pReq->nContentsLength, pReq->nTimeout*1000);
 
-	if(nSaved != req->nContentsLength) {
-		LOG_INFO("Broken pipe. %jd/%jd, errno=%d", nSaved, req->nContentsLength, errno);
+	if(nSaved != pReq->nContentsLength) {
+		LOG_INFO("Broken pipe. %jd/%jd, errno=%d", nSaved, pReq->nContentsLength, errno);
 		return HTTP_CODE_BAD_REQUEST;
 	}
-	DEBUG("File %s saved. (%jd/%jd)", req->pszRequestPath, nSaved, req->nContentsLength);
+	DEBUG("File %s saved. (%jd/%jd)", pReq->pszRequestPath, nSaved, pReq->nContentsLength);
 
 	// response
 	return HTTP_CODE_CREATED;
 }
 
 /*
- * extended HTTP method - DELETE
- */
-int httpMethodDelete(struct HttpRequest *req, struct HttpResponse *res) {
-	if(g_conf.methods.bDelete == false) return response405(req, res);
-
-	// file path
-	char szFilePath[PATH_MAX];
-	snprintf(szFilePath, sizeof(szFilePath), "%s%s", g_conf.szDataDir, req->pszRequestPath);
-	szFilePath[sizeof(szFilePath) - 1] = '\0';
-
-	// file info
-	struct stat filestat;
-	if (sysStat(szFilePath, &filestat) < 0) {
-		return response404(req, res);
-	}
-
-	// remove
-	if(S_ISDIR(filestat.st_mode)) {
-		if(rmdir(szFilePath) != 0) {
-			return response403(req, res);
-		}
-	} else {
-		if(unlink(szFilePath) != 0) {
-			return response403(req, res);
-		}
-	}
-
-	return response204(req, res); // no contents
-}
-
-/*
  * method not implemented
  */
-int httpMethodNotImplemented(struct HttpRequest *req, struct HttpResponse *res) {
-	return response501(req, res);
+int httpMethodNotImplemented(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	return response501(pReq, pRes);
 }

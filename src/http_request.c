@@ -32,25 +32,25 @@ static char *_getCorrectedHostname(const char *pszRequestHost);
  *		NULL : system error
  */
 struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
-	struct HttpRequest *req;
+	struct HttpRequest *pReq;
 	char szLineBuf[URI_MAX + 32];
 
 	// initialize request structure
-	req = (struct HttpRequest*)malloc(sizeof(struct HttpRequest));
-	if(req == NULL) return NULL;
+	pReq = (struct HttpRequest*)malloc(sizeof(struct HttpRequest));
+	if(pReq == NULL) return NULL;
 
 	// initialize response structure
-	memset((void *)req, 0, sizeof(struct HttpRequest));
+	memset((void *)pReq, 0, sizeof(struct HttpRequest));
 
 	// set initial values
-	req->nSockFd = nSockFd;
-	req->nTimeout = nTimeout;
+	pReq->nSockFd = nSockFd;
+	pReq->nTimeout = nTimeout;
 
-	req->nReqStatus = 0;
-	req->nContentsLength = -1;
+	pReq->nReqStatus = 0;
+	pReq->nContentsLength = -1;
 
-	req->pHeaders = qEntry();
-	if(req->pHeaders == NULL) return req;
+	pReq->pHeaders = qEntry();
+	if(pReq->pHeaders == NULL) return pReq;
 
 	//
 	// Parse HTTP header
@@ -64,11 +64,11 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		// read line
 		nStreamStatus = streamGets(szLineBuf, sizeof(szLineBuf), nSockFd, nTimeout*1000);
 		if(nStreamStatus == 0) { // timeout
-			req->nReqStatus = -1;
-			return req;
+			pReq->nReqStatus = -1;
+			return pReq;
 		} else if(nStreamStatus < 0) { // connection closed
-			req->nReqStatus = -2;
-			return req;
+			pReq->nReqStatus = -2;
+			return pReq;
 		}
 
 		// parse line
@@ -79,7 +79,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 
 		if(pszReqMethod == NULL || pszReqUri == NULL || pszHttpVer == NULL || pszTmp != NULL) {
 			DEBUG("Invalid request line.");
-			return req;
+			return pReq;
 		}
 
 		//DEBUG("pszReqMethod %s", pszReqMethod);
@@ -90,7 +90,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		// request method
 		//
 		qStrUpper(pszReqMethod);
-		req->pszRequestMethod = strdup(pszReqMethod);
+		pReq->pszRequestMethod = strdup(pszReqMethod);
 
 		//
 		// http version
@@ -101,9 +101,9 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 			&& strcmp(pszHttpVer, HTTP_PROTOCOL_11)
 		) {
 			DEBUG("Unknown protocol: %s", pszHttpVer);
-			return req;
+			return pReq;
 		}
-		req->pszHttpVersion = strdup(pszHttpVer);
+		pReq->pszHttpVersion = strdup(pszHttpVer);
 
 		//
 		// request uri
@@ -111,60 +111,60 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 
 		// if request has only path
 		if(pszReqUri[0] == '/') {
-			req->pszRequestUri = strdup(pszReqUri);
+			pReq->pszRequestUri = strdup(pszReqUri);
 		// if request has full uri format
 		} else if(!strncasecmp(pszReqUri, "HTTP://", 7)) {
 			// divide uri into host and path
 			pszTmp = strstr(pszReqUri + 8, "/");
 			if(pszTmp == NULL) {	// No path, ex) http://a.b.c:80
-				httpHeaderSetStr(req->pHeaders, "Host", pszReqUri+8);
-				req->pszRequestUri = strdup("/");
+				httpHeaderSetStr(pReq->pHeaders, "Host", pszReqUri+8);
+				pReq->pszRequestUri = strdup("/");
 			} else {		// Has path, ex) http://a.b.c:80/100
 				*pszTmp = '\0';
-				httpHeaderSetStr(req->pHeaders, "Host", pszReqUri+8);
+				httpHeaderSetStr(pReq->pHeaders, "Host", pszReqUri+8);
 				*pszTmp = '/';
-				req->pszRequestUri = strdup(pszTmp);
+				pReq->pszRequestUri = strdup(pszTmp);
 			}
 		// invalid format
 		} else {
 			DEBUG("Unable to parse uri: %s", pszReqUri);
-			return req;
+			return pReq;
 		}
 
 		// request path
-		req->pszRequestPath = strdup(req->pszRequestUri);
+		pReq->pszRequestPath = strdup(pReq->pszRequestUri);
 
 		// remove query string from request path
-		pszTmp = strstr(req->pszRequestPath, "?");
+		pszTmp = strstr(pReq->pszRequestPath, "?");
 		if(pszTmp != NULL) {
 			*pszTmp ='\0';
-			req->pszQueryString = strdup(pszTmp + 1);
+			pReq->pszQueryString = strdup(pszTmp + 1);
 		} else {
-			req->pszQueryString = strdup("");
+			pReq->pszQueryString = strdup("");
 		}
 
 		// decode path
-		qDecodeUrl(req->pszRequestPath);
+		qDecodeUrl(pReq->pszRequestPath);
 
 		// check path
-		if(isValidPathname(req->pszRequestPath) == false) {
-			DEBUG("Invalid URI format : %s", req->pszRequestUri);
-			return req;
+		if(isValidPathname(pReq->pszRequestPath) == false) {
+			DEBUG("Invalid URI format : %s", pReq->pszRequestUri);
+			return pReq;
 		}
-		correctPathname(req->pszRequestPath);
+		correctPathname(pReq->pszRequestPath);
 	}
 
 	// Parse parameter headers : "key: value"
 	while(true) {
 		// read line
-		if(streamGets(szLineBuf, sizeof(szLineBuf), nSockFd, nTimeout*1000) <= 0) return req;
+		if(streamGets(szLineBuf, sizeof(szLineBuf), nSockFd, nTimeout*1000) <= 0) return pReq;
 		if(strlen(szLineBuf) == 0) break; // detect line-feed
 
 		// separate :
 		char *tmp = strstr(szLineBuf, ":");
 		if(tmp == NULL) {
 			DEBUG("Request header field is missing ':' separator.");
-			return req;
+			return pReq;
 		}
 
 		*tmp = '\0';
@@ -172,76 +172,86 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		char *value = qStrTrim(tmp + 1);
 
 		// put
-		httpHeaderSetStr(req->pHeaders, name, value);
+		httpHeaderSetStr(pReq->pHeaders, name, value);
 	}
 
 	// parse host
-	req->pszRequestHost = _getCorrectedHostname(httpHeaderGetStr(req->pHeaders, "HOST"));
-	if(req->pszRequestHost == NULL) {
+	pReq->pszRequestHost = _getCorrectedHostname(httpHeaderGetStr(pReq->pHeaders, "HOST"));
+	if(pReq->pszRequestHost == NULL) {
 		DEBUG("Can't find host information.");
-		return req;
+		return pReq;
 	}
-	httpHeaderSetStr(req->pHeaders, "Host", req->pszRequestHost);
+	httpHeaderSetStr(pReq->pHeaders, "Host", pReq->pszRequestHost);
 
 	// Parse Contents
-	if(httpHeaderGetStr(req->pHeaders, "CONTENT-LENGTH") != NULL) {
-		req->nContentsLength = (off_t)atoll(httpHeaderGetStr(req->pHeaders, "CONTENT-LENGTH"));
+	if(httpHeaderGetStr(pReq->pHeaders, "CONTENT-LENGTH") != NULL) {
+		pReq->nContentsLength = (off_t)atoll(httpHeaderGetStr(pReq->pHeaders, "CONTENT-LENGTH"));
 
 		// do not load into memory in case of PUT and POST method
-		if(strcmp(req->pszRequestMethod, "PUT")
-		&& strcmp(req->pszRequestMethod, "POST")
-		&& req->nContentsLength <= MAX_HTTP_MEMORY_CONTENTS) {
-			if(req->nContentsLength == 0) {
-				req->pContents = strdup("");
+		if(strcmp(pReq->pszRequestMethod, "PUT")
+		&& strcmp(pReq->pszRequestMethod, "POST")
+		&& pReq->nContentsLength <= MAX_HTTP_MEMORY_CONTENTS) {
+			if(pReq->nContentsLength == 0) {
+				pReq->pContents = strdup("");
 			} else {
 				// allocate memory
-				req->pContents = (char *)malloc(req->nContentsLength + 1);
-				if(req->pContents == NULL) {
+				pReq->pContents = (char *)malloc(pReq->nContentsLength + 1);
+				if(pReq->pContents == NULL) {
 					LOG_WARN("Memory allocation failed.");
-					return req;
+					return pReq;
 				}
 
 				// save into memory
-				int nReaded = streamGetb(req->pContents, nSockFd, req->nContentsLength, nTimeout*1000);
-				if(nReaded >= 0) req->pContents[nReaded] = '\0';
-				DEBUG("[Contents] %s", req->pContents);
+				int nReaded = streamGetb(pReq->pContents, nSockFd, pReq->nContentsLength, nTimeout*1000);
+				if(nReaded >= 0) pReq->pContents[nReaded] = '\0';
+				DEBUG("%s", pReq->pContents);
 
-				if(req->nContentsLength != nReaded) {
+				if(pReq->nContentsLength != nReaded) {
 					DEBUG("Connection is closed before request completion.");
-					free(req->pContents);
-					req->nContentsLength = -1;
-					return req;
+					free(pReq->pContents);
+					pReq->nContentsLength = -1;
+					return pReq;
 				}
 			}
 		}
 	}
 
 	// set document root
-	req->pszDocRoot = strdup(g_conf.szDataDir);
+	pReq->pszDocRoot = strdup(g_conf.szDocRoot);
 
 	// change flag to normal state
-	req->nReqStatus = 1;
+	pReq->nReqStatus = 1;
 
-	return req;
+	return pReq;
 }
 
-bool httpRequestFree(struct HttpRequest *req) {
-	if(req == NULL) return false;
+char *httpRequestGetSysPath(struct HttpRequest *pReq, char *pszBuf, size_t nBufSize, const char *pszPath) {
+	if(pReq == NULL || pReq->nReqStatus != 1) return NULL;
 
-	if(req->pszDocRoot != NULL) free(req->pszDocRoot);
+	// generate abs path
+	snprintf(pszBuf, nBufSize, "%s%s", pReq->pszDocRoot, pszPath);
+	pszBuf[nBufSize - 1] = '\0';
 
-	if(req->pszRequestMethod != NULL) free(req->pszRequestMethod);
-	if(req->pszRequestUri != NULL) free(req->pszRequestUri);
-	if(req->pszHttpVersion != NULL) free(req->pszHttpVersion);
+	return pszBuf;
+}
 
-	if(req->pszRequestHost != NULL) free(req->pszRequestHost);
-	if(req->pszRequestPath != NULL) free(req->pszRequestPath);
-	if(req->pszQueryString != NULL) free(req->pszQueryString);
+bool httpRequestFree(struct HttpRequest *pReq) {
+	if(pReq == NULL) return false;
 
-	if(req->pHeaders != NULL) req->pHeaders->free(req->pHeaders);
-	if(req->pContents != NULL) free(req->pContents);
+	if(pReq->pszDocRoot != NULL) free(pReq->pszDocRoot);
 
-	free(req);
+	if(pReq->pszRequestMethod != NULL) free(pReq->pszRequestMethod);
+	if(pReq->pszRequestUri != NULL) free(pReq->pszRequestUri);
+	if(pReq->pszHttpVersion != NULL) free(pReq->pszHttpVersion);
+
+	if(pReq->pszRequestHost != NULL) free(pReq->pszRequestHost);
+	if(pReq->pszRequestPath != NULL) free(pReq->pszRequestPath);
+	if(pReq->pszQueryString != NULL) free(pReq->pszQueryString);
+
+	if(pReq->pHeaders != NULL) pReq->pHeaders->free(pReq->pHeaders);
+	if(pReq->pContents != NULL) free(pReq->pContents);
+
+	free(pReq);
 
 	return true;
 }

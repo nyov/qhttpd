@@ -79,6 +79,10 @@
 #define SET_TCP_NODELAY				(1)		// 0 for disable
 #define	MAX_SHUTDOWN_WAIT			(5000)		// maximum ms for waiting input stream after socket shutdown
 
+// default file creation mode
+#define DEF_DIR_MODE				(S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)
+#define DEF_FILE_MODE				(S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)
+
 //
 // HTTP RESPONSE CODES
 //
@@ -114,12 +118,12 @@ struct ServerConfig {
 
 	char	szRunDir[PATH_MAX];
 	char	szLogDir[PATH_MAX];
-	char	szDataDir[PATH_MAX];
 	char	szTmpDir[PATH_MAX];
 
 	char	szMimeFile[PATH_MAX];
-
 	char	szPidFile[PATH_MAX];
+	char	szDocRoot[PATH_MAX];
+
 	int	nPort;
 	int	nMaxPending;
 
@@ -151,7 +155,7 @@ struct ServerConfig {
 		bool bMove;
 		bool bDelete;
 		bool bLock;
-		bool Unlock;
+		bool bUnlock;
 
 		// Custom methods HERE
 
@@ -297,8 +301,8 @@ extern	bool		poolSetExitRequest(void);
 extern	int		poolGetChildTotalRequests(void);
 
 extern	bool		poolSetConnInfo(int nSockFd);
-extern	bool		poolSetConnRequest(struct HttpRequest *req);
-extern	bool		poolSetConnResponse(struct HttpResponse *res);
+extern	bool		poolSetConnRequest(struct HttpRequest *pReq);
+extern	bool		poolSetConnResponse(struct HttpResponse *pRes);
 extern	bool		poolClearConnInfo(void);
 extern	char*		poolGetConnAddr(void);
 extern	unsigned int	poolGetConnNaddr(void);
@@ -310,63 +314,73 @@ extern	void		childStart(int nSockFd);
 
 // http_main.c
 extern	int		httpMain(int nSockFd);
-extern	int		httpRequestHandler(struct HttpRequest *req, struct HttpResponse *res);
-extern	int		httpSpecialRequestHandler(struct HttpRequest *req, struct HttpResponse *res);
+extern	int		httpRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	int		httpSpecialRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes);
 
 // http_request.c
 extern	struct	HttpRequest*	httpRequestParse(int nSockFd, int nTimeout);
-extern	bool		httpRequestFree(struct HttpRequest *req);
+extern	char*		httpRequestGetSysPath(struct HttpRequest *pReq, char *pszBuf, size_t nBufSize, const char *pszPath);
+extern	bool		httpRequestFree(struct HttpRequest *pReq);
 
 // http_response.c
 extern	struct HttpResponse* httpResponseCreate(void);
-extern	int		httpResponseSetSimple(struct HttpRequest *req, struct HttpResponse *res, int nResCode, bool nKeepAlive, const char *pszText);
-extern	bool		httpResponseSetCode(struct HttpResponse *res, int nResCode, struct HttpRequest *req, bool bKeepAlive);
-extern	bool		httpResponseSetContent(struct HttpResponse *res, const char *pszContentType, const char *pContent, off_t nContentsLength);
-extern	bool		httpResponseSetContentHtml(struct HttpResponse *res, const char *pszMsg);
-extern	bool		httpResponseSetContentChunked(struct HttpResponse *res, bool bChunked);
-extern	bool		httpResponseOut(struct HttpResponse *res, int nSockFd);
-extern	int		httpResponseOutChunk(int nSockFd, const char *pszData, int nSize);
-extern	void		httpResponseFree(struct HttpResponse *res);
+extern	int		httpResponseSetSimple(struct HttpRequest *pReq, struct HttpResponse *pRes, int nResCode, bool nKeepAlive, const char *pszText);
+extern	bool		httpResponseSetCode(struct HttpResponse *pRes, int nResCode, struct HttpRequest *pReq, bool bKeepAlive);
+extern	bool		httpResponseSetContent(struct HttpResponse *pRes, const char *pszContentType, const char *pContent, off_t nContentsLength);
+extern	bool		httpResponseSetContentHtml(struct HttpResponse *pRes, const char *pszMsg);
+extern	bool		httpResponseSetContentChunked(struct HttpResponse *pRes, bool bChunked);
+extern	bool		httpResponseOut(struct HttpResponse *pRes, int nSockFd);
+extern	int		httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize);
+extern	void		httpResponseFree(struct HttpResponse *pRes);
 extern	const char*	httpResponseGetMsg(int nResCode);
 
-#define response201(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_CREATED, true, httpResponseGetMsg(HTTP_CODE_CREATED));
-#define response204(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_NO_CONTENT, true, NULL);
-#define response304(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_NOT_MODIFIED, true, NULL);
-#define response400(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_BAD_REQUEST, false, httpResponseGetMsg(HTTP_CODE_BAD_REQUEST))
-#define response403(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_FORBIDDEN, true, httpResponseGetMsg(HTTP_CODE_FORBIDDEN))
-#define response404(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_NOT_FOUND, true, httpResponseGetMsg(HTTP_CODE_NOT_FOUND))
-#define response404nc(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_NOT_FOUND, true, NULL)
-#define response405(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_METHOD_NOT_ALLOWED, true, httpResponseGetMsg(HTTP_CODE_METHOD_NOT_ALLOWED))
-#define response414(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_REQUEST_URI_TOO_LONG, true, httpResponseGetMsg(HTTP_CODE_REQUEST_URI_TOO_LONG))
-#define response500(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_INTERNAL_SERVER_ERROR, false, httpResponseGetMsg(HTTP_CODE_INTERNAL_SERVER_ERROR))
-#define response501(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_NOT_IMPLEMENTED, false, httpResponseGetMsg(HTTP_CODE_NOT_IMPLEMENTED))
-#define response503(req, res)	httpResponseSetSimple(req, res, HTTP_CODE_SERVICE_UNAVAILABLE, true, httpResponseGetMsg(HTTP_CODE_SERVICE_UNAVAILABLE))
+#define response201(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_CREATED, true, httpResponseGetMsg(HTTP_CODE_CREATED));
+#define response204(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_NO_CONTENT, true, NULL);
+#define response304(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_MODIFIED, true, NULL);
+#define response400(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_BAD_REQUEST, false, httpResponseGetMsg(HTTP_CODE_BAD_REQUEST))
+#define response403(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_FORBIDDEN, true, httpResponseGetMsg(HTTP_CODE_FORBIDDEN))
+#define response404(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_FOUND, true, httpResponseGetMsg(HTTP_CODE_NOT_FOUND))
+#define response404nc(pReq, pRes) httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_FOUND, true, NULL)
+#define response405(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_METHOD_NOT_ALLOWED, true, httpResponseGetMsg(HTTP_CODE_METHOD_NOT_ALLOWED))
+#define response414(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_REQUEST_URI_TOO_LONG, true, httpResponseGetMsg(HTTP_CODE_REQUEST_URI_TOO_LONG))
+#define response500(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_INTERNAL_SERVER_ERROR, false, httpResponseGetMsg(HTTP_CODE_INTERNAL_SERVER_ERROR))
+#define response501(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_IMPLEMENTED, false, httpResponseGetMsg(HTTP_CODE_NOT_IMPLEMENTED))
+#define response503(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_SERVICE_UNAVAILABLE, true, httpResponseGetMsg(HTTP_CODE_SERVICE_UNAVAILABLE))
 
 // http_header.c
 extern	const char*	httpHeaderGetStr(Q_ENTRY *entries, const char *pszName);
 extern	int		httpHeaderGetInt(Q_ENTRY *entries, const char *pszName);
 extern	bool		httpHeaderSetStr(Q_ENTRY *entries, const char *pszName, const char *pszValue);
-extern	bool		httpHeaderSetStrf(Q_ENTRY *entries, const char *pszName, const char *format, ...);
+extern	bool		httpHeaderSetStrf(Q_ENTRY *entries, const char *pszName, const char *pszformat, ...);
 extern	bool		httpHeaderRemove(Q_ENTRY *entries, const char *pszName);
 extern	bool		httpHeaderHasStr(Q_ENTRY *entries, const char *pszName, const char *pszValue);
 extern	bool		httpHeaderParseRange(const char *pszRangeHeader, off_t nFilesize, off_t *pnRangeOffset1, off_t *pnRangeOffset2, off_t *pnRangeSize);
 extern	bool		httpHeaderSetExpire(Q_ENTRY *entries, int nExpire);
 
 // http_method.c
-extern	int		httpMethodOptions(struct HttpRequest *req, struct HttpResponse *res);
-extern	int		httpMethodHead(struct HttpRequest *req, struct HttpResponse *res);
-extern	int		httpMethodGet(struct HttpRequest *req, struct HttpResponse *res);
-extern	int		httpRealGet(struct HttpRequest *req, struct HttpResponse *res, int nFd, struct stat *pStat, const char *pszContentType);
-extern	int		httpMethodPut(struct HttpRequest *req, struct HttpResponse *res);
-extern	int		httpRealPut(struct HttpRequest *req, struct HttpResponse *res, int nFd);
-extern	int		httpMethodDelete(struct HttpRequest *req, struct HttpResponse *res);
-extern	int		httpMethodNotImplemented(struct HttpRequest *req, struct HttpResponse *res);
+extern	int		httpMethodOptions(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	int		httpMethodHead(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	int		httpMethodGet(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	int		httpRealGet(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd, struct stat *pStat, const char *pszContentType);
+extern	int		httpMethodPut(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	int		httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd);
+extern	int		httpMethodDelete(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	int		httpMethodNotImplemented(struct HttpRequest *pReq, struct HttpResponse *pRes);
+
+// dav_method.c
+extern	int		httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	int		httpMethodProppatch(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	int		httpMethodMkcol(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	int		httpMethodMove(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	int		httpMethodDelete(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	int		httpMethodLock(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	int		httpMethodUnlock(struct HttpRequest *pReq, struct HttpResponse *pRes);
 
 // http_status.c
 extern	Q_OBSTACK*	httpGetStatusHtml(void);
 
 // http_accesslog.c
-extern	bool		httpAccessLog(struct HttpRequest *req, struct HttpResponse *res);
+extern	bool		httpAccessLog(struct HttpRequest *pReq, struct HttpResponse *pRes);
 
 // mime.c
 extern	bool		mimeInit(const char *pszFilepath);
@@ -383,7 +397,37 @@ extern	ssize_t		streamPrintf(int nSockFd, const char *format, ...);
 extern	ssize_t		streamPuts(int nSockFd, const char *pszStr);
 extern	ssize_t		streamStackOut(int nSockFd, Q_OBSTACK *obstack);
 extern	ssize_t		streamWrite(int nSockFd, const void *pszBuffer, size_t nSize, int nTimeoutMs);
+extern	ssize_t		streamWritev(int nSockFd,  const struct iovec *pVector, int nCount);
 extern	off_t		streamSend(int nSockFd, int nFd, off_t nSize, int nTimeoutMs);
+
+// util.c
+extern	char*		getEtag(char *pszBuf, size_t nBufSize, const char *pszPath, struct stat *pStat);
+extern	unsigned int	getIp2Uint(const char *szIp);
+extern	float		getDiffTimeval(struct timeval *t1, struct timeval *t0);
+extern	bool		isValidPathname(const char *pszPath);
+extern	void		correctPathname(char *pszPath);
+
+// syscall.c
+#include <dirent.h>
+extern	int		sysOpen(const char *pszPath, int nFlags, mode_t nMode);
+extern	int		sysClose(int nFd);
+extern	int		sysStat(const char *pszPath, struct stat *pBuf);
+extern	int		sysFstat(int nFd, struct stat *pBuf);
+extern	int		sysUnlink(const char *pszPath);
+extern	int		sysRename(const char *pszOldPath, const char *pszNewPath);
+extern	int		sysMkdir(const char *pszPath, mode_t nMode);
+extern	int		sysRmdir(const char *pszPath);
+extern	DIR*		sysOpendir(const char *pszPath);
+extern	struct dirent*	sysReaddir(DIR *pDir);
+extern	int		sysClosedir(DIR *pDir);
+
+// luascript.c
+#ifdef ENABLE_LUA
+extern	bool		luaInit(const char *pszScriptPath);
+extern	bool		luaFree(void);
+extern	int		luaRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	bool		luaResponseHandler(struct HttpRequest *pReq, struct HttpResponse *pRes);
+#endif
 
 // hook.c
 #ifdef ENABLE_HOOK
@@ -399,34 +443,9 @@ extern	bool		hookAfterChildInit(void);
 extern	bool		hookBeforeChildEnd(void);
 extern	bool		hookAfterConnEstablished(int nSockFd);
 
-extern	int		hookRequestHandler(struct HttpRequest *req, struct HttpResponse *res);
-extern	bool		hookResponseHandler(struct HttpRequest *req, struct HttpResponse *res);
+extern	int		hookRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	bool		hookResponseHandler(struct HttpRequest *pReq, struct HttpResponse *pRes);
 #endif
-
-// script.c
-#ifdef ENABLE_LUA
-extern	bool		luaInit(const char *pszScriptPath);
-extern	bool		luaFree(void);
-extern	int		luaRequestHandler(struct HttpRequest *req, struct HttpResponse *res);
-extern	bool		luaResponseHandler(struct HttpRequest *req, struct HttpResponse *res);
-#endif
-
-// util.c
-extern	char*		getEtag(char *pszBuf, size_t nBufSize, char *pszFilepath, struct stat *pStat);
-extern	unsigned int	getIp2Uint(const char *szIp);
-extern	float		getDiffTimeval(struct timeval *t1, struct timeval *t0);
-extern	bool		isValidPathname(const char *pszPath);
-extern	void		correctPathname(char *pszPath);
-
-// syscall.c
-#include <dirent.h>
-extern	int		sysOpen(const char *pathname, int flags, mode_t mode);
-extern	int		sysClose(int fd);
-extern	int		sysStat(const char *path, struct stat *buf);
-extern	int		sysFstat(int fd, struct stat *buf);
-extern	DIR*		sysOpendir(const char *name);
-extern	struct dirent*	sysReaddir(DIR *dir);int sysClosedir(DIR *dir);
-extern	int		sysClosedir(DIR *dir);
 
 //
 // GLOBAL VARIABLES

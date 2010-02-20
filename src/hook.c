@@ -90,32 +90,37 @@ bool hookAfterConnEstablished(int nSockFd) {
 // request & response hooking
 //
 // 1. parse request.
-// 2.   hook> hookRequestHandler();
-// 3.    lua> luaRequestHandler();
-// 4. native request handler
-// 5.   hook> hookResponseHandler()
-// 6.    lua> luaResponseHandler()
+// 2.   call luaRequestHandler(), if LUA is enabled
+// 3.   call hookRequestHandler(), if HOOK is enabled.
+// 4.   call default request handler
+// 5.   call hookResponseHandler(), if HOOK is enabled.
+// 6.   call luaResponseHandler(), if LUA is enabled
 // 7. response out
 
-// in case of bad request, hook will not be called.
-// return response code, only when you set response code.
-// in case of modifying headers and such modifications, return 0.
-int hookRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
-	// method hooking example
+// return response code if you set response, otherwise return 0 for bypassing to next step.
+int hookRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	// example: adding or overriding your new method
 	/*
 	int nResCode = 0;
-	if(!strcmp(req->pszRequestMethod, "YOUR_METHOD_XXX")) {
+	if(!strcmp(pReq->pszRequestMethod, "YOUR_METHOD_XXX")) {
 		nResCode = hookMethodXXX(req, res);
 	}
 
 	return nResCode;
 	*/
 
+	// example: change document root
+	/*
+	free(pReq->pszDocRoot);
+	pReq->pszDocRoot = strdup("/NEW_DOCUMENT_ROOT");
+	return 0; // pass to default method handler
+	*/
+
 	return 0;
 }
 
-// in case of bad request, hook will not be called.
-bool hookResponseHandler(struct HttpRequest *req, struct HttpResponse *res) {
+bool hookResponseHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	// returns false if you want to log out failure during this call.
 	return true;
 }
 

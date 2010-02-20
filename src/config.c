@@ -74,6 +74,7 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	// parse configuration file
 	Q_ENTRY *entry = qConfigParseFile(NULL, pszFilePath, '=');
 	if (entry == NULL) {
+		DEBUG("Can't open file %s", pszFilePath);
 		return false;
 	}
 
@@ -82,12 +83,12 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 
 	fetch2Str(entry, pConf->szRunDir, "RunDir");
 	fetch2Str(entry, pConf->szLogDir, "LogDir");
-	fetch2Str(entry, pConf->szDataDir, "DataDir");
 	fetch2Str(entry, pConf->szTmpDir, "TmpDir");
 
 	fetch2Str(entry, pConf->szMimeFile, "MimeFile");
-
 	fetch2Str(entry, pConf->szPidFile, "PidFile");
+	fetch2Str(entry, pConf->szDocRoot, "DocRoot");
+
 	fetch2Int(entry, pConf->nPort, "Port");
 	fetch2Int(entry, pConf->nMaxPending, "MaxPending");
 
@@ -145,7 +146,7 @@ bool checkConfig(struct ServerConfig *pConf) {
 	if(strstr(pConf->szAllowedMethods, "MOVE") != NULL) pConf->methods.bMove = true;
 	if(strstr(pConf->szAllowedMethods, "DELETE") != NULL) pConf->methods.bDelete = true;
 	if(strstr(pConf->szAllowedMethods, "LOCK") != NULL) pConf->methods.bLock = true;
-	if(strstr(pConf->szAllowedMethods, "UNLOCK") != NULL) pConf->methods.Unlock = true;
+	if(strstr(pConf->szAllowedMethods, "UNLOCK") != NULL) pConf->methods.bUnlock = true;
 
 	return true;
 }

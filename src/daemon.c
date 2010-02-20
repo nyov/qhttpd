@@ -234,7 +234,7 @@ void daemonStart(bool nDaemonize) {
 		// periodic job here
 		static time_t nLastSec = 0;
 		if(nLastSec != time(NULL)) {
-			DEBUG("Launching %d spare server. (working:%d, running:%d)\n", nChildFlag, nWorkingChilds, nRunningChilds);
+			//DEBUG("Launching %d spare server. (working:%d, running:%d)\n", nChildFlag, nWorkingChilds, nRunningChilds);
 
 			// safety code : check semaphore dead-lock bug
 			static int nSemLockCnt[MAX_SEMAPHORES];
@@ -463,19 +463,19 @@ static bool ignoreConnection(int nSockFd, long int nTimeoutMs) {
 	//
 
 	// create response
-	struct HttpResponse *res = httpResponseCreate();
-	if(res == NULL) {
+	struct HttpResponse *pRes = httpResponseCreate();
+	if(pRes == NULL) {
 		LOG_ERR("Can't create response.");
 		return false;
 	}
 
 	// set response
-	res->pszHttpVersion = strdup(HTTP_PROTOCOL_11);
-	res->nResponseCode = HTTP_CODE_SERVICE_UNAVAILABLE;
-	httpHeaderSetStr(res->pHeaders, "Connection", "close");
+	pRes->pszHttpVersion = strdup(HTTP_PROTOCOL_11);
+	pRes->nResponseCode = HTTP_CODE_SERVICE_UNAVAILABLE;
+	httpHeaderSetStr(pRes->pHeaders, "Connection", "close");
 
 	// serialize & stream out
-	httpResponseOut(res, nSockFd);
+	httpResponseOut(pRes, nSockFd);
 
 	// close connection immediately
 	close(nNewSockFd);

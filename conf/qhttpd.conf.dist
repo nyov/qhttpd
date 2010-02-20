@@ -4,11 +4,8 @@
 
 BaseDir			= /usr/local/qhttpd
 BinDir			= ${BaseDir}/bin
-SbinDir			= ${BaseDir}/sbin
 RunDir			= ${BaseDir}/run
 LogDir			= ${BaseDir}/logs
-ConfDir			= ${BaseDir}/conf
-DataDir			= ${BaseDir}/htdocs
 TmpDir			= /tmp
 
 ## the mimetype file
@@ -16,6 +13,9 @@ MimeFile			= ${ConfDir}/mimetypes.conf
 
 ## the pid file which is recorded by egisdavd when it starts
 PidFile			= ${RunDir}/qhttpd.pid
+
+## document root
+DocRoot			= ${BaseDir}/htdocs
 
 ## listening port
 Port			= 8080
@@ -66,12 +66,12 @@ ResponseExpires		= 0
 ##
 ## Allowed methods
 ##   HTTP methods     : OPTIONS,HEAD,GET,PUT
-##   Extended methods : DELETE
-##   "ALL" for HTTP + Extended methods
+##   Extended methods : PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK
+## "ALL" = HTTP + Extended methods
 ##
 AllowedMethods		= ALL
 #AllowedMethods		= OPTIONS,HEAD,GET
-#AllowedMethods		= OPTIONS,HEAD,GET,PUT,DELETE
+#AllowedMethods		= OPTIONS,HEAD,GET,PUT,PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK
 
 ##
 ## Lua Script Engine

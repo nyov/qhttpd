@@ -45,89 +45,89 @@ int httpMain(int nSockFd) {
 		/////////////////////////////////////////////////////////
 
 		// parse request
-		struct HttpRequest *req = httpRequestParse(nSockFd, g_conf.nConnectionTimeout);
-		if(req == NULL) {
+		struct HttpRequest *pReq = httpRequestParse(nSockFd, g_conf.nConnectionTimeout);
+		if(pReq == NULL) {
 			LOG_ERR("Can't parse request.");
 			break;
 		}
 
 		// create response
-		struct HttpResponse *res = httpResponseCreate();
-		if(res == NULL) {
+		struct HttpResponse *pRes = httpResponseCreate();
+		if(pRes == NULL) {
 			LOG_ERR("Can't create response.");
-			httpRequestFree(req);
+			httpRequestFree(pReq);
 			break;
 		}
 
-		if(req->nReqStatus >= 0) { // normal request
+		if(pReq->nReqStatus >= 0) { // normal request
 			// set request information
-			poolSetConnRequest(req);
+			poolSetConnRequest(pReq);
 
 			// call method handler
 			// 1. parse request.
-			// 2.    lua> luaRequestHandler();
-			// 3.   hook> hookRequestHandler();
-			// 4. native request handler
-			// 5.   hook> hookResponseHandler()
-			// 6.    lua> luaResponseHandler()
+			// 2.   call luaRequestHandler(), if LUA is enabled
+			// 3.   call hookRequestHandler(), if HOOK is enabled.
+			// 4.   call default request handler
+			// 5.   call hookResponseHandler(), if HOOK is enabled.
+			// 6.   call luaResponseHandler(), if LUA is enabled
 			// 7. response out
-			if(req->nReqStatus > 0) {
+			if(pReq->nReqStatus > 0) {
 				int nResCode = 0;
 
 				// check if the request is for server status page
-				nResCode = httpSpecialRequestHandler(req, res);
+				nResCode = httpSpecialRequestHandler(pReq, pRes);
 
 #ifdef ENABLE_LUA
 				if(nResCode == 0 && g_conf.bEnableLua == true) { // if response does not set
-					nResCode = luaRequestHandler(req, res);
+					nResCode = luaRequestHandler(pReq, pRes);
 				}
 #endif
 #ifdef ENABLE_HOOK
 				if(nResCode == 0) { // if response does not set
-					nResCode = hookRequestHandler(req, res);
+					nResCode = hookRequestHandler(pReq, pRes);
 				}
 #endif
 				if(nResCode == 0) { // if nothing done, call native handler
-					nResCode =  httpRequestHandler(req, res);
+					nResCode =  httpRequestHandler(pReq, pRes);
 				}
 
 				if(nResCode == 0) { // never reach here
-					nResCode = response500(req, res);
+					nResCode = response500(pReq, pRes);
 					LOG_ERR("An error occured while processing method.");
 				}
 			} else { // bad request
-				httpResponseSetSimple(req, res, HTTP_CODE_BAD_REQUEST, false, "Your browser sent a request that this server could not understand.");
+				httpResponseSetSimple(pReq, pRes, HTTP_CODE_BAD_REQUEST, false, "Your browser sent a request that this server could not understand.");
 			}
 
 			// hook response
 #ifdef ENABLE_HOOK
-			if(hookResponseHandler(req, res) == false) {
+			if(hookResponseHandler(pReq, pRes) == false) {
 				LOG_WARN("An error occured while processing hookResponseHandler().");
 			}
 #endif
 
 #ifdef ENABLE_LUA
-			if(g_conf.bEnableLua == true && luaResponseHandler(req,res) == false) {
+			if(g_conf.bEnableLua == true && luaResponseHandler(pReq, pRes) == false) {
 				LOG_WARN("An error occured while processing luaResponseHandler().");
 			}
 #endif
 
 			 // set response information
-			poolSetConnResponse(res);
+			poolSetConnResponse(pRes);
 
 			// check exit request
 			if(poolGetExitRequest() == true) {
-				httpHeaderSetStr(res->pHeaders, "Connection", "close");
+				httpHeaderSetStr(pRes->pHeaders, "Connection", "close");
 			}
 
 			// serialize & stream out
-			httpResponseOut(res, nSockFd);
+			httpResponseOut(pRes, nSockFd);
 
 			// logging
-			httpAccessLog(req, res);
+			httpAccessLog(pReq, pRes);
 
 			// check keep-alive
-			if(httpHeaderHasStr(res->pHeaders, "CONNECTION", "KEEP-ALIVE") == true) bKeepAlive = true;
+			if(httpHeaderHasStr(pRes->pHeaders, "CONNECTION", "KEEP-ALIVE") == true) bKeepAlive = true;
 		} else { // timeout or connection closed
 			DEBUG("Connection timeout.");
 		}
@@ -137,8 +137,8 @@ int httpMain(int nSockFd) {
 		/////////////////////////////////////////////////////////
 
 		// free resources
-		if(req != NULL) httpRequestFree(req);
-		if(res != NULL) httpResponseFree(res);
+		if(pReq != NULL) httpRequestFree(pReq);
+		if(pRes != NULL) httpResponseFree(pRes);
 	} while(bKeepAlive == true);
 
 	return 0;
@@ -147,69 +147,67 @@ int httpMain(int nSockFd) {
 /*
  * @return	response code
  */
-int httpRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
-	if(req == NULL || res == NULL) return 0;
+int httpRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	if(pReq == NULL || pRes == NULL) return 0;
 
 	int nResCode = 0;
 
 	// HTTP methods : OPTIONS,HEAD,GET,PUT
-	if(!strcmp(req->pszRequestMethod, "OPTIONS")) {
-		nResCode = httpMethodOptions(req, res);
-	} else if(!strcmp(req->pszRequestMethod, "HEAD")) {
-		nResCode = httpMethodHead(req, res);
-	} else if(!strcmp(req->pszRequestMethod, "GET")) {
-		nResCode = httpMethodGet(req, res);
-	} else if(!strcmp(req->pszRequestMethod, "PUT")) {
-		nResCode = httpMethodPut(req, res);
+	if(!strcmp(pReq->pszRequestMethod, "OPTIONS")) {
+		nResCode = httpMethodOptions(pReq, pRes);
+	} else if(!strcmp(pReq->pszRequestMethod, "HEAD")) {
+		nResCode = httpMethodHead(pReq, pRes);
+	} else if(!strcmp(pReq->pszRequestMethod, "GET")) {
+		nResCode = httpMethodGet(pReq, pRes);
+	} else if(!strcmp(pReq->pszRequestMethod, "PUT")) {
+		nResCode = httpMethodPut(pReq, pRes);
 	}
 	// WebDAV methods : PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK
-	/*
-	else if(!strcmp(req->pszRequestMethod, "PROPFIND")) {
-		nResCode = httpMethodPropfind(req, res);
-	} else if(!strcmp(req->pszRequestMethod, "PROPPATCH")) {
-		nResCode = httpMethodDelete(req, res);
-	} else if(!strcmp(req->pszRequestMethod, "MKCOL")) {
-		nResCode = httpMethodDelete(req, res);
-	} else if(!strcmp(req->pszRequestMethod, "MOVE")) {
-		nResCode = httpMethodDelete(req, res);
-	} else if(!strcmp(req->pszRequestMethod, "DELETE")) {
-		nResCode = httpMethodDelete(req, res);
-	} else if(!strcmp(req->pszRequestMethod, "LOCK")) {
-		nResCode = httpMethodDelete(req, res);
-	} else if(!strcmp(req->pszRequestMethod, "UNLOCK")) {
-		nResCode = httpMethodDelete(req, res);
+	else if(!strcmp(pReq->pszRequestMethod, "PROPFIND")) {
+		nResCode = httpMethodPropfind(pReq, pRes);
+	} else if(!strcmp(pReq->pszRequestMethod, "PROPPATCH")) {
+		nResCode = httpMethodProppatch(pReq, pRes);
+	} else if(!strcmp(pReq->pszRequestMethod, "MKCOL")) {
+		nResCode = httpMethodMkcol(pReq, pRes);
+	} else if(!strcmp(pReq->pszRequestMethod, "MOVE")) {
+		nResCode = httpMethodMove(pReq, pRes);
+	} else if(!strcmp(pReq->pszRequestMethod, "DELETE")) {
+		nResCode = httpMethodDelete(pReq, pRes);
+	} else if(!strcmp(pReq->pszRequestMethod, "LOCK")) {
+		nResCode = httpMethodLock(pReq, pRes);
+	} else if(!strcmp(pReq->pszRequestMethod, "UNLOCK")) {
+		nResCode = httpMethodUnlock(pReq, pRes);
 	}
-	*/
 	// unknown methods
 	else {
-		nResCode = httpMethodNotImplemented(req, res);
+		nResCode = httpMethodNotImplemented(pReq, pRes);
 	}
 
 	return nResCode;
 }
 
-int httpSpecialRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
-	if(req == NULL || res == NULL) return 0;
+int httpSpecialRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	if(pReq == NULL || pRes == NULL) return 0;
 
 	// check if the request is for server status page
 	if(g_conf.bStatusEnable == true
-	&& !strcmp(req->pszRequestMethod, "GET")
-	&& !strcmp(req->pszRequestPath, g_conf.szStatusUrl)) {
+	&& !strcmp(pReq->pszRequestMethod, "GET")
+	&& !strcmp(pReq->pszRequestPath, g_conf.szStatusUrl)) {
 		Q_OBSTACK *obHtml = httpGetStatusHtml();
-		if(obHtml == NULL) return response500(req, res);
+		if(obHtml == NULL) return response500(pReq, pRes);
 
 		// get size
 		size_t nHtmlSize = obHtml->getSize(obHtml);
 
 		// set response
-		httpResponseSetCode(res, HTTP_CODE_OK, req, true);
-		httpResponseSetContent(res, "text/html; charset=\"utf-8\"", NULL, nHtmlSize);
+		httpResponseSetCode(pRes, HTTP_CODE_OK, pReq, true);
+		httpResponseSetContent(pRes, "text/html; charset=\"utf-8\"", NULL, nHtmlSize);
 
 		// print out header
-		httpResponseOut(res, req->nSockFd);
+		httpResponseOut(pRes, pReq->nSockFd);
 
 		// print out contents
-		streamStackOut(req->nSockFd, obHtml);
+		streamStackOut(pReq->nSockFd, obHtml);
 
 		// free
 		obHtml->free(obHtml);

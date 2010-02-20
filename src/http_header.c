@@ -40,16 +40,15 @@ bool httpHeaderSetStr(Q_ENTRY *entries, const char *pszName, const char *pszValu
 	return true;
 }
 
-bool httpHeaderSetStrf(Q_ENTRY *entries, const char *pszName, const char *format, ...) {
-	char szValue[1024];
-	va_list arglist;
+bool httpHeaderSetStrf(Q_ENTRY *entries, const char *pszName, const char *pszFormat, ...) {
+	char *pszValue;
+	DYNAMIC_VSPRINTF(pszValue, pszFormat);
+	if(pszValue == NULL) return false;
 
-	va_start(arglist, format);
-	vsnprintf(szValue, sizeof(szValue)-1, format, arglist);
-	szValue[sizeof(szValue)-1] = '\0';
-	va_end(arglist);
+	bool bRet = httpHeaderSetStr(entries, pszName, pszValue);
+	free(pszValue);
 
-	return httpHeaderSetStr(entries, pszName, szValue);
+	return bRet;
 }
 
 bool httpHeaderRemove(Q_ENTRY *entries, const char *pszName) {

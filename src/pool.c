@@ -334,10 +334,10 @@ bool poolSetConnInfo(int nSockFd) {
 	return true;
 }
 
-bool poolSetConnRequest(struct HttpRequest *req) {
+bool poolSetConnRequest(struct HttpRequest *pReq) {
 	int nReqSize = sizeof(m_pShm->child[m_nMySlotId].conn.szReqInfo);
-	char *pszReqMethod = req->pszRequestMethod;
-	char *pszReqUri = req->pszRequestUri;
+	char *pszReqMethod = pReq->pszRequestMethod;
+	char *pszReqUri = pReq->pszRequestUri;
 
 	if(pszReqMethod == NULL) pszReqMethod = "";
 	if(pszReqUri == NULL) pszReqUri = "";
@@ -356,8 +356,8 @@ bool poolSetConnRequest(struct HttpRequest *req) {
 	return true;
 }
 
-bool poolSetConnResponse(struct HttpResponse *res) {
-	m_pShm->child[m_nMySlotId].conn.nResponseCode = res->nResponseCode;
+bool poolSetConnResponse(struct HttpResponse *pRes) {
+	m_pShm->child[m_nMySlotId].conn.nResponseCode = pRes->nResponseCode;
 	gettimeofday(&m_pShm->child[m_nMySlotId].conn.tvResTime, NULL);
 	m_pShm->child[m_nMySlotId].conn.bRun = false;
 

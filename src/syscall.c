@@ -25,30 +25,46 @@
 
 #include "qhttpd.h"
 
-int sysOpen(const char *pathname, int flags, mode_t mode) {
-	return open(pathname, flags, mode);
+int sysOpen(const char *pszPath, int nFlags, mode_t nMode) {
+	return open(pszPath, nFlags, nMode);
 }
 
-int sysClose(int fd) {
-	return close(fd);
+int sysClose(int nFd) {
+	return close(nFd);
 }
 
-int sysStat(const char *path, struct stat *buf) {
-	return stat(path, buf);
+int sysStat(const char *pszPath, struct stat *pBuf) {
+	return stat(pszPath, pBuf);
 }
 
-int sysFstat(int fd, struct stat *buf) {
-	return fstat(fd, buf);
+int sysFstat(int nFd, struct stat *pBuf) {
+	return fstat(nFd, pBuf);
 }
 
-DIR *sysOpendir(const char *name) {
-	return opendir(name);
+int sysUnlink(const char *pszPath) {
+	return unlink(pszPath);
 }
 
-struct dirent *sysReaddir(DIR *dir) {
-	return readdir(dir);
+int sysRename(const char *pszOldPath, const char *pszNewPath) {
+	return rename(pszOldPath, pszNewPath);
 }
 
-int sysClosedir(DIR *dir) {
-	return closedir(dir);
+int sysMkdir(const char *pszPath, mode_t nMode) {
+	return mkdir(pszPath, nMode);
+}
+
+int sysRmdir(const char *pszPath) {
+	return rmdir(pszPath);
+}
+
+DIR *sysOpendir(const char *pszPath) {
+	return opendir(pszPath);
+}
+
+struct dirent *sysReaddir(DIR *pDir) {
+	return readdir(pDir);
+}
+
+int sysClosedir(DIR *pDir) {
+	return closedir(pDir);
 }

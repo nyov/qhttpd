@@ -75,8 +75,8 @@ static const struct luaL_Reg lualib_response [] = {
 // PRIVATE VARIABLES
 /////////////////////////////////////////////////////////////////////////
 static lua_State *m_lua = NULL;
-struct HttpRequest *m_req = NULL;
-struct HttpResponse *m_res = NULL;
+struct HttpRequest *m_pReq = NULL;
+struct HttpResponse *m_pRes = NULL;
 
 /////////////////////////////////////////////////////////////////////////
 // HOOKING FUNCTIONS
@@ -116,17 +116,17 @@ bool luaFree(void) {
 
 	lua_close(m_lua);
 	m_lua = NULL;
-	m_req = NULL;
-	m_res = NULL;
+	m_pReq = NULL;
+	m_pRes = NULL;
 	return true;
 }
 
-int luaRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
+int luaRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	if(m_lua == NULL) return 0;
 
 	// get session data
-	m_req = req;
-	m_res = res;
+	m_pReq = pReq;
+	m_pRes = pRes;
 
 	// clear stack
 	lua_settop(m_lua, 0);
@@ -141,7 +141,7 @@ int luaRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
 	int nResCode = 0;
 	if(lua_isnumber (m_lua, -1) == 1) {
 		nResCode = lua_tonumber(m_lua, -1); lua_pop(m_lua, 1);
-		httpResponseSetCode(res, nResCode, req, true);
+		httpResponseSetCode(pRes, nResCode, pReq, true);
 	}
 
 	DEBUG("luaRequestHandler: %d", nResCode);
@@ -150,7 +150,7 @@ int luaRequestHandler(struct HttpRequest *req, struct HttpResponse *res) {
 }
 
 // in case of bad request, hook will not be called.
-bool luaResponseHandler(struct HttpRequest *req, struct HttpResponse *res) {
+bool luaResponseHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	if(m_lua == NULL) return false;
 
 	lua_getglobal(m_lua, "responseHandler");
@@ -159,8 +159,8 @@ bool luaResponseHandler(struct HttpRequest *req, struct HttpResponse *res) {
 	}
 
 	// remove session temporary information
-	m_req = NULL;
-	m_res = NULL;
+	m_pReq = NULL;
+	m_pRes = NULL;
 	return true;
 }
 
@@ -194,53 +194,53 @@ static const char *LUA_GETTBLSTR(lua_State *L, const char *N) {
 #define LUA_SETTBLSTR(L, N, V)	{ lua_pushstring(L, V); lua_setfield(L, -2, N); }
 #define LUA_SETTBLINT(L, N, V)	{ lua_pushinteger(L, V); lua_setfield(L, -2, N); }
 static int lualib_request_getRequest(lua_State *lua) {
-	if(m_req == NULL) {
+	if(m_pReq == NULL) {
 		lua_pushnil(lua);
 		return 1;
 	}
 
 	lua_newtable(lua);
-	LUA_SETTBLSTR(lua, "requestMethod", m_req->pszRequestMethod);
-	LUA_SETTBLSTR(lua, "requestHost", m_req->pszRequestHost);
-	LUA_SETTBLSTR(lua, "requestPath", m_req->pszRequestPath);
-	LUA_SETTBLSTR(lua, "queryString", m_req->pszQueryString);
+	LUA_SETTBLSTR(lua, "requestMethod", m_pReq->pszRequestMethod);
+	LUA_SETTBLSTR(lua, "requestHost", m_pReq->pszRequestHost);
+	LUA_SETTBLSTR(lua, "requestPath", m_pReq->pszRequestPath);
+	LUA_SETTBLSTR(lua, "queryString", m_pReq->pszQueryString);
 
 	return 1;
 }
 
 static int lualib_request_setRequest(lua_State *lua) {
-	if(lua_istable (lua, -1) != 1 || m_req == NULL) {
+	if(lua_istable (lua, -1) != 1 || m_pReq == NULL) {
 		lua_pushboolean(lua, false);
 		return 1;
 	}
 
-	free(m_req->pszRequestMethod);
-	m_req->pszRequestMethod = strdup(LUA_GETTBLSTR(lua, "requestMethod"));
+	free(m_pReq->pszRequestMethod);
+	m_pReq->pszRequestMethod = strdup(LUA_GETTBLSTR(lua, "requestMethod"));
 
-	free(m_req->pszRequestHost);
-	m_req->pszRequestHost = strdup(LUA_GETTBLSTR(lua, "requestHost"));
+	free(m_pReq->pszRequestHost);
+	m_pReq->pszRequestHost = strdup(LUA_GETTBLSTR(lua, "requestHost"));
 
-	free(m_req->pszRequestPath);
-	m_req->pszRequestPath = strdup(LUA_GETTBLSTR(lua, "requestPath"));
+	free(m_pReq->pszRequestPath);
+	m_pReq->pszRequestPath = strdup(LUA_GETTBLSTR(lua, "requestPath"));
 
-	free(m_req->pszQueryString);
-	m_req->pszQueryString = strdup(LUA_GETTBLSTR(lua, "queryString"));
+	free(m_pReq->pszQueryString);
+	m_pReq->pszQueryString = strdup(LUA_GETTBLSTR(lua, "queryString"));
 
 	// generate new request uri
-	char *pszNewUri = (char *)malloc((strlen(m_req->pszRequestPath)*3) + 1 + strlen(m_req->pszQueryString) + 1);
+	char *pszNewUri = (char *)malloc((strlen(m_pReq->pszRequestPath)*3) + 1 + strlen(m_pReq->pszQueryString) + 1);
 	if(pszNewUri != NULL) {
-		strcpy(pszNewUri, m_req->pszRequestPath);
+		strcpy(pszNewUri, m_pReq->pszRequestPath);
 		qEncodeUrl(pszNewUri);
-		if(IS_EMPTY_STRING(m_req->pszQueryString) == false) {
+		if(IS_EMPTY_STRING(m_pReq->pszQueryString) == false) {
 			strcat(pszNewUri, "?");
-			strcat(pszNewUri, m_req->pszQueryString);
+			strcat(pszNewUri, m_pReq->pszQueryString);
 		}
 
-		free(m_req->pszRequestUri);
-		m_req->pszRequestUri =  pszNewUri;
+		free(m_pReq->pszRequestUri);
+		m_pReq->pszRequestUri =  pszNewUri;
 	}
 
-	DEBUG("lualib_http_setRequest: %s", m_req->pszRequestUri);
+	DEBUG("lualib_http_setRequest: %s", m_pReq->pszRequestUri);
 
 	// return true
 	lua_pushboolean(lua, true);
@@ -248,13 +248,13 @@ static int lualib_request_setRequest(lua_State *lua) {
 }
 
 static int lualib_request_getHeader(lua_State *lua) {
-	if(lua_isstring (lua, -1) != 1 || m_req == NULL) {
+	if(lua_isstring (lua, -1) != 1 || m_pReq == NULL) {
 		lua_pushnil(lua);
 		return 1;
 	}
 
 	const char *pszName = lua_tostring(lua, -1); lua_pop(lua, 1);
-	const char *pszValue = httpHeaderGetStr(m_req->pHeaders, pszName);
+	const char *pszValue = httpHeaderGetStr(m_pReq->pHeaders, pszName);
 
 	if(pszValue != NULL) lua_pushstring(lua, pszValue);
 	else lua_pushnil(lua);
@@ -263,7 +263,7 @@ static int lualib_request_getHeader(lua_State *lua) {
 }
 
 static int lualib_request_setHeader(lua_State *lua) {
-	if(lua_isstring (lua, -2) != 1 || lua_isstring (lua, -1) != 1 || m_req == NULL) {
+	if(lua_isstring (lua, -2) != 1 || lua_isstring (lua, -1) != 1 || m_pReq == NULL) {
 		lua_pushboolean(lua, false);
 		return 1;
 	}
@@ -271,43 +271,43 @@ static int lualib_request_setHeader(lua_State *lua) {
 	const char *pszValue = lua_tostring(lua, -1); lua_pop(lua, 1);
 	const char *pszName = lua_tostring(lua, -1); lua_pop(lua, 1);
 
-	if(httpHeaderSetStr(m_req->pHeaders, pszName, pszValue) == true) lua_pushboolean(lua, true);
+	if(httpHeaderSetStr(m_pReq->pHeaders, pszName, pszValue) == true) lua_pushboolean(lua, true);
 	else lua_pushboolean(lua, false);
 	return 1;
 }
 
 static int lualib_request_delHeader(lua_State *lua) {
-	if(lua_isstring (lua, -1) != 1 || m_req == NULL) {
+	if(lua_isstring (lua, -1) != 1 || m_pReq == NULL) {
 		lua_pushboolean(lua, false);
 		return 1;
 	}
 
 	const char *pszName = lua_tostring(lua, -1); lua_pop(lua, 1);
 
-	if(httpHeaderRemove(m_req->pHeaders, pszName) == true) lua_pushboolean(lua, true);
+	if(httpHeaderRemove(m_pReq->pHeaders, pszName) == true) lua_pushboolean(lua, true);
 	else lua_pushboolean(lua, false);
 	return 1;
 }
 
 static int lualib_response_getCode(lua_State *lua) {
-	if(m_res == NULL) {
+	if(m_pRes == NULL) {
 		lua_pushinteger(lua, 0);
 		return 1;
 	}
 
-	lua_pushinteger(lua, m_res->nResponseCode);
+	lua_pushinteger(lua, m_pRes->nResponseCode);
 	return 1;
 }
 
 static int lualib_response_setContent(lua_State *lua) {
-	if(lua_isstring (lua, -2) != 1 || lua_isstring (lua, -1) != 1 || m_res == NULL) {
+	if(lua_isstring (lua, -2) != 1 || lua_isstring (lua, -1) != 1 || m_pRes == NULL) {
 		lua_pushboolean(lua, false);
 		return 1;
 	}
 
 	const char *pszContent = lua_tostring(lua, -1); lua_pop(lua, 1);
 	const char *pszContentType = lua_tostring(lua, -1); lua_pop(lua, 1);
-	httpResponseSetContent(m_res, pszContentType, pszContent, strlen(pszContent));
+	httpResponseSetContent(m_pRes, pszContentType, pszContent, strlen(pszContent));
 
 	DEBUG("lualib_http_setContent: %s %s", pszContentType, pszContent);
 
@@ -317,13 +317,13 @@ static int lualib_response_setContent(lua_State *lua) {
 }
 
 static int lualib_response_getHeader(lua_State *lua) {
-	if(lua_isstring (lua, -1) != 1 || m_res == NULL) {
+	if(lua_isstring (lua, -1) != 1 || m_pRes == NULL) {
 		lua_pushnil(lua);
 		return 1;
 	}
 
 	const char *pszName = lua_tostring(lua, -1); lua_pop(lua, 1);
-	const char *pszValue = httpHeaderGetStr(m_res->pHeaders, pszName);
+	const char *pszValue = httpHeaderGetStr(m_pRes->pHeaders, pszName);
 
 	if(pszValue != NULL) lua_pushstring(lua, pszValue);
 	else lua_pushnil(lua);
@@ -332,7 +332,7 @@ static int lualib_response_getHeader(lua_State *lua) {
 }
 
 static int lualib_response_setHeader(lua_State *lua) {
-	if(lua_isstring (lua, -2) != 1 || lua_isstring (lua, -1) != 1 || m_res == NULL) {
+	if(lua_isstring (lua, -2) != 1 || lua_isstring (lua, -1) != 1 || m_pRes == NULL) {
 		lua_pushboolean(lua, false);
 		return 1;
 	}
@@ -340,20 +340,20 @@ static int lualib_response_setHeader(lua_State *lua) {
 	const char *pszValue = lua_tostring(lua, -1); lua_pop(lua, 1);
 	const char *pszName = lua_tostring(lua, -1); lua_pop(lua, 1);
 
-	if(httpHeaderSetStr(m_res->pHeaders, pszName, pszValue) == true) lua_pushboolean(lua, true);
+	if(httpHeaderSetStr(m_pRes->pHeaders, pszName, pszValue) == true) lua_pushboolean(lua, true);
 	else lua_pushboolean(lua, false);
 	return 1;
 }
 
 static int lualib_response_delHeader(lua_State *lua) {
-	if(lua_isstring (lua, -1) != 1 || m_res == NULL) {
+	if(lua_isstring (lua, -1) != 1 || m_pRes == NULL) {
 		lua_pushboolean(lua, false);
 		return 1;
 	}
 
 	const char *pszName = lua_tostring(lua, -1); lua_pop(lua, 1);
 
-	if(httpHeaderRemove(m_res->pHeaders, pszName) == true) lua_pushboolean(lua, true);
+	if(httpHeaderRemove(m_pRes->pHeaders, pszName) == true) lua_pushboolean(lua, true);
 	else lua_pushboolean(lua, false);
 	return 1;
 }

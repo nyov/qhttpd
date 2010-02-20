@@ -25,17 +25,17 @@
 
 #include "qhttpd.h"
 
-bool httpAccessLog(struct HttpRequest *req, struct HttpResponse *res) {
-	if(req->pszRequestMethod == NULL) return false;
+bool httpAccessLog(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	if(pReq->pszRequestMethod == NULL) return false;
 
-	const char *pszHost = httpHeaderGetStr(req->pHeaders, "HOST");
-	const char *pszReferer = httpHeaderGetStr(req->pHeaders, "REFERER");
-	const char *pszAgent = httpHeaderGetStr(req->pHeaders, "USER-AGENT");
+	const char *pszHost = httpHeaderGetStr(pReq->pHeaders, "HOST");
+	const char *pszReferer = httpHeaderGetStr(pReq->pHeaders, "REFERER");
+	const char *pszAgent = httpHeaderGetStr(pReq->pHeaders, "USER-AGENT");
 
 	g_acclog->writef(g_acclog, "%s - - [%s] \"%s http://%s%s %s\" %d %jd \"%s\" \"%s\"",
 		poolGetConnAddr(),  qTimeGetLocalStaticStr(poolGetConnReqTime()),
-		req->pszRequestMethod, pszHost, req->pszRequestUri, req->pszHttpVersion,
-		res->nResponseCode, res->nContentsLength,
+		pReq->pszRequestMethod, pszHost, pReq->pszRequestUri, pReq->pszHttpVersion,
+		pRes->nResponseCode, pRes->nContentsLength,
 		(pszReferer != NULL) ? pszReferer : "-",
 		(pszAgent != NULL) ? pszAgent : "-"
 	);
