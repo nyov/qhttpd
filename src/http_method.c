@@ -224,7 +224,12 @@ int httpRealGet(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd, st
  */
 int httpMethodPut(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	if(g_conf.methods.bPut == false) return response405(pReq, pRes);
-	if(pReq->nContentsLength < 0) return response400(pReq, pRes);
+
+	// check contents length or transfer-encoding
+	if(pReq->nContentsLength < 0
+	&& httpHeaderHasStr(pReq->pHeaders, "TRANSFER-ENCODING", "CHUNKED") == false) {
+		return response400(pReq, pRes);
+	}
 
 	// generate abs path
 	char szFilePath[PATH_MAX];
@@ -272,7 +277,7 @@ int httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd) {
 	} else if(httpHeaderHasStr(pReq->pHeaders, "TRANSFER-ENCODING", "CHUNKED") == true) {
 		off_t nSaved = 0;
 		bool bCompleted = false;
-		while(true) {
+		do {
 			// read chunk size
 			char szLineBuf[64];
 			if(streamGets(szLineBuf, sizeof(szLineBuf), pReq->nSockFd, pReq->nTimeout * 1000) <= 0) break;
@@ -283,21 +288,21 @@ int httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd) {
 			if(nChunkSize == 0) {
 				// end of transfer
 				bCompleted = true;
-				break;
 			} else if(nChunkSize < 0) {
 				// parsing failure
 				break;
 			}
 
 			// save chunk
-			off_t nChunkSaved = streamSave(nFd, pReq->nSockFd, (size_t)nChunkSize, pReq->nTimeout*1000);
-			if(nChunkSaved != nChunkSize) break;
-
-			nSaved += nChunkSaved;
+			if(nChunkSize > 0) {
+				off_t nChunkSaved = streamSave(nFd, pReq->nSockFd, (size_t)nChunkSize, pReq->nTimeout*1000);
+				if(nChunkSaved != nChunkSize) break;
+				nSaved += nChunkSaved;
+			}
 
 			// read tailing CRLF
 			if(streamGets(szLineBuf, sizeof(szLineBuf), pReq->nSockFd, pReq->nTimeout * 1000) <= 0) break;
-		}
+		} while(bCompleted == false);
 
 		if(bCompleted == false) {
 			LOG_INFO("Broken pipe. %jd/chunked, errno=%d", nSaved, errno);
