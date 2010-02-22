@@ -80,6 +80,7 @@
 #define	MAX_SHUTDOWN_WAIT			(5000)		// maximum ms for waiting input stream after socket shutdown
 
 // default file creation mode
+#define CRLF					"\r\n"		// CR+LF
 #define DEF_DIR_MODE				(S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)
 #define DEF_FILE_MODE				(S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)
 

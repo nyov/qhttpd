@@ -139,14 +139,14 @@ bool httpResponseSetContentHtml(struct HttpResponse *pRes, const char *pszMsg) {
 	char szContent[1024];
 
 	snprintf(szContent, sizeof(szContent)-1,
-		"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n"
-		"<html>\r\n"
-		"<head><title>%d %s</title></head>\r\n"
-		"<body>\r\n"
-		"<h1>%d %s</h1>\r\n"
-		"<p>%s</p>\r\n"
-		"<hr>\r\n"
-		"<address>%s %s/%s</address>\r\n"
+		"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">" CRLF
+		"<html>" CRLF
+		"<head><title>%d %s</title></head>" CRLF
+		"<body>" CRLF
+		"<h1>%d %s</h1>" CRLF
+		"<p>%s</p>" CRLF
+		"<hr>" CRLF
+		"<address>%s %s/%s</address>" CRLF
 		"</body></html>",
 		pRes->nResponseCode, httpResponseGetMsg(pRes->nResponseCode),
 		pRes->nResponseCode, httpResponseGetMsg(pRes->nResponseCode),
@@ -187,7 +187,7 @@ bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
 	if(outBuf == NULL) return false;
 
 	// first line is response code
-	outBuf->growStrf(outBuf, "%s %d %s\r\n",
+	outBuf->growStrf(outBuf, "%s %d %s" CRLF,
 		pRes->pszHttpVersion,
 		pRes->nResponseCode,
 		httpResponseGetMsg(pRes->nResponseCode)
@@ -199,12 +199,12 @@ bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
 	memset((void*)&obj, 0, sizeof(obj)); // must be cleared before call
 	tbl->lock(tbl);
 	while(tbl->getNext(tbl, &obj, NULL, false) == true) {
-		outBuf->growStrf(outBuf, "%s: %s\r\n", obj.name, (char*)obj.data);
+		outBuf->growStrf(outBuf, "%s: %s" CRLF, obj.name, (char*)obj.data);
 	}
 	tbl->unlock(tbl);
 
 	// end of headers
-	outBuf->growStrf(outBuf, "\r\n");
+	outBuf->growStr(outBuf, CRLF);
 
 	// buf flush
 	streamStackOut(nSockFd, outBuf);
@@ -215,7 +215,7 @@ bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
 	// print out contents binary
 	if(pRes->nContentsLength > 0 && pRes->pContent != NULL) {
 		streamWrite(nSockFd, pRes->pContent, pRes->nContentsLength, g_conf.nConnectionTimeout * 1000);
-		//streamPrintf(nSockFd, "\r\n");
+		//streamPrintf(nSockFd, "%s", CRLF);
 	}
 
 	pRes->bOut = true;
@@ -228,14 +228,32 @@ bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
  * @return	a number of octets sent (do not include bytes which are sent for chunk boundary string)
  */
 int httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize) {
-	int nSent = 0;
+	struct iovec vectors[3];
+	int nVecCnt = 0;
 
-	streamPrintf(nSockFd, "%x\r\n", nSize);
+	char szChunkSizeHead[16 + CONST_STRLEN(CRLF) + 1];
+	snprintf(szChunkSizeHead, sizeof(szChunkSizeHead), "%x" CRLF, (unsigned int)nSize);
+
+	// add to vector
+	vectors[nVecCnt].iov_base = szChunkSizeHead;
+	vectors[nVecCnt].iov_len = strlen(szChunkSizeHead);
+	nVecCnt++;
+
+	int nSent = 0;
 	if(nSize > 0) {
-		nSent = streamWrite(nSockFd, pData, nSize, g_conf.nConnectionTimeout * 1000);
-		DEBUG("[TX] %s", (char*) pData);
+		// add to vector
+		vectors[nVecCnt].iov_base = (void *)pData;
+		vectors[nVecCnt].iov_len = nSize;
+		nVecCnt++;
 	}
-	streamPrintf(nSockFd, "\r\n");
+
+	// add to vector
+	vectors[nVecCnt].iov_base = CRLF;
+	vectors[nVecCnt].iov_len = CONST_STRLEN(CRLF);
+	nVecCnt++;
+
+	// print out
+	streamWritev(nSockFd, vectors, nVecCnt);
 
 	return nSent;
 }

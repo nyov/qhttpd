@@ -260,7 +260,7 @@ int httpMethodPut(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 int httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd) {
 	// header check
 	if(httpHeaderHasStr(pReq->pHeaders, "EXPECT", "100-CONTINUE") == true) {
-		streamPrintf(pReq->nSockFd, "%s %d %s\r\n\r\n", pReq->pszHttpVersion, HTTP_CODE_CONTINUE, httpResponseGetMsg(HTTP_CODE_CONTINUE));
+		streamPrintf(pReq->nSockFd, "%s %d %s" CRLF CRLF, pReq->pszHttpVersion, HTTP_CODE_CONTINUE, httpResponseGetMsg(HTTP_CODE_CONTINUE));
 	}
 
 	// save
