@@ -231,7 +231,7 @@ struct HttpRequest {
 	int	nTimeout;		// timeout value for this request
 
 	// request status
-	int	nReqStatus;		// request status 1:ok, 0:bad request, -1:timeout, -2:connection closed
+	int	nReqStatus;		// request status 1:ok, 0:bad request, -1:timeout or connection closed
 	char*	pszDocumentRoot;	// document root for this request
 	char*	pszDirectoryIndex;	// directory index file
 
@@ -527,7 +527,7 @@ do {											\
 #define LOG_WARN(fmt, args...)	_LOG2(g_errlog, 2, " [WARN] ", fmt, ##args)
 #define LOG_INFO(fmt, args...)	_LOG(g_errlog, 3, " [INFO] ", fmt, ##args)
 
-#define STOPWATCH_START									\
+#define STOPWATCH_START()								\
 	int _swno = 0;									\
 	struct timeval _tv1, _tv2;							\
 	gettimeofday(&_tv1, NULL)
@@ -539,7 +539,7 @@ do {											\
 	_diff.tv_sec = _tv2.tv_sec - _tv1.tv_sec;					\
 	if(_tv2.tv_usec >= _tv1.tv_usec) _diff.tv_usec = _tv2.tv_usec - _tv1.tv_usec;	\
 	else { _diff.tv_sec += 1; _diff.tv_usec = _tv1.tv_usec - _tv2.tv_usec; }	\
-	printf("STOPWATCH(%d,%s%d): %zus %dus (%s:%d)\n", getpid(), prefix, _swno, _diff.tv_sec, (int)(_diff.tv_usec), __FILE__, __LINE__);	\
+	printf("STOPWATCH(%d,%s,%d): %zus %dus (%s:%d)\n", getpid(), prefix, _swno, _diff.tv_sec, (int)(_diff.tv_usec), __FILE__, __LINE__);	\
 	gettimeofday(&_tv1, NULL);							\
 }
 

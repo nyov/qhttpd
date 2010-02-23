@@ -54,9 +54,7 @@ ssize_t qIoGets2(char *buf, size_t bufsize, int fd, int timeoutms) {
 }
 
 ssize_t streamGets(char *pszStr, size_t nSize, int nSockFd, int nTimeoutMs) {
-STOPWATCH_START;
 	ssize_t nReaded = qIoGets2(pszStr, nSize, nSockFd, nTimeoutMs);
-STOPWATCH_STOP("streamGets");
 #ifdef BUILD_DEBUG
 	if(nReaded > 0) DEBUG("[RX] %s", pszStr);
 #endif

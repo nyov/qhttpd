@@ -36,7 +36,6 @@ int httpMain(int nSockFd) {
 		/////////////////////////////////////////////////////////
 		// Pre-processing Block
 		/////////////////////////////////////////////////////////
-STOPWATCH_START;
 
 		// reset keep-alive
 		bKeepAlive = false;
@@ -51,8 +50,6 @@ STOPWATCH_START;
 			LOG_ERR("Can't parse request.");
 			break;
 		}
-
-STOPWATCH_STOP("httpmain");
 
 		// create response
 		struct HttpResponse *pRes = httpResponseCreate();
@@ -101,7 +98,6 @@ STOPWATCH_STOP("httpmain");
 			} else { // bad request
 				httpResponseSetSimple(pReq, pRes, HTTP_CODE_BAD_REQUEST, false, "Your browser sent a request that this server could not understand.");
 			}
-STOPWATCH_STOP("httpmain");
 
 			// hook response
 #ifdef ENABLE_HOOK
@@ -143,7 +139,6 @@ STOPWATCH_STOP("httpmain");
 		// free resources
 		if(pReq != NULL) httpRequestFree(pReq);
 		if(pRes != NULL) httpResponseFree(pRes);
-STOPWATCH_STOP("httpmain");
 	} while(bKeepAlive == true);
 
 	return 0;
