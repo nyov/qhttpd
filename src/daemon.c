@@ -60,7 +60,7 @@ void daemonStart(bool nDaemonize) {
 		daemon(false, false); // after this line, parent's pid will be changed.
 	} else {
 		g_errlog->duplicate(g_errlog, stdout, true);
-		//g_acclog->duplicate(g_acclog, stdout, false);
+		g_acclog->duplicate(g_acclog, stdout, false);
 	}
 
 	// save pid
@@ -269,8 +269,7 @@ void daemonStart(bool nDaemonize) {
 			usleep(1 * 1000);
 			continue;
 		} else {
-		printf("%d %d %d %d\n", nRunningChilds, nWorkingChilds, nIdleChilds, nChildFlag);
-			//DEBUG("working:%d, running:%d", nWorkingChilds, nRunningChilds);
+			//DEBUG("%d %d %d %d", nRunningChilds, nWorkingChilds, nIdleChilds, nChildFlag);
 
 			// safety code : check semaphore dead-lock bug
 			static int nSemLockCnt[MAX_SEMAPHORES];
