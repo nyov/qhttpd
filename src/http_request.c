@@ -25,6 +25,7 @@
 
 #include "qhttpd.h"
 
+static char *_requestRead(int nSockFd, size_t *nRequestSize, int nTimeout);
 static char *_getCorrectedHostname(const char *pszRequestHost);
 
 /*
@@ -35,11 +36,13 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	struct HttpRequest *pReq;
 	char szLineBuf[URI_MAX + 32];
 
+	//
 	// initialize request structure
+	//
 	pReq = (struct HttpRequest*)malloc(sizeof(struct HttpRequest));
 	if(pReq == NULL) return NULL;
 
-	// initialize response structure
+	// initialize request structure
 	memset((void *)pReq, 0, sizeof(struct HttpRequest));
 
 	// set initial values
@@ -53,23 +56,28 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	if(pReq->pHeaders == NULL) return pReq;
 
 	//
+	// Read whole request at once to reduce a amount of read() system call.
+	//
+	pReq->pszRequestBody = _requestRead(nSockFd, &pReq->nRequestSize, pReq->nTimeout * 1000);
+	if(pReq->pszRequestBody == NULL) {
+		DEBUG("Connection is closed before request completion.");
+		pReq->nReqStatus = -1;
+		return pReq;
+	}
+
+	// set offset for qStrGets()
+	char *pszBodyOffset = pReq->pszRequestBody;
+
+	//
 	// Parse HTTP header
 	//
 
 	// Parse request line : "method uri protocol"
 	{
-		int nStreamStatus;
 		char *pszReqMethod, *pszReqUri, *pszHttpVer, *pszTmp;
 
 		// read line
-		nStreamStatus = streamGets(szLineBuf, sizeof(szLineBuf), nSockFd, pReq->nTimeout * 1000);
-		if(nStreamStatus == 0) { // timeout
-			pReq->nReqStatus = -1;
-			return pReq;
-		} else if(nStreamStatus < 0) { // connection closed
-			pReq->nReqStatus = -2;
-			return pReq;
-		}
+		if(qStrGets(szLineBuf, sizeof(szLineBuf), &pszBodyOffset) == NULL) return pReq;
 
 		// parse line
 		pszReqMethod = strtok(szLineBuf, " ");
@@ -157,8 +165,8 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	// Parse parameter headers : "key: value"
 	while(true) {
 		// read line
-		if(streamGets(szLineBuf, sizeof(szLineBuf), nSockFd, pReq->nTimeout * 1000) <= 0) return pReq;
-		if(strlen(szLineBuf) == 0) break; // detect line-feed
+		if(qStrGets(szLineBuf, sizeof(szLineBuf), &pszBodyOffset) == NULL) return pReq;
+		if(IS_EMPTY_STRING(szLineBuf) == true) break; // detect line-feed
 
 		// separate :
 		char *tmp = strstr(szLineBuf, ":");
@@ -244,6 +252,8 @@ bool httpRequestFree(struct HttpRequest *pReq) {
 	if(pReq->pszDocumentRoot != NULL) free(pReq->pszDocumentRoot);
 	if(pReq->pszDirectoryIndex != NULL) free(pReq->pszDirectoryIndex);
 
+	if(pReq->pszRequestBody != NULL) free(pReq->pszRequestBody);
+
 	if(pReq->pszRequestMethod != NULL) free(pReq->pszRequestMethod);
 	if(pReq->pszRequestUri != NULL) free(pReq->pszRequestUri);
 	if(pReq->pszHttpVersion != NULL) free(pReq->pszHttpVersion);
@@ -258,6 +268,71 @@ bool httpRequestFree(struct HttpRequest *pReq) {
 	free(pReq);
 
 	return true;
+}
+
+#define REQ_READ_BLOCK_SIZE		(1024 * 4)
+static char *_requestRead(int nSockFd, size_t *nRequestSize, int nTimeout) {
+	// read headers
+	int nBlockRead = 0;	// 0: read 1 byte, 1: enable block read, -1 block read disabled
+	bool bEndOfHeader = false;
+
+	size_t nBufSize = 0;
+	char *pszReqBuf = NULL;
+	size_t nTotal = 0;
+	do {
+		int nMaxRead = nBufSize - nTotal;
+		if(nMaxRead == 0) {
+			// alloc or realloc
+			nBufSize += REQ_READ_BLOCK_SIZE;
+			char *pszNewBuf = realloc(pszReqBuf, nBufSize + 1); // for debugging purpose, allocate 1 byte more for storing termination character
+			if(pszNewBuf == NULL) break;;
+
+			pszReqBuf = pszNewBuf;
+			nMaxRead = nBufSize - nTotal;
+			//DEBUG("malloc %d %d", nBufSize, pszReqBuf);
+		}
+
+		if(qIoWaitReadable(nSockFd, nTimeout) <= 0) break;
+		ssize_t nRead = read(nSockFd, pszReqBuf + nTotal, (nBlockRead > 0) ? nMaxRead : 1);
+
+		if(nRead <= 0) break;
+		nTotal += nRead;
+
+		// turn on block read only for the requests which wait server's response after sending request.
+		if(nBlockRead == 0 && pszReqBuf[nTotal - 1] == ' ') {
+			if((nTotal == CONST_STRLEN("GET ") && !strncmp(pszReqBuf, "GET ", CONST_STRLEN("GET ")))
+			|| (nTotal == CONST_STRLEN("HEAD ") && !strncmp(pszReqBuf, "HEAD ", CONST_STRLEN("HEAD ")))
+			|| (nTotal == CONST_STRLEN("OPTIONS ") && !strncmp(pszReqBuf, "OPTIONS ", CONST_STRLEN("OPTIONS ")))
+			) {
+				nBlockRead = 1; // enable block read
+			} else {
+				nBlockRead = -1; // disable block read
+			}
+		}
+		// check end of headers
+		else if(nTotal >= CONST_STRLEN(CRLF CRLF) && pszReqBuf[nTotal - 1] == '\n') {
+			if(!strncmp(pszReqBuf + nTotal - CONST_STRLEN(CRLF CRLF), CRLF CRLF, CONST_STRLEN(CRLF CRLF))) {
+				bEndOfHeader = true;
+			}
+		}
+
+	} while(bEndOfHeader == false);
+
+#ifdef BUILD_DEBUG
+	if(pszReqBuf != NULL) {
+		pszReqBuf[nTotal] = '\0';
+		if(bEndOfHeader == true) DEBUG("[RX] %s", pszReqBuf);
+		else DEBUG("[RX-ERR] %s", pszReqBuf);
+	}
+#endif
+
+	if(bEndOfHeader == true) {
+		if(nRequestSize != NULL) *nRequestSize = nTotal;
+		return pszReqBuf;
+	}
+
+	if(pszReqBuf != NULL) free(pszReqBuf);
+	return NULL;
 }
 
 static char *_getCorrectedHostname(const char *pszRequestHost) {

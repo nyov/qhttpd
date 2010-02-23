@@ -84,6 +84,11 @@
 #define DEF_DIR_MODE				(S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)
 #define DEF_FILE_MODE				(S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)
 
+// prefork management
+#define	MAX_PREFORK_AT_ONCE			(5)		// maximum prefork servers at once
+#define PERIODIC_JOB_INTERVAL			(2)		// periodic job interval
+#define KILL_IDLE_INTERVAL			(2000)		// unit is ms, if idle servers are more than max idle server, it will be terminated one a the interval. must bigger than 1000.
+
 //
 // HTTP RESPONSE CODES
 //
@@ -229,6 +234,10 @@ struct HttpRequest {
 	int	nReqStatus;		// request status 1:ok, 0:bad request, -1:timeout, -2:connection closed
 	char*	pszDocumentRoot;	// document root for this request
 	char*	pszDirectoryIndex;	// directory index file
+
+	// request body
+	char*	pszRequestBody;		// whole request body
+	size_t	nRequestSize;		// size of request body
 
 	// request line
 	char*	pszRequestMethod;	// request method		ex) GET
@@ -518,6 +527,22 @@ do {											\
 #define LOG_WARN(fmt, args...)	_LOG2(g_errlog, 2, " [WARN] ", fmt, ##args)
 #define LOG_INFO(fmt, args...)	_LOG(g_errlog, 3, " [INFO] ", fmt, ##args)
 
+#define STOPWATCH_START									\
+	int _swno = 0;									\
+	struct timeval _tv1, _tv2;							\
+	gettimeofday(&_tv1, NULL)
+
+#define STOPWATCH_STOP(prefix)	{							\
+	gettimeofday(&_tv2, NULL);							\
+	_swno++;									\
+	struct timeval _diff;								\
+	_diff.tv_sec = _tv2.tv_sec - _tv1.tv_sec;					\
+	if(_tv2.tv_usec >= _tv1.tv_usec) _diff.tv_usec = _tv2.tv_usec - _tv1.tv_usec;	\
+	else { _diff.tv_sec += 1; _diff.tv_usec = _tv1.tv_usec - _tv2.tv_usec; }	\
+	printf("STOPWATCH(%d,%s%d): %zus %dus (%s:%d)\n", getpid(), prefix, _swno, _diff.tv_sec, (int)(_diff.tv_usec), __FILE__, __LINE__);	\
+	gettimeofday(&_tv1, NULL);							\
+}
+
 #ifdef DEBUG
 #undef DEBUG
 #endif
@@ -531,31 +556,12 @@ do {											\
 	do {										\
 		_LOG2(g_errlog, MAX_LOGLEVEL, " [DEBUG] ", fmt, ##args);		\
 	} while (false)
-
-#define STOPWATCH_START									\
-	int _swno = 0;									\
-	struct timeval _tv1, _tv2;							\
-	gettimeofday(&_tv1, NULL)
-
-#define STOPWATCH_STOP	{								\
-	gettimeofday(&_tv2, NULL);							\
-	_swno++;									\
-	struct timeval _diff;								\
-	_diff.tv_sec = _tv2.tv_sec - _tv1.tv_sec;					\
-	if(_tv2.tv_usec >= _tv1.tv_usec) _diff.tv_usec = _tv2.tv_usec - _tv1.tv_usec;	\
-	else { _diff.tv_sec += 1; _diff.tv_usec = _tv1.tv_usec - _tv2.tv_usec; }	\
-	DEBUG("STOPWATCH(%d,%d): %zus %dus (%s:%d)", getpid(), _swno, _diff.tv_sec, (int)(_diff.tv_usec), __FILE__, __LINE__);	\
-	gettimeofday(&_tv1, NULL);							\
-}
-
 #else
 
 //
 // RELEASE build
 //
 #define DEBUG(fms, args...)
-#define STOPWATCH_START
-#define STOPWATCH_STOP
 
 #endif // BUILD_DEBUG
 

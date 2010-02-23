@@ -32,7 +32,7 @@ static void childEnd(int nStatus);
 static void childSignalInit(void *func);
 static void childSignal(int signo);
 static void childSignalHandler(void);
-static void setSocketOption(int nSockFd);
+static void setClientSocketOption(int nSockFd);
 
 /////////////////////////////////////////////////////////////////////////
 // PUBLIC FUNCTIONS
@@ -69,7 +69,7 @@ void childStart(int nSockFd) {
 	int nIdleCnt = 0;
         while (true) {
 		//
-		// 컨넥션 대기 영역
+		// SECTION: connection waiting
 		//
 
                 // wait connection
@@ -117,20 +117,20 @@ void childStart(int nSockFd) {
                 socklen_t nConnLen = sizeof(connAddr);
                 int nNewSockFd;
                 if ((nNewSockFd = accept(nSockFd, (struct sockaddr *)&connAddr, &nConnLen)) == -1) {
-                        // 다른 프로세스에 의해 처리되었음
+                        // caught by another process
                         //DEBUG("I'm late...");
                         continue;
                 }
 
 		//
-		// 컨넥션 완료 영역
+		// SECTION: connection established
 		//
 
 		// connection accepted
 		DEBUG("Connection established.");
 
 		// set socket option
-		setSocketOption(nNewSockFd);
+		setClientSocketOption(nNewSockFd);
 
 #ifdef ENABLE_HOOK
 		// connection hook
@@ -254,7 +254,7 @@ static void childSignalHandler(void) {
 	}
 }
 
-static void setSocketOption(int nSockFd) {
+static void setClientSocketOption(int nSockFd) {
 	// linger option
 	if(SET_TCP_LINGER_TIMEOUT > 0) {
 		struct linger li;
@@ -272,4 +272,10 @@ static void setSocketOption(int nSockFd) {
 			LOG_WARN("Socket option(TCP_NODELAY) set failed.");
 		}
 	}
+
+	// nonblock socket
+	/*
+	int nSockFlags = fcntl(nSockFd, F_GETFL, 0);
+	fcntl(nSockFd, F_SETFL, nSockFlags | O_NONBLOCK);
+	*/
 }

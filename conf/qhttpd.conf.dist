@@ -39,7 +39,7 @@ MaxPending		= 5
 ## MaxRequestsPerChild: maximum number of requests a server process serves.
 StartServers		= 5
 MinSpareServers		= 3
-MaxSpareServers		= 15
+MaxSpareServers		= 10
 MaxIdleSeconds		= 300
 MaxClients		= 150
 MaxRequestsPerChild	= 3000

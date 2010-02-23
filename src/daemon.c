@@ -60,7 +60,7 @@ void daemonStart(bool nDaemonize) {
 		daemon(false, false); // after this line, parent's pid will be changed.
 	} else {
 		g_errlog->duplicate(g_errlog, stdout, true);
-		g_acclog->duplicate(g_acclog, stdout, false);
+		//g_acclog->duplicate(g_acclog, stdout, false);
 	}
 
 	// save pid
@@ -113,9 +113,12 @@ void daemonStart(bool nDaemonize) {
 		if (so_rcvbufsize > 0) setsockopt(nSockFd, SOL_SOCKET, SO_RCVBUF, &so_rcvbufsize, sizeof(so_rcvbufsize));
 	}
 
-	// set to non-block socket
+	// save it
 	m_nBindSockFd = nSockFd; // store bind sock id
-	fcntl(nSockFd, F_SETFL, O_NONBLOCK);
+
+	// set to non-block socket
+	int nSockFlags = fcntl(nSockFd, F_GETFL, 0);
+	fcntl(nSockFd, F_SETFL, nSockFlags | O_NONBLOCK);
 
 	// bind
 	struct sockaddr_in svrAddr;		// server address information
@@ -149,9 +152,14 @@ void daemonStart(bool nDaemonize) {
 
 	// prefork management
 	int nIgnoredConn = 0;
+	int nChildFlag = 0; // n : number of spares required, -n : number of times reqched over max idle, 0 : no action
 	while (true) {
 		// signal handling
 		daemonSignalHandler();
+
+		//
+		// SECTION: calculate prefork status
+		//
 
 		// get child count
 		int nTotalLaunched = poolGetTotalLaunched();
@@ -159,35 +167,51 @@ void daemonStart(bool nDaemonize) {
 		nRunningChilds = poolGetNumChilds(&nWorkingChilds, &nIdleChilds);
 
 		// increase or decrease childs
-		int nChildFlag = 0;
 		if(nRunningChilds < g_conf.nStartServers) { // should be launched at least start servers
+			// increase spare servers
 			nChildFlag = g_conf.nStartServers - nRunningChilds;
 		} else {
+			// running childs are equal or more than start servers
 			if(nIdleChilds < g_conf.nMinSpareServers) { // not enough idle childs
 				if(nRunningChilds < g_conf.nMaxClients) {
+					// increase spare servers
 					nChildFlag = g_conf.nMinSpareServers - nIdleChilds;
 					if(nChildFlag + nRunningChilds > g_conf.nMaxClients) {
 						nChildFlag = g_conf.nMaxClients - nRunningChilds;
 					}
-				} else if(nIdleChilds <= 0 && g_conf.bIgnoreOverConnection == true) { // ignore connectin
+				} else if(nIdleChilds <= 0 && g_conf.bIgnoreOverConnection == true) {
+					nChildFlag = 0;
+
+					// ignore connectin
 					while(ignoreConnection(nSockFd, 0) == true) {
 						nIgnoredConn++;
 						LOG_WARN("Maximum connection reached. Connection ignored. (%d)", nIgnoredConn);
 					}
 				}
-			} else if(nIdleChilds > g_conf.nMaxSpareServers) { // too much idle childs
-				if(nRunningChilds > g_conf.nStartServers) nChildFlag = -1;
+			} else if(nIdleChilds > g_conf.nMaxSpareServers) {
+				// too much idle childs
+				if(nRunningChilds > g_conf.nStartServers) {
+					nChildFlag--;
+				} else {
+					nChildFlag = 0;
+				}
+			} else {
+				// between min and max
+				nChildFlag = 0;
 			}
 		}
 
+		//
+		// SECTION: prefork control
+		//
 		//DEBUG("%d %d %d %d", nRunningChilds, nWorkingChilds, nIdleChilds, nChildFlag);
 
-		// launch or kill childs
+		// launching spare server
 		if(nChildFlag > 0) {
-			// launching  spare server
-			DEBUG("Launching %d spare server. (working:%d, running:%d)", nChildFlag, nWorkingChilds, nRunningChilds);
+			DEBUG("Launching %d/%d spare servers. (working:%d, running:%d)", nChildFlag, MAX_PREFORK_AT_ONCE, nWorkingChilds, nRunningChilds);
+
 			int i;
-			for(i = 0; i < nChildFlag; i++) {
+			for(i = 0; i < nChildFlag && i < MAX_PREFORK_AT_ONCE; i++) {
 				int nCpid = fork();
 				if (nCpid < 0) { // error
 					LOG_ERR("Can't create child.");
@@ -215,26 +239,33 @@ void daemonStart(bool nDaemonize) {
 					}
 				}
 			}
-		} else if(nChildFlag < 0) { // removing child
-			static time_t nLastSec = 0;
-			// removing 1 child per sec
-			if(nLastSec != time(NULL)) {
-				if(poolSetIdleExitReqeust(nChildFlag * -1) <= 0) {
-					LOG_WARN("Can't set exit flag.");
-				}
-				nLastSec = time(NULL);
-			} else {
-				usleep(1 * 1000);
-			}
-		} else { // no need to increase spare server
-			//DEBUG("sleeping...");
-			usleep(1 * 1000);
+
+			continue;
 		}
 
-		// periodic job here
+		// decrease spare server
+		if(nChildFlag < 0) {
+			// removing 1 child per sec
+			if(nChildFlag <= (-1 * KILL_IDLE_INTERVAL)) {
+				DEBUG("Removing 1/%d spare server. (working:%d, running:%d)", nChildFlag, nWorkingChilds, nRunningChilds);
+				nChildFlag = 0;
+
+				if(poolSetIdleExitReqeust(1) <= 0) {
+					LOG_WARN("Can't set exit flag.");
+				}
+			}
+		}
+
+		//
+		// SECTION: periodic job
+		//
 		static time_t nLastSec = 0;
-		if(nLastSec != time(NULL)) {
-			//DEBUG("Launching %d spare server. (working:%d, running:%d)\n", nChildFlag, nWorkingChilds, nRunningChilds);
+		if(time(NULL) - nLastSec < PERIODIC_JOB_INTERVAL) {
+			// get some sleep
+			usleep(1 * 1000);
+			continue;
+		} else {
+			//DEBUG("working:%d, running:%d\n", nWorkingChilds, nRunningChilds);
 
 			// safety code : check semaphore dead-lock bug
 			static int nSemLockCnt[MAX_SEMAPHORES];

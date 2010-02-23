@@ -121,14 +121,14 @@ bool poolCheck(void) {
 	// check current child
 	bool bFixed = false;
 	if(m_pShm->nRunningChilds != nTotal) {
+		LOG_WARN("Child counter adjusted from %d to %d.", m_pShm->nRunningChilds, nTotal);
 		m_pShm->nRunningChilds = nTotal;
-		LOG_WARN("Child counter adjusted to %d.", nTotal);
 		bFixed = true;
 	}
 
 	if(m_pShm->nWorkingChilds != nWorking) {
+		LOG_WARN("Working counter adjusted from %d to %d.", m_pShm->nWorkingChilds, nWorking);
 		m_pShm->nWorkingChilds = nWorking;
-		LOG_WARN("Working counter adjusted to %d.", nWorking);
 		bFixed = true;
 	}
 
@@ -173,13 +173,23 @@ int poolGetNumChilds(int *nWorking, int *nIdling) {
  */
 int poolSetIdleExitReqeust(int nNum) {
 	int i, nCnt = 0;
+
+	// scan first
 	for (i = 0; i < m_nMaxChild; i++) {
+		if (m_pShm->child[i].nPid > 0 && m_pShm->child[i].conn.bConnected == false) {
+			if(m_pShm->child[i].bExit == true) {
+				nCnt++;
+			}
+		}
+	}
+
+	// set exit request
+	for (i = 0; nCnt < nNum && i < m_nMaxChild; i++) {
 		if (m_pShm->child[i].nPid > 0 && m_pShm->child[i].conn.bConnected == false) {
 			if(m_pShm->child[i].bExit == false) {
 				m_pShm->child[i].bExit = true;
 			}
 			nCnt++;
-			if(nCnt >= nNum) break;
 		}
 	}
 

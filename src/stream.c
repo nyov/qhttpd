@@ -33,8 +33,30 @@ ssize_t streamRead(void *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs) {
 	return nReaded;
 }
 
+ssize_t qIoGets2(char *buf, size_t bufsize, int fd, int timeoutms) {
+	if(bufsize <= 1) return -1;
+
+	ssize_t readcnt = 0;
+	char *ptr;
+	for (ptr = buf; readcnt < (bufsize - 1); ptr++) {
+		//if(qIoWaitReadable(fd, timeoutms) <= 0) break;
+		if (read(fd, ptr, 1) != 1) break;
+
+		readcnt++;
+		if (*ptr == '\r') ptr--;
+		else if (*ptr == '\n') break;
+	}
+
+	*ptr = '\0';
+
+	if(readcnt >0) return readcnt;
+	return -1;
+}
+
 ssize_t streamGets(char *pszStr, size_t nSize, int nSockFd, int nTimeoutMs) {
-	ssize_t nReaded = qIoGets(pszStr, nSize, nSockFd, nTimeoutMs);
+STOPWATCH_START;
+	ssize_t nReaded = qIoGets2(pszStr, nSize, nSockFd, nTimeoutMs);
+STOPWATCH_STOP("streamGets");
 #ifdef BUILD_DEBUG
 	if(nReaded > 0) DEBUG("[RX] %s", pszStr);
 #endif
