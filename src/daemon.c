@@ -60,7 +60,7 @@ void daemonStart(bool nDaemonize) {
 		daemon(false, false); // after this line, parent's pid will be changed.
 	} else {
 		g_errlog->duplicate(g_errlog, stdout, true);
-		//g_acclog->duplicate(g_acclog, stdout, false);
+		g_acclog->duplicate(g_acclog, stdout, false);
 	}
 
 	// save pid
