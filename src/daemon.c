@@ -60,7 +60,7 @@ void daemonStart(bool nDaemonize) {
 		daemon(false, false); // after this line, parent's pid will be changed.
 	} else {
 		g_errlog->duplicate(g_errlog, stdout, true);
-		g_acclog->duplicate(g_acclog, stdout, false);
+		//g_acclog->duplicate(g_acclog, stdout, false);
 	}
 
 	// save pid
@@ -223,8 +223,7 @@ void daemonStart(bool nDaemonize) {
 					childStart(nSockFd);
 
 					// safety code, never reached.
-					exit(EXIT_FAILURE);
-
+					daemonEnd(EXIT_FAILURE);
 				} else { // this is parent
 					// wait for the child register itself to shared pool.
 					int nWait;
@@ -237,6 +236,9 @@ void daemonStart(bool nDaemonize) {
 					if(nWait == 10000) {
 						LOG_WARN("Delayed child launching.");
 					}
+
+					// reset flag
+					nChildFlag = 0;
 				}
 			}
 
@@ -248,6 +250,8 @@ void daemonStart(bool nDaemonize) {
 			// removing 1 child per sec
 			if(nChildFlag <= (-1 * KILL_IDLE_INTERVAL)) {
 				DEBUG("Removing 1/%d spare server. (working:%d, running:%d)", nChildFlag, nWorkingChilds, nRunningChilds);
+
+				// reset flag
 				nChildFlag = 0;
 
 				if(poolSetIdleExitReqeust(1) <= 0) {
@@ -265,7 +269,8 @@ void daemonStart(bool nDaemonize) {
 			usleep(1 * 1000);
 			continue;
 		} else {
-			//DEBUG("working:%d, running:%d\n", nWorkingChilds, nRunningChilds);
+		printf("%d %d %d %d\n", nRunningChilds, nWorkingChilds, nIdleChilds, nChildFlag);
+			//DEBUG("working:%d, running:%d", nWorkingChilds, nRunningChilds);
 
 			// safety code : check semaphore dead-lock bug
 			static int nSemLockCnt[MAX_SEMAPHORES];

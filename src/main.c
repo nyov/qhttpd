@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 	}
 #endif
 	// initialize
-	strcpy(szConfigFile, "");
+	qStrCpy(szConfigFile, sizeof(szConfigFile), DEF_CONFIG);
 
 	// parse command line arguments
 	int nOpt;
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 			case 'c': {
-				strcpy(szConfigFile, optarg);
+				qStrCpy(szConfigFile, sizeof(szConfigFile), optarg);
 				break;
 			}
 			case 'v': {
@@ -109,7 +109,8 @@ int main(int argc, char *argv[]) {
 	bConfigLoadStatus = hookAfterConfigLoaded(&g_conf, bConfigLoadStatus);
 #endif
 	if(bConfigLoadStatus == false) {
-		fprintf(stderr, "ERROR: Failed to load configuration.\n");
+		fprintf(stderr, "ERROR: No configuration available at \"%s\". Try using '-c' option.\n", szConfigFile);
+		fprintf(stderr, "       Use '-h' option to see help message.\n");
 		return EXIT_FAILURE;
 	}
 

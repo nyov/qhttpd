@@ -50,7 +50,7 @@ void childStart(int nSockFd) {
 
 #ifdef ENABLE_HOOK
 	if(hookAfterChildInit() == false) {
-		LOG_ERR("Hook failed.\n");
+		LOG_ERR("Hook failed.");
 		childEnd(EXIT_FAILURE);
 	}
 #endif
@@ -72,22 +72,27 @@ void childStart(int nSockFd) {
 		// SECTION: connection waiting
 		//
 
+		// signal handling
+		childSignalHandler();
+
+                // check exit request
+                if(poolGetExitRequest() == true) {
+                	DEBUG("Caughted exit request.");
+                	break;
+                }
+
+        	// check maximum requests
+        	if(g_conf.nMaxRequestsPerChild > 0
+        		&& poolGetChildTotalRequests() >= g_conf.nMaxRequestsPerChild) {
+        		DEBUG("Maximum requests per child are reached. (%d/%d)", poolGetChildTotalRequests(), g_conf.nMaxRequestsPerChild);
+        		break;
+        	}
+
                 // wait connection
 		int nStatus = qIoWaitReadable(nSockFd, 1000); // wait 1 sec
 		if(nStatus < 0) break;
                 else if(nStatus == 0) {
-                        //
                         // periodic(1 sec) job here
-                        //
-
-                        // signal handling
-                        childSignalHandler();
-
-                        // check exit request
-                        if(poolGetExitRequest() == true) {
-                        	DEBUG("Caughted exit request.");
-                        	break;
-                        }
 
                         // idle time check
                         nIdleCnt++;
@@ -98,13 +103,6 @@ void childStart(int nSockFd) {
                         		DEBUG("Maximum idle seconds(%d) are reached.", g_conf.nMaxIdleSeconds);
                         		break;
                         	}
-                	}
-
-                	// check maximum requests
-                	if(g_conf.nMaxRequestsPerChild > 0
-                		&& poolGetChildTotalRequests() > g_conf.nMaxRequestsPerChild) {
-                		DEBUG("Maximum requests per child are over. (%d/%d)", poolGetChildTotalRequests(), g_conf.nMaxRequestsPerChild);
-                		break;
                 	}
 
                         continue;
@@ -181,7 +179,7 @@ static void childEnd(int nStatus) {
 #ifdef ENABLE_HOOK
 	// hook
 	if(hookBeforeChildEnd() == false) {
-		LOG_ERR("Hook failed.\n");
+		LOG_ERR("Hook failed.");
 	}
 #endif
 

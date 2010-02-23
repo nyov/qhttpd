@@ -116,7 +116,9 @@ int httpMain(int nSockFd) {
 			poolSetConnResponse(pRes);
 
 			// check exit request
-			if(poolGetExitRequest() == true) {
+			if(poolGetExitRequest() == true
+			|| (g_conf.nMaxKeepAliveRequests > 0 && poolGetChildKeepaliveRequests() > g_conf.nMaxKeepAliveRequests))
+			{
 				httpHeaderSetStr(pRes->pHeaders, "Connection", "close");
 			}
 

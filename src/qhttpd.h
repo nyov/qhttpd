@@ -59,6 +59,8 @@
 #define PRG_NAME				"qhttpd"
 #define PRG_VERSION				"1.2.3"
 
+#define DEF_CONFIG				"/usr/local/etc/qhttpd.conf"
+
 //
 // HARD-CODED INTERNAL LIMITATIONS
 //
@@ -87,7 +89,7 @@
 // prefork management
 #define	MAX_PREFORK_AT_ONCE			(5)		// maximum prefork servers at once
 #define PERIODIC_JOB_INTERVAL			(2)		// periodic job interval
-#define KILL_IDLE_INTERVAL			(2000)		// unit is ms, if idle servers are more than max idle server, it will be terminated one a the interval. must bigger than 1000.
+#define KILL_IDLE_INTERVAL			(1000)		// unit is ms, if idle servers are more than max idle server, it will be terminated one a the interval. must bigger than 1000.
 
 //
 // HTTP RESPONSE CODES
@@ -139,6 +141,8 @@ struct ServerConfig {
 	int	nMaxRequestsPerChild;
 
 	bool	bKeepAliveEnable;
+	int	nMaxKeepAliveRequests;
+
 	int	nConnectionTimeout;
 	bool	bIgnoreOverConnection;
 	int	nResponseExpires;
@@ -308,6 +312,7 @@ extern	bool		poolGetExitRequest(void);
 extern	bool		poolSetExitRequest(void);
 
 extern	int		poolGetChildTotalRequests(void);
+extern	int		poolGetChildKeepaliveRequests(void);
 
 extern	bool		poolSetConnInfo(int nSockFd);
 extern	bool		poolSetConnRequest(struct HttpRequest *pReq);

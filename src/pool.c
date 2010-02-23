@@ -29,7 +29,7 @@
 // PRIVATE VARIABLES
 /////////////////////////////////////////////////////////////////////////
 #define POOL_SEM_ID		(1)
-#define POOL_SEM_MAXWAIT	(3000)
+#define POOL_SEM_MAXWAIT	(5000)
 
 static struct SharedData *m_pShm = NULL;
 static int m_nShmId = -1;
@@ -99,9 +99,7 @@ int poolSendSignal(int signo) {
 }
 
 /*
- * Pool Checking
- *
- * @return 서비스중인 프로세스 수
+ * Check pool counter consistency.
  */
 bool poolCheck(void) {
 	if(m_pShm == NULL) return false;
@@ -138,9 +136,9 @@ bool poolCheck(void) {
 }
 
 /*
- * 차일드 누적 구동 수를 얻음
+ * Get number of total launched childs
  *
- * @return 차일드 누적 구동 수
+ * @return umber of total launched childs
  */
 int poolGetTotalLaunched(void) {
 	if(m_pShm == NULL) return 0;
@@ -148,12 +146,14 @@ int poolGetTotalLaunched(void) {
 }
 
 /*
- * 구동중인 프로세스 수를 얻음
+ * Get number of childs.
  *
- * @return 구동중인 프로세스 수
+ * @return number of running childs
  */
 int poolGetNumChilds(int *nWorking, int *nIdling) {
 	if(m_pShm == NULL) return false;
+
+	//qSemEnterForce(g_semid, POOL_SEM_ID, POOL_SEM_MAXWAIT, NULL);
 
 	if(m_pShm->nRunningChilds < 0 || m_pShm->nWorkingChilds < 0
 	|| m_pShm->nRunningChilds < m_pShm->nWorkingChilds) {
@@ -163,16 +163,20 @@ int poolGetNumChilds(int *nWorking, int *nIdling) {
 	if(nWorking != NULL) *nWorking = m_pShm->nWorkingChilds;
 	if(nIdling != NULL) *nIdling = (m_pShm->nRunningChilds - m_pShm->nWorkingChilds);
 
+	//qSemLeave(g_semid, POOL_SEM_ID);
+
 	return m_pShm->nRunningChilds;
 }
 
 /*
- * IDLE 프로세스에게 종료 프레그를 설정
+ * Send exit to number of idle childs.
  *
- * @return 종료 프레그를 설정한 프로세스 수
+ * @return number of processes set
  */
 int poolSetIdleExitReqeust(int nNum) {
 	int i, nCnt = 0;
+
+	qSemEnterForce(g_semid, POOL_SEM_ID, POOL_SEM_MAXWAIT, NULL);
 
 	// scan first
 	for (i = 0; i < m_nMaxChild; i++) {
@@ -193,15 +197,19 @@ int poolSetIdleExitReqeust(int nNum) {
 		}
 	}
 
+	qSemLeave(g_semid, POOL_SEM_ID);
+
 	return nCnt;;
 }
 
 /*
- * 모든 프로세스에게 종료 프레그를 설정
+ * Send exit to all childs.
  *
- * @return 종료 프레그를 설정한 프로세스 수
+ * @return number of processes set
  */
 int poolSetExitReqeustAll(void) {
+	qSemEnterForce(g_semid, POOL_SEM_ID, POOL_SEM_MAXWAIT, NULL);
+
 	int i, nCnt = 0;
 	for (i = 0; i < m_nMaxChild; i++) {
 		if (m_pShm->child[i].nPid > 0) {
@@ -209,6 +217,8 @@ int poolSetExitReqeustAll(void) {
 			nCnt++;
 		}
 	}
+
+	qSemLeave(g_semid, POOL_SEM_ID);
 
 	return nCnt;;
 }
@@ -219,8 +229,6 @@ int poolSetExitReqeustAll(void) {
 
 /*
  * called by child
- * @note
- * 성공여부와 상관없이 nTotalLaunched는 항상 1 증가
  */
 bool poolChildReg(void) {
 	if (m_nMySlotId >= 0) {
@@ -229,7 +237,6 @@ bool poolChildReg(void) {
 	}
 
 	qSemEnterForce(g_semid, POOL_SEM_ID, POOL_SEM_MAXWAIT, NULL);
-
 	// find empty slot
 	int nSlot = poolFindSlot(0);
 	if (nSlot < 0) {
@@ -308,6 +315,12 @@ int poolGetChildTotalRequests(void) {
 	return m_pShm->child[m_nMySlotId].nTotalRequests;
 }
 
+int poolGetChildKeepaliveRequests(void) {
+	if (m_nMySlotId < 0) return -1;
+
+	return m_pShm->child[m_nMySlotId].conn.nTotalRequests;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // MEMBER FUNCTIONS - connection
 /////////////////////////////////////////////////////////////////////////
@@ -323,6 +336,9 @@ bool poolSetConnInfo(int nSockFd) {
 		LOG_WARN("getpeername() failed. (errno:%d)", errno);
 		return false;
 	}
+
+
+	qSemEnterForce(g_semid, POOL_SEM_ID, POOL_SEM_MAXWAIT, NULL);
 
 	// set slot data
 	m_pShm->child[m_nMySlotId].conn.bConnected = true;
@@ -340,6 +356,8 @@ bool poolSetConnInfo(int nSockFd) {
 	// set global info
 	m_pShm->nTotalConnected++;
 	m_pShm->nWorkingChilds++;
+
+	qSemLeave(g_semid, POOL_SEM_ID);
 
 	return true;
 }
@@ -367,9 +385,13 @@ bool poolSetConnRequest(struct HttpRequest *pReq) {
 }
 
 bool poolSetConnResponse(struct HttpResponse *pRes) {
+	qSemEnterForce(g_semid, POOL_SEM_ID, POOL_SEM_MAXWAIT, NULL);
+
 	m_pShm->child[m_nMySlotId].conn.nResponseCode = pRes->nResponseCode;
 	gettimeofday(&m_pShm->child[m_nMySlotId].conn.tvResTime, NULL);
 	m_pShm->child[m_nMySlotId].conn.bRun = false;
+
+	qSemLeave(g_semid, POOL_SEM_ID);
 
 	return true;
 }
@@ -377,10 +399,14 @@ bool poolSetConnResponse(struct HttpResponse *pRes) {
 bool poolClearConnInfo(void) {
 	if (m_nMySlotId < 0) return NULL;
 
+	qSemEnterForce(g_semid, POOL_SEM_ID, POOL_SEM_MAXWAIT, NULL);
+
 	m_pShm->child[m_nMySlotId].conn.bConnected = false;
 	m_pShm->child[m_nMySlotId].conn.nEndTime = time(NULL); // set endtime
 
 	m_pShm->nWorkingChilds--;
+
+	qSemLeave(g_semid, POOL_SEM_ID);
 
 	return true;
 }

@@ -46,7 +46,10 @@ MaxRequestsPerChild	= 3000
 
 ## KeepAliveEnable: Whether or not to allow persistent connections.
 ## Set to "NO" to deactivate.
+## MaxKeepAliveRequests: The maximum number of requests to allow
+## during a persistent connection. Set to 0 to allow an unlimited amount.
 KeepAliveEnable		= YES
+MaxKeepAliveRequests	= 100
 
 ## ConnectionTimeout: Number of seconds to wait for the request from the
 ## same client on the same connection. Also used for Keep-Alive timeout.
