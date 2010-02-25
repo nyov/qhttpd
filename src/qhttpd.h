@@ -222,6 +222,9 @@ struct SharedData {
 		} conn;
 	} child[MAX_CHILDS];
 
+	// child control
+	bool	bKeepAliveEnable;		// control keep-alive behavior, when heavy load
+
 	// extra info
 	int	nUserCounter[MAX_USERCOUNTER];
 };
@@ -298,6 +301,8 @@ extern	bool		poolInit(int nMaxChild);
 extern	bool		poolFree(void);
 extern	struct SharedData* poolGetShm(void);
 extern	int		poolSendSignal(int signo);
+extern	bool		poolIsKeepaliveEnabled(void);
+extern	bool		poolSetKeepalive(bool bKeepAliveEnable);
 
 extern	bool		poolCheck(void);
 extern	int		poolGetTotalLaunched(void);

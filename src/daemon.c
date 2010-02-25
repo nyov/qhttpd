@@ -179,13 +179,22 @@ void daemonStart(bool nDaemonize) {
 					if(nChildFlag + nRunningChilds > g_conf.nMaxClients) {
 						nChildFlag = g_conf.nMaxClients - nRunningChilds;
 					}
-				} else if(nIdleChilds <= 0 && g_conf.bIgnoreOverConnection == true) {
+				} else if(nIdleChilds <= 0) {
+					// max connection reached
 					nChildFlag = 0;
 
+					// keep-alive control
+					if(poolIsKeepaliveEnabled() == true) {
+						poolSetKeepalive(false);
+						LOG_WARN("Maximum connection reached. KeepAlive feature is disabled temporary.");
+					}
+
 					// ignore connectin
-					while(ignoreConnection(nSockFd, 0) == true) {
-						nIgnoredConn++;
-						LOG_WARN("Maximum connection reached. Connection ignored. (%d)", nIgnoredConn);
+					if(g_conf.bIgnoreOverConnection == true) {
+						while(ignoreConnection(nSockFd, 0) == true) {
+							nIgnoredConn++;
+							LOG_WARN("Maximum connection reached. Connection ignored. (%d)", nIgnoredConn);
+						}
 					}
 				}
 			} else if(nIdleChilds > g_conf.nMaxSpareServers) {
@@ -256,6 +265,12 @@ void daemonStart(bool nDaemonize) {
 
 				if(poolSetIdleExitReqeust(1) <= 0) {
 					LOG_WARN("Can't set exit flag.");
+				}
+
+				// turn on keep-alive if disabled
+				if(g_conf.bKeepAliveEnable == true && poolIsKeepaliveEnabled() == false) {
+					poolSetKeepalive(true);
+					LOG_WARN("KeepAlive feature is enabled.");
 				}
 			}
 		}
