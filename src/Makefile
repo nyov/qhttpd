@@ -43,7 +43,7 @@ INCLUDE = -I./				\
 LIB	= -L/usr/local/lib
 
 OBJ	= main.o version.o config.o daemon.o child.o pool.o mime.o \
-	  http_main.o http_request.o http_response.o http_header.o http_method.o dav_method.o http_status.o http_accesslog.o \
+	  http_main.o http_request.o http_response.o http_header.o http_method.o http_method_dav.o http_status.o http_accesslog.o \
 	  stream.o util.o syscall.o \
 
 ## qDecoder library

@@ -382,7 +382,7 @@ extern	int		httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int
 extern	int		httpMethodDelete(struct HttpRequest *pReq, struct HttpResponse *pRes);
 extern	int		httpMethodNotImplemented(struct HttpRequest *pReq, struct HttpResponse *pRes);
 
-// http_davext.c
+// http_method_dav.c
 extern	int		httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes);
 extern	int		httpMethodProppatch(struct HttpRequest *pReq, struct HttpResponse *pRes);
 extern	int		httpMethodMkcol(struct HttpRequest *pReq, struct HttpResponse *pRes);
