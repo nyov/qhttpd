@@ -100,12 +100,12 @@ int poolSendSignal(int signo) {
 
 bool poolIsKeepaliveEnabled(void) {
 	if(m_pShm == NULL) return false;
-	return m_pShm->bKeepAliveEnable;
+	return m_pShm->bKeepAliveControl;
 }
 
 bool poolSetKeepalive(bool bKeepAliveEnable) {
 	if(m_pShm == NULL) return false;
-	m_pShm->bKeepAliveEnable = bKeepAliveEnable;
+	m_pShm->bKeepAliveControl = bKeepAliveEnable;
 	return true;
 }
 

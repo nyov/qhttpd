@@ -184,7 +184,7 @@ void daemonStart(bool nDaemonize) {
 					nChildFlag = 0;
 
 					// keep-alive control
-					if(poolIsKeepaliveEnabled() == true) {
+					if(g_conf.bKeepAliveControl == true && poolIsKeepaliveEnabled() == true) {
 						poolSetKeepalive(false);
 						LOG_WARN("Maximum connection reached. KeepAlive feature is disabled temporary.");
 					}

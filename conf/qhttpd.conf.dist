@@ -46,9 +46,15 @@ MaxRequestsPerChild	= 3000
 
 ## KeepAliveEnable: Whether or not to allow persistent connections.
 ## Set to "NO" to deactivate.
+## KeepAliveControl: Whether or not to allow qhttpd control keep alive
+## feature. If it's on, keep-alive will be disabled temporary, when
+## all childs are working and can't accept new connection just because
+## all connections are held by keep-alive requests.
+## are are no available idle childs.
 ## MaxKeepAliveRequests: The maximum number of requests to allow
 ## during a persistent connection. Set to 0 to allow an unlimited amount.
 KeepAliveEnable		= YES
+KeepAliveControl	= NO
 MaxKeepAliveRequests	= 100
 
 ## ConnectionTimeout: Number of seconds to wait for the request from the

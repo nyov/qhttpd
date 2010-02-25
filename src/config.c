@@ -98,6 +98,7 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	fetch2Int(entry, pConf->nMaxRequestsPerChild, "MaxRequestsPerChild");
 
 	fetch2Bool(entry, pConf->bKeepAliveEnable, "KeepAliveEnable");
+	fetch2Bool(entry, pConf->bKeepAliveControl, "KeepAliveControl");
 	fetch2Int(entry, pConf->nMaxKeepAliveRequests, "MaxKeepAliveRequests");
 
 	fetch2Int(entry, pConf->nConnectionTimeout, "ConnectionTimeout");

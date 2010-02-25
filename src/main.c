@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
 	bConfigLoadStatus = hookAfterConfigLoaded(&g_conf, bConfigLoadStatus);
 #endif
 	if(bConfigLoadStatus == false) {
-		fprintf(stderr, "ERROR: No configuration available at \"%s\".\n", szConfigFile);
+		fprintf(stderr, "ERROR: An error occured while loading configuration \"%s\".\n", szConfigFile);
 		fprintf(stderr, "       Try using '-c' option. Use '-h' option for help message.\n");
 		return EXIT_FAILURE;
 	}

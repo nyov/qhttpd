@@ -141,6 +141,7 @@ struct ServerConfig {
 	int	nMaxRequestsPerChild;
 
 	bool	bKeepAliveEnable;
+	bool	bKeepAliveControl;
 	int	nMaxKeepAliveRequests;
 
 	int	nConnectionTimeout;
@@ -223,7 +224,7 @@ struct SharedData {
 	} child[MAX_CHILDS];
 
 	// child control
-	bool	bKeepAliveEnable;		// control keep-alive behavior, when heavy load
+	bool	bKeepAliveControl;		// keep-alive control status, when heavy load
 
 	// extra info
 	int	nUserCounter[MAX_USERCOUNTER];
