@@ -117,7 +117,7 @@ int httpMethodGet(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 		sysClose(nFd);
 	}
 
-	// set response except of 200 and 304
+	// set response if response code did not set
 	if(pRes->nResponseCode == 0) {
 		httpResponseSetSimple(pReq, pRes, nResCode, true, httpResponseGetMsg(nResCode));
 	}

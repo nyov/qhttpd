@@ -107,11 +107,11 @@ int httpMain(int nSockFd) {
 #endif
 
 #ifdef ENABLE_LUA
-			if(g_conf.bEnableLua == true && luaResponseHandler(pReq, pRes) == false) {
+			if(g_conf.bEnableLua == true
+			&& luaResponseHandler(pReq, pRes) == false) {
 				LOG_WARN("An error occured while processing luaResponseHandler().");
 			}
 #endif
-
 			 // set response information
 			poolSetConnResponse(pRes);
 

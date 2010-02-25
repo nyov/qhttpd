@@ -82,10 +82,10 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 
 	// append sub files if requested
 	if(nDepth > 0) {
-		DIR *pDir = opendir(szFilePath);
+		DIR *pDir = sysOpendir(szFilePath);
 		if(pDir != NULL) {
 			struct dirent *pFile;
-			while((pFile = readdir(pDir)) != NULL) {
+			while((pFile = sysReaddir(pDir)) != NULL) {
 				if(!strcmp(pFile->d_name, ".") || !strcmp(pFile->d_name, "..")) continue;
 
 				// flush buffer if buffered xml is large than max chunk size
@@ -115,7 +115,7 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 				_addXmlResponseFile(obXml, szSubRequestPath, &filestat);
 			}
 
-			closedir(pDir);
+			sysClosedir(pDir);
 		}
 	}
 

@@ -32,10 +32,14 @@ struct HttpResponse *httpResponseCreate(void) {
 	pRes = (struct HttpResponse *)malloc(sizeof(struct HttpResponse));
 	if(pRes == NULL) return NULL;
 
+	Q_ENTRY *pHeaders = qEntry();
+	if(pHeaders == NULL) {
+		free(pRes);
+		return NULL;
+	}
+
 	memset((void *)pRes, 0, sizeof(struct HttpResponse));
-	pRes->bOut = false;
-	pRes->pHeaders = qEntry();
-	if(pRes->pHeaders == NULL) return NULL;
+	pRes->pHeaders = pHeaders;
 
 	return pRes;
 }
@@ -256,6 +260,24 @@ int httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize) {
 	streamWritev(nSockFd, vectors, nVecCnt);
 
 	return nSent;
+}
+
+bool httpResponseReset(struct HttpResponse *pRes) {
+	if(pRes == NULL || pRes->bOut == true) return false;
+
+	// allocate Q_ENTRY for
+	Q_ENTRY *pHeaders = qEntry();
+	if(pHeaders == NULL) return false;
+
+	if(pRes->pszHttpVersion != NULL) free(pRes->pszHttpVersion);
+	if(pRes->pHeaders) pRes->pHeaders->free(pRes->pHeaders);
+	if(pRes->pszContentType != NULL) free(pRes->pszContentType);
+	if(pRes->pContent != NULL) free(pRes->pContent);
+
+	memset((void *)pRes, 0, sizeof(struct HttpResponse));
+	pRes->pHeaders = pHeaders;
+
+	return true;
 }
 
 void httpResponseFree(struct HttpResponse *pRes) {

@@ -345,6 +345,7 @@ extern	bool		httpResponseSetContentHtml(struct HttpResponse *pRes, const char *p
 extern	bool		httpResponseSetContentChunked(struct HttpResponse *pRes, bool bChunked);
 extern	bool		httpResponseOut(struct HttpResponse *pRes, int nSockFd);
 extern	int		httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize);
+extern	bool		httpResponseReset(struct HttpResponse *pRes);
 extern	void		httpResponseFree(struct HttpResponse *pRes);
 extern	const char*	httpResponseGetMsg(int nResCode);
 

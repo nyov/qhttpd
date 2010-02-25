@@ -45,7 +45,6 @@ LIB	= -L/usr/local/lib
 OBJ	= main.o version.o config.o daemon.o child.o pool.o mime.o \
 	  http_main.o http_request.o http_response.o http_header.o http_method.o dav_method.o http_status.o http_accesslog.o \
 	  stream.o util.o syscall.o \
-	  luascript.o
 
 ## qDecoder library
 INCLUDE	+= ${QDECODER_INC}
@@ -55,8 +54,9 @@ LIB	+= ${QDECODER_LIB}
 #DEFS	+= -DENABLE_HOOK
 #OBJ	+= hook.o
 
-## Lua script engine
+## Enable Lua script engine
 DEFS	+= -DENABLE_LUA
+OBJ	+= luascript.o
 INCLUDE	+= ${LUA_INC}
 LIB	+= ${LUA_LIB}
 
