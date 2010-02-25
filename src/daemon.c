@@ -325,7 +325,7 @@ static void daemonEnd(int nStatus) {
 		}
 
 		// sleep
-		sleep(1);
+		while(sleep(1) != 0);
 
 		// waitpid
 		while(waitpid(-1, NULL, WNOHANG) > 0);
@@ -411,7 +411,7 @@ static void daemonSignalHandler(void) {
 		sigdelset(&g_sigflags, SIGCHLD);
 		DEBUG("Caughted SIGCHLD");
 
-		int nChildPid;
+		pid_t nChildPid;
 		int nChildStatus = 0;
 		while((nChildPid = waitpid(-1, &nChildStatus, WNOHANG)) > 0) {
 			DEBUG("Detecting child(%d) terminated. Status : %d", nChildPid, nChildStatus);

@@ -116,7 +116,7 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 		char szTimeStr[sizeof(char) * (CONST_STRLEN("YYYYMMDDhhmmss")+1)];
 		obHtml->growStr(obHtml, "  <tr align=center>" CRLF);
 		obHtml->growStrf(obHtml,"    <td>%d</td>" CRLF, j);
-		obHtml->growStrf(obHtml,"    <td>%d</td>" CRLF, pShm->child[i].nPid);
+		obHtml->growStrf(obHtml,"    <td>%u</td>" CRLF, (unsigned int)pShm->child[i].nPid);
 		obHtml->growStrf(obHtml,"    <td>%s</td>" CRLF, qTimeGetGmtStrf(szTimeStr, sizeof(szTimeStr), pShm->child[i].nStartTime, "%Y%m%d%H%M%S"));
 		obHtml->growStrf(obHtml,"    <td align=right>%d</td>" CRLF, pShm->child[i].nTotalConnected);
 		obHtml->growStrf(obHtml,"    <td align=right>%d</td>" CRLF, pShm->child[i].nTotalRequests);

@@ -184,7 +184,7 @@ static void childEnd(int nStatus) {
 #endif
 
 	// remove child info
-	if(poolChildDel(getpid()) == false) {
+	if(poolChildDel(0) == false) {
 		LOG_WARN("Can't find pid %d from connection list", getpid());
 	}
 

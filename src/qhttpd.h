@@ -197,7 +197,7 @@ struct SharedData {
 
 	// child info
 	struct child {
-		int     nPid;			// pid, 0 means empty slot
+		pid_t	nPid;			// pid, 0 means empty slot
 		int	nTotalConnected;	// total connection counter for this slot
 		int	nTotalRequests;		// total processed requests counter for this slot
 		time_t  nStartTime;		// start time for this slot
@@ -306,7 +306,7 @@ extern	int		poolSetIdleExitReqeust(int nNum);
 extern	int		poolSetExitReqeustAll(void);
 
 extern	bool		poolChildReg(void);
-extern	bool		poolChildDel(int nPid);
+extern	bool		poolChildDel(pid_t nPid);
 extern	int		poolGetMySlotId(void);
 extern	bool		poolGetExitRequest(void);
 extern	bool		poolSetExitRequest(void);

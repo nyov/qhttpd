@@ -266,15 +266,19 @@ bool poolChildReg(void) {
 	return true;
 }
 
-// called by daemon
-bool poolChildDel(int nPid) {
-	int nSlot;
-
+// called by child and daemon
+// if nPid is 0, use m_nMySlotId
+bool poolChildDel(pid_t nPid) {
 	qSemEnterForce(g_semid, POOL_SEM_ID, POOL_SEM_MAXWAIT, NULL);
 
-	nSlot = poolFindSlot(nPid);
+	int nSlot;
+	if(nPid == 0) {
+		nSlot = m_nMySlotId;
+	} else {
+		nSlot = poolFindSlot(nPid);
+	}
+
 	if (nSlot < 0) {
-		//DEBUG("Can't find slot for pid %d.", nPid);
 		qSemLeave(g_semid, POOL_SEM_ID);
 		return false;
 	}
