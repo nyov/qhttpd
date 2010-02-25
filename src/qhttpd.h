@@ -156,7 +156,7 @@ struct ServerConfig {
 		bool bGet;
 		bool bPut;
 
-		// WebDAV methods
+		// HTTP extension - WebDAV methods
 		bool bPropfind;
 		bool bProppatch;
 		bool bMkcol;
@@ -382,7 +382,7 @@ extern	int		httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int
 extern	int		httpMethodDelete(struct HttpRequest *pReq, struct HttpResponse *pRes);
 extern	int		httpMethodNotImplemented(struct HttpRequest *pReq, struct HttpResponse *pRes);
 
-// dav_method.c
+// http_davext.c
 extern	int		httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes);
 extern	int		httpMethodProppatch(struct HttpRequest *pReq, struct HttpResponse *pRes);
 extern	int		httpMethodMkcol(struct HttpRequest *pReq, struct HttpResponse *pRes);

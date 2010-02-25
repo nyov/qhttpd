@@ -164,7 +164,7 @@ int httpRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	} else if(!strcmp(pReq->pszRequestMethod, "PUT")) {
 		nResCode = httpMethodPut(pReq, pRes);
 	}
-	// WebDAV methods : PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK
+	// HTTP extension - WebDAV methods : PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK
 	else if(!strcmp(pReq->pszRequestMethod, "PROPFIND")) {
 		nResCode = httpMethodPropfind(pReq, pRes);
 	} else if(!strcmp(pReq->pszRequestMethod, "PROPPATCH")) {
