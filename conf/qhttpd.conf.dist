@@ -27,10 +27,6 @@ DirectoryIndex		= index.html
 ## Port: listening port to serve.
 Port			= 8080
 
-## MaxPending: defines the maximum length the queue of pending connections
-## may grow tonumber of connection queuing.
-MaxPending		= 5
-
 ## StartServers:    number of server processes to start.
 ## MinSpareServers: minimum number of server processes which are kept spare.
 ## MaxSpareServers: maximum number of server processes which are kept spare.
@@ -44,17 +40,10 @@ MaxIdleSeconds		= 300
 MaxClients		= 150
 MaxRequestsPerChild	= 3000
 
-## KeepAliveEnable: Whether or not to allow persistent connections.
-## Set to "NO" to deactivate.
-## KeepAliveControl: Whether or not to allow qhttpd control keep alive
-## feature. If it's on, keep-alive will be disabled temporary, when
-## all childs are working and can't accept new connection just because
-## all connections are held by keep-alive requests.
-## are are no available idle childs.
+## EnableKeepAlive: Whether or not to allow persistent connections.
 ## MaxKeepAliveRequests: The maximum number of requests to allow
 ## during a persistent connection. Set to 0 to allow an unlimited amount.
-KeepAliveEnable		= YES
-KeepAliveControl	= NO
+EnableKeepAlive		= YES
 MaxKeepAliveRequests	= 100
 
 ## ConnectionTimeout: Number of seconds to wait for the request from the
@@ -84,9 +73,9 @@ AllowedMethods		= ALL
 EnableLua		= NO
 LuaScript		= ${ConfDir}/qhttpd.lua
 
-## StatusEnable: Whether or not to allow server status reports.
+## EnableStatus: Whether or not to allow server status reports.
 ## StatusUrl: The URL for retrieving server status reports.
-StatusEnable		= YES
+EnableStatus		= YES
 StatusUrl		= /server-status
 
 ## ErrorLog:  The location of the error log file.
@@ -98,3 +87,4 @@ ErrorLog		= ${LogDir}/qhttpd-%Y%m%d.err
 AccessLog		= ${LogDir}/qhttpd-%Y%m%d.log
 LogRotate		= 86400
 LogLevel		= 2
+

@@ -68,7 +68,7 @@ bool httpResponseSetCode(struct HttpResponse *pRes, int nResCode, struct HttpReq
 	httpHeaderSetStrf(pRes->pHeaders, "Server", "%s/%s (%s)", g_prgname, g_prgversion, g_prginfo);
 
 	// decide to turn on/off keep-alive
-	if(bKeepAlive == true && poolIsKeepaliveEnabled() == true) {
+	if(g_conf.bEnableKeepAlive == true && bKeepAlive == true) {
 		bKeepAlive = false;
 
 		if(!strcmp(pszHttpVer, HTTP_PROTOCOL_11)) {

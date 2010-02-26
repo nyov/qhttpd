@@ -134,7 +134,7 @@ void daemonStart(bool nDaemonize) {
 	LOG_INFO("Binding port %d succeed.", g_conf.nPort);
 
 	// listen
-	if (listen(nSockFd, g_conf.nMaxPending) == -1) {
+	if (listen(nSockFd, MAX_LISTEN_BACKLOG) == -1) {
 		LOG_ERR("Can't listen port %d.", g_conf.nPort);
 		daemonEnd(EXIT_FAILURE);
 	}
@@ -182,12 +182,6 @@ void daemonStart(bool nDaemonize) {
 				} else if(nIdleChilds <= 0) {
 					// max connection reached
 					nChildFlag = 0;
-
-					// keep-alive control
-					if(g_conf.bKeepAliveControl == true && poolIsKeepaliveEnabled() == true) {
-						poolSetKeepalive(false);
-						LOG_WARN("Maximum connection reached. KeepAlive feature is disabled temporary.");
-					}
 
 					// ignore connectin
 					if(g_conf.bIgnoreOverConnection == true) {
@@ -265,12 +259,6 @@ void daemonStart(bool nDaemonize) {
 
 				if(poolSetIdleExitReqeust(1) <= 0) {
 					LOG_WARN("Can't set exit flag.");
-				}
-
-				// turn on keep-alive if disabled
-				if(g_conf.bKeepAliveEnable == true && poolIsKeepaliveEnabled() == false) {
-					poolSetKeepalive(true);
-					LOG_WARN("KeepAlive feature is enabled.");
 				}
 			}
 		}

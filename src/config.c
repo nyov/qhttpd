@@ -56,7 +56,7 @@ do {								\
 		return false;					\
 	}							\
 	d = (!strcasecmp(t, "YES") || !strcasecmp(t, "TRUE") || \
-	    !strcasecmp(t, "ON") ) ? true : false;		\
+	    !strcasecmp(t, "ON")) ? true : false;		\
 } while (false)
 
 /**
@@ -88,7 +88,6 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	fetch2Str(entry, pConf->szDirectoryIndex, "DirectoryIndex");
 
 	fetch2Int(entry, pConf->nPort, "Port");
-	fetch2Int(entry, pConf->nMaxPending, "MaxPending");
 
 	fetch2Int(entry, pConf->nStartServers, "StartServers");
 	fetch2Int(entry, pConf->nMinSpareServers, "MinSpareServers");
@@ -97,8 +96,7 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	fetch2Int(entry, pConf->nMaxClients, "MaxClients");
 	fetch2Int(entry, pConf->nMaxRequestsPerChild, "MaxRequestsPerChild");
 
-	fetch2Bool(entry, pConf->bKeepAliveEnable, "KeepAliveEnable");
-	fetch2Bool(entry, pConf->bKeepAliveControl, "KeepAliveControl");
+	fetch2Bool(entry, pConf->bEnableKeepAlive, "EnableKeepAlive");
 	fetch2Int(entry, pConf->nMaxKeepAliveRequests, "MaxKeepAliveRequests");
 
 	fetch2Int(entry, pConf->nConnectionTimeout, "ConnectionTimeout");
@@ -110,7 +108,7 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	fetch2Bool(entry, pConf->bEnableLua, "EnableLua");
 	fetch2Str(entry, pConf->szLuaScript, "LuaScript");
 
-	fetch2Bool(entry, pConf->bStatusEnable, "StatusEnable");
+	fetch2Bool(entry, pConf->bEnableStatus, "EnableStatus");
 	fetch2Str(entry, pConf->szStatusUrl, "StatusUrl");
 
 	fetch2Str(entry, pConf->szErrorLog, "ErrorLog");

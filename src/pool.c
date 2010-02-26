@@ -98,17 +98,6 @@ int poolSendSignal(int signo) {
 	return n;
 }
 
-bool poolIsKeepaliveEnabled(void) {
-	if(m_pShm == NULL) return false;
-	return m_pShm->bKeepAliveControl;
-}
-
-bool poolSetKeepalive(bool bKeepAliveEnable) {
-	if(m_pShm == NULL) return false;
-	m_pShm->bKeepAliveControl = bKeepAliveEnable;
-	return true;
-}
-
 /*
  * Check pool counter consistency.
  */
@@ -470,9 +459,6 @@ static bool poolInitData(void) {
 	// clear child. we clear all available slot even we do not use slot over m_nMaxChild
 	int i;
 	for (i = 0; i < MAX_CHILDS; i++) poolInitSlot(i);
-
-	// set control
-	poolSetKeepalive(g_conf.bKeepAliveEnable);
 
 	return true;
 }

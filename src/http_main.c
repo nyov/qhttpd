@@ -192,7 +192,7 @@ int httpSpecialRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRe
 	if(pReq == NULL || pRes == NULL) return 0;
 
 	// check if the request is for server status page
-	if(g_conf.bStatusEnable == true
+	if(g_conf.bEnableStatus == true
 	&& !strcmp(pReq->pszRequestMethod, "GET")
 	&& !strcmp(pReq->pszRequestPath, g_conf.szStatusUrl)) {
 		Q_OBSTACK *obHtml = httpGetStatusHtml();

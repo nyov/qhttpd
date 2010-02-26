@@ -67,19 +67,20 @@
 
 #define MAX_CHILDS				(256)
 #define MAX_SEMAPHORES				(1+2)
-#define MAX_SEMAPHORES_LOCK_SECS		(10)		// maximum secondes which semaphores can be locked
+#define MAX_SEMAPHORES_LOCK_SECS		(10)		// the maximum secondes which semaphores can be locked
 #define MAX_HTTP_MEMORY_CONTENTS		(1024*1024)	// if the contents size is less than this, do not use temporary file
-#define	MAX_USERCOUNTER				(10)		// amount of custom counter in shared memory for customizing purpose
+#define	MAX_USERCOUNTER				(10)		// the amount of custom counter in shared memory for customizing purpose
 
-#define MAX_LOGLEVEL				(4)		// maximum log level
+#define MAX_LOGLEVEL				(4)		// the maximum log level
 
-#define URI_MAX					(1024 * 4)	// maximum request uri length
-#define ETAG_MAX				(8+1+8+1+8+1)	// maximum etag string length including NULL termination
+#define URI_MAX					(1024 * 4)	// the maximum request uri length
+#define ETAG_MAX				(8+1+8+1+8+1)	// the maximum etag string length including NULL termination
 
 // TCP options
+#define MAX_LISTEN_BACKLOG			(5)		// the maximum length the queue of pending connections may grow to
 #define	SET_TCP_LINGER_TIMEOUT			(15)		// 0 for disable
 #define SET_TCP_NODELAY				(1)		// 0 for disable
-#define	MAX_SHUTDOWN_WAIT			(5000)		// maximum ms for waiting input stream after socket shutdown
+#define	MAX_SHUTDOWN_WAIT			(5000)		// the maximum ms for waiting input stream after socket shutdown
 
 // default file creation mode
 #define CRLF					"\r\n"		// CR+LF
@@ -87,9 +88,9 @@
 #define DEF_FILE_MODE				(S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)
 
 // prefork management
-#define	MAX_PREFORK_AT_ONCE			(5)		// maximum prefork servers at once
+#define	MAX_PREFORK_AT_ONCE			(5)		// the maximum prefork servers at once
 #define PERIODIC_JOB_INTERVAL			(2)		// periodic job interval
-#define KILL_IDLE_INTERVAL			(1000)		// unit is ms, if idle servers are more than max idle server, it will be terminated one a the interval. must bigger than 1000.
+#define KILL_IDLE_INTERVAL			(1000)		// the unit is ms, if idle servers are more than max idle server, it will be terminated one a the interval. must bigger than 1000.
 
 //
 // HTTP RESPONSE CODES
@@ -120,7 +121,6 @@
 //
 // CONFIGURATION STRUCTURES
 //
-
 struct ServerConfig {
 	char	szConfigFile[PATH_MAX];
 
@@ -131,7 +131,6 @@ struct ServerConfig {
 	char	szDirectoryIndex[NAME_MAX];
 
 	int	nPort;
-	int	nMaxPending;
 
 	int	nStartServers;
 	int	nMinSpareServers;
@@ -140,8 +139,7 @@ struct ServerConfig {
 	int	nMaxClients;
 	int	nMaxRequestsPerChild;
 
-	bool	bKeepAliveEnable;
-	bool	bKeepAliveControl;
+	bool	bEnableKeepAlive;
 	int	nMaxKeepAliveRequests;
 
 	int	nConnectionTimeout;
@@ -173,7 +171,7 @@ struct ServerConfig {
 	bool	bEnableLua;
 	char	szLuaScript[PATH_MAX];
 
-	bool	bStatusEnable;
+	bool	bEnableStatus;
 	char	szStatusUrl[URI_MAX];
 
 	char	szErrorLog[PATH_MAX];
@@ -222,9 +220,6 @@ struct SharedData {
 			int	nResponseCode;		// response code
 		} conn;
 	} child[MAX_CHILDS];
-
-	// child control
-	bool	bKeepAliveControl;		// keep-alive control status, when heavy load
 
 	// extra info
 	int	nUserCounter[MAX_USERCOUNTER];
@@ -302,8 +297,6 @@ extern	bool		poolInit(int nMaxChild);
 extern	bool		poolFree(void);
 extern	struct SharedData* poolGetShm(void);
 extern	int		poolSendSignal(int signo);
-extern	bool		poolIsKeepaliveEnabled(void);
-extern	bool		poolSetKeepalive(bool bKeepAliveEnable);
 
 extern	bool		poolCheck(void);
 extern	int		poolGetTotalLaunched(void);
