@@ -56,8 +56,8 @@ bool poolInit(int nMaxChild) {
 	int nShmId;
 
 	if(nMaxChild > MAX_CHILDS) {
-		LOG_ERR("The number of maximum childs is too big. (System maximum: %d)", MAX_CHILDS);
-		return false;
+		LOG_ERR("The number of maximum childs(%d) is limited to system maximum %d.", nMaxChild, MAX_CHILDS);
+		nMaxChild = MAX_CHILDS;
 	}
 
 	nShmId = qShmInit(g_conf.szPidFile, '0', sizeof(struct SharedData), true);
