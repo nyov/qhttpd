@@ -65,7 +65,7 @@
 // HARD-CODED INTERNAL LIMITATIONS
 //
 
-#define MAX_CHILDS				(1024)
+#define MAX_CHILDS				(512)
 #define MAX_SEMAPHORES				(1+2)
 #define MAX_SEMAPHORES_LOCK_SECS		(10)		// the maximum secondes which semaphores can be locked
 #define MAX_HTTP_MEMORY_CONTENTS		(1024*1024)	// if the contents size is less than this, do not use temporary file
