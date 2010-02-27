@@ -47,6 +47,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
+#include <sys/uio.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
@@ -57,7 +58,7 @@
 //
 #define PRG_INFO				"The qDecoder Project"
 #define PRG_NAME				"qhttpd"
-#define PRG_VERSION				"1.2.3"
+#define PRG_VERSION				"1.2.4"
 
 #define DEF_CONFIG				"/usr/local/etc/qhttpd.conf"
 
