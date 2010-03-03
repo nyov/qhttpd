@@ -121,20 +121,21 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		if(pszReqUri[0] == '/') {
 			pReq->pszRequestUri = strdup(pszReqUri);
 		// if request has full uri format
-		} else if(!strncasecmp(pszReqUri, "HTTP://", 7)) {
+		} else if(!strncasecmp(pszReqUri, "HTTP://", CONST_STRLEN("HTTP://"))) {
 			// divide uri into host and path
-			pszTmp = strstr(pszReqUri + 8, "/");
+			pszTmp = strstr(pszReqUri + CONST_STRLEN("HTTP://"), "/");
 			if(pszTmp == NULL) {	// No path, ex) http://a.b.c:80
-				httpHeaderSetStr(pReq->pHeaders, "Host", pszReqUri+8);
+				httpHeaderSetStr(pReq->pHeaders, "Host", pszReqUri + CONST_STRLEN("HTTP://"));
 				pReq->pszRequestUri = strdup("/");
 			} else {		// Has path, ex) http://a.b.c:80/100
 				*pszTmp = '\0';
-				httpHeaderSetStr(pReq->pHeaders, "Host", pszReqUri+8);
+				httpHeaderSetStr(pReq->pHeaders, "Host", pszReqUri  + CONST_STRLEN("HTTP://"));
 				*pszTmp = '/';
 				pReq->pszRequestUri = strdup(pszTmp);
 			}
+		}
 		// invalid format
-		} else {
+		else {
 			DEBUG("Unable to parse uri: %s", pszReqUri);
 			return pReq;
 		}
@@ -185,7 +186,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 
 	// parse host
 	pReq->pszRequestHost = _getCorrectedHostname(httpHeaderGetStr(pReq->pHeaders, "HOST"));
-	if(pReq->pszRequestHost == NULL) {
+	if(IS_EMPTY_STRING(pReq->pszRequestHost) == true) {
 		DEBUG("Can't find host information.");
 		return pReq;
 	}
@@ -315,14 +316,13 @@ static char *_requestRead(int nSockFd, size_t *nRequestSize, int nTimeout) {
 				bEndOfHeader = true;
 			}
 		}
-
 	} while(bEndOfHeader == false);
 
 #ifdef BUILD_DEBUG
 	if(pszReqBuf != NULL) {
 		pszReqBuf[nTotal] = '\0';
 		if(bEndOfHeader == true) DEBUG("[RX] %s", pszReqBuf);
-		else DEBUG("[RX-ERR] %s", pszReqBuf);
+		else if(nTotal > 0)DEBUG("[RX-ERR] %s", pszReqBuf);
 	}
 #endif
 
