@@ -72,7 +72,7 @@ debug:
 	$(MAKE) CFLAGS_ADD="-g -O" DEFS_ADD="-DBUILD_DEBUG"
 
 install: all
-	install -m 0755 qhttpd ../bin/
+	install -m 0755 qhttpd ../sbin/
 
 ## Compile Module
 .SUFFIXES: .c .cpp .o
