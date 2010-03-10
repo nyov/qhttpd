@@ -188,9 +188,16 @@ int httpMethodMkcol(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	char szFilePath[PATH_MAX];
 	httpRequestGetSysPath(pReq, szFilePath, sizeof(szFilePath), pReq->pszRequestPath);
 
+	// check file or directory is already exists
+	struct stat filestat;
+	if (sysStat(szFilePath, &filestat) == 0) {
+		// exists
+		return response403(pReq, pRes);
+	}
+
 	// try to create directory
 	if(sysMkdir(szFilePath, DEF_DIR_MODE) != 0) {
-		return response403(pReq, pRes);
+		return response500(pReq, pRes);
 	}
 
 	// success
@@ -210,16 +217,18 @@ int httpMethodMove(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	// decode url encoded uri
 	char *pszTmp = strdup(pszDestination);
 	qDecodeUrl(pszTmp);
-	char szDestUri[PATH_MAX];
-	qStrCpy(szDestUri, sizeof(szDestUri), pszTmp);
+	char pszDecDestination[PATH_MAX];
+	qStrCpy(pszDecDestination, sizeof(pszDecDestination), pszTmp);
 	free(pszTmp);
 
 	// parse destination header
-	char *pszDestPath = szDestUri;
-	if(!strncasecmp(szDestUri, "HTTP://", CONST_STRLEN("HTTP://"))) {
-		pszDestPath = strstr(szDestUri + CONST_STRLEN("HTTP://"), "/");
+	char *pszDestPath;
+	if(pszDecDestination[0] == '/') {
+		pszDestPath = pszDecDestination;
+	} else if(!strncasecmp(pszDecDestination, "HTTP://", CONST_STRLEN("HTTP://"))) {
+		pszDestPath = strstr(pszDecDestination + CONST_STRLEN("HTTP://"), "/");
 		if(pszDestPath == NULL) return response400(pReq, pRes);
-	} else if(pszDestPath[0] != '/') {
+	} else {
 		return response400(pReq, pRes);
 	}
 
