@@ -307,7 +307,9 @@ const char *httpResponseGetMsg(int nResCode) {
 		case HTTP_CODE_NOT_FOUND		: return "Not Found";
 		case HTTP_CODE_METHOD_NOT_ALLOWED	: return "Method Not Allowed";
 		case HTTP_CODE_REQUEST_TIME_OUT		: return "Request Time Out";
+		case HTTP_CODE_GONE			: return "Gone";
 		case HTTP_CODE_REQUEST_URI_TOO_LONG	: return "Request URI Too Long";
+		case HTTP_CODE_LOCKED			: return "Locked";
 		case HTTP_CODE_INTERNAL_SERVER_ERROR	: return "Internal Server Error";
 		case HTTP_CODE_NOT_IMPLEMENTED		: return "Not Implemented";
 		case HTTP_CODE_SERVICE_UNAVAILABLE	: return "Service Unavailable";
