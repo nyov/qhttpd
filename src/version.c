@@ -30,11 +30,11 @@
 void printUsages(void) {
 	printVersion();
 	fprintf(stderr, "Usage: %s [-h] [-d] [-D] -c configfile\n", g_prgname);
-	fprintf(stderr, "  -h		Display this help message and exit.\n");
-	fprintf(stderr, "  -v		Version info.\n");
+	fprintf(stderr, "  -c filepath	Set configuration file.\n");
 	fprintf(stderr, "  -d		Run as debugging mode.\n");
 	fprintf(stderr, "  -D		Do not daemonize.\n");
-	fprintf(stderr, "  -c filepath	Set configuration file.\n");
+	fprintf(stderr, "  -v		Version info.\n");
+	fprintf(stderr, "  -h		Display this help message and exit.\n");
 }
 
 void printVersion(void) {
