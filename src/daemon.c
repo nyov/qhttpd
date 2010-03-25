@@ -254,7 +254,7 @@ void daemonStart(bool nDaemonize) {
 		if(nChildFlag < 0) {
 			// removing 1 child per sec
 			if(nChildFlag <= (-1 * KILL_IDLE_INTERVAL)) {
-				DEBUG("Removing 1/%d spare server. (working:%d, running:%d)", nChildFlag, nWorkingChilds, nRunningChilds);
+				//DEBUG("Removing 1(%d) spare server. (working:%d, running:%d)", nChildFlag, nWorkingChilds, nRunningChilds);
 
 				// reset flag
 				nChildFlag = 0;

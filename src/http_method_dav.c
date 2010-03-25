@@ -49,7 +49,7 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 
 	// get file stat
 	struct stat filestat;
-	if(stat(szFilePath, &filestat) < 0) {
+	if(sysStat(szFilePath, &filestat) < 0) {
 		return response404(pReq, pRes);
 	}
 
@@ -112,7 +112,7 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 
 				// get file stat
 				struct stat filestat;
-				if(stat(szSubFilePath, &filestat) < 0) continue;
+				if(sysStat(szSubFilePath, &filestat) < 0) continue;
 
 				_addXmlResponseFile(obXml, szSubRequestPath, &filestat);
 			}
@@ -152,7 +152,7 @@ int httpMethodProppatch(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 
 	// get file stat
 	struct stat filestat;
-	if(stat(szFilePath, &filestat) < 0) {
+	if(sysStat(szFilePath, &filestat) < 0) {
 		return response404(pReq, pRes);
 	}
 
