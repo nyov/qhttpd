@@ -17,14 +17,6 @@ PidFile			= ${RunDir}/qhttpd.pid
 ## MimeFile: The location of the mime-types file.
 MimeFile		= ${ConfDir}/mimetypes.conf
 
-## DocumentRoot: The directory out of which you will serve your
-## documents. By default, all requests are taken from this directory.
-DocumentRoot		= ${BaseDir}/htdocs
-
-## DirectoryIndex: sets the filename that will be served if a
-## directory is requested. Set to empty to disable.
-DirectoryIndex		= index.html
-
 ## Port: listening port to serve.
 Port			= 8080
 
@@ -61,13 +53,21 @@ IgnoreOverConnection     = NO
 ## greater than 0. Set to 0 to deactivate.
 ResponseExpires		= 0
 
-## Allowed methods: List up methods you want to activate.
+## DocumentRoot: The directory out of which you will serve your
+## documents. By default, all requests are taken from this directory.
+DocumentRoot		= ${BaseDir}/htdocs
+
+## AllowedMethods: List up methods you want to activate.
 ## Set to "ALL" to activate all supported methods.
 ## - HTTP methods     : OPTIONS,HEAD,GET,PUT
 ## - Extended methods : PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK
 AllowedMethods		= ALL
 #AllowedMethods		= OPTIONS,HEAD,GET
 #AllowedMethods		= OPTIONS,HEAD,GET,PUT,PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK
+
+## DirectoryIndex: sets the filename that will be served if a
+## directory is requested. Set to empty to disable.
+DirectoryIndex		= index.html
 
 ## EnableLua: Whether or not to allow LUA script engine.
 ## LuaScript: The file which contains LUA script for hooking connection.

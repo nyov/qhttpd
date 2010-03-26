@@ -132,9 +132,6 @@ struct ServerConfig {
 	char	szPidFile[PATH_MAX];
 	char	szMimeFile[PATH_MAX];
 
-	char	szDocumentRoot[PATH_MAX];
-	char	szDirectoryIndex[NAME_MAX];
-
 	int	nPort;
 
 	int	nStartServers;
@@ -150,6 +147,8 @@ struct ServerConfig {
 	int	nConnectionTimeout;
 	bool	bIgnoreOverConnection;
 	int	nResponseExpires;
+
+	char	szDocumentRoot[PATH_MAX];
 
 	// allowed methods
 	char	szAllowedMethods[PATH_MAX];
@@ -170,8 +169,9 @@ struct ServerConfig {
 		bool bUnlock;
 
 		// Custom methods HERE
-
 	} methods;
+
+	char	szDirectoryIndex[NAME_MAX];
 
 	bool	bEnableLua;
 	char	szLuaScript[PATH_MAX];

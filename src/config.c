@@ -86,9 +86,6 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	fetch2Str(entry, pConf->szPidFile, "PidFile");
 	fetch2Str(entry, pConf->szMimeFile, "MimeFile");
 
-	fetch2Str(entry, pConf->szDocumentRoot, "DocumentRoot");
-	fetch2Str(entry, pConf->szDirectoryIndex, "DirectoryIndex");
-
 	fetch2Int(entry, pConf->nPort, "Port");
 
 	fetch2Int(entry, pConf->nStartServers, "StartServers");
@@ -105,7 +102,11 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	fetch2Bool(entry, pConf->bIgnoreOverConnection, "IgnoreOverConnection");
 	fetch2Int(entry, pConf->nResponseExpires, "ResponseExpires");
 
+	fetch2Str(entry, pConf->szDocumentRoot, "DocumentRoot");
+
 	fetch2Str(entry, pConf->szAllowedMethods, "AllowedMethods");
+
+	fetch2Str(entry, pConf->szDirectoryIndex, "DirectoryIndex");
 
 	fetch2Bool(entry, pConf->bEnableLua, "EnableLua");
 	fetch2Str(entry, pConf->szLuaScript, "LuaScript");
