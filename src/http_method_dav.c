@@ -218,7 +218,7 @@ int httpMethodMove(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 
 	// decode url encoded uri
 	char *pszTmp = strdup(pszDestination);
-	qDecodeUrl(pszTmp);
+	qUrlDecode(pszTmp);
 	char pszDecDestination[PATH_MAX];
 	qStrCpy(pszDecDestination, sizeof(pszDecDestination), pszTmp);
 	free(pszTmp);
@@ -365,7 +365,7 @@ static bool _addXmlResponseFile(Q_OBSTACK *obXml, const char *pszUriPath, struct
 }
 
 static bool _addXmlResponseFileHead(Q_OBSTACK *obXml, const char *pszUriPath, struct stat *pFileStat) {
-	char *pszEncPath = qEncodeUrl(pszUriPath);
+	char *pszEncPath = qUrlEncode(pszUriPath, strlen(pszUriPath));
 
 	char *pszTailSlash = "";
 	if(S_ISDIR(pFileStat->st_mode) && strcmp(pszUriPath, "/")) pszTailSlash = "/";

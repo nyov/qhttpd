@@ -155,7 +155,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 		}
 
 		// decode path
-		qDecodeUrl(pReq->pszRequestPath);
+		qUrlDecode(pReq->pszRequestPath);
 
 		// check path
 		if(isValidPathname(pReq->pszRequestPath) == false) {
