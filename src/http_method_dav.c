@@ -47,8 +47,6 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	char szFilePath[PATH_MAX];
 	httpRequestGetSysPath(pReq, szFilePath, sizeof(szFilePath), pReq->pszRequestPath);
 
-DEBUG("============= %s", szFilePath);
-
 	// get file stat
 	struct stat filestat;
 	if(sysStat(szFilePath, &filestat) < 0) {
