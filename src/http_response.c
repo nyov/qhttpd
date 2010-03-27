@@ -303,6 +303,7 @@ const char *httpResponseGetMsg(int nResCode) {
 		case HTTP_CODE_MOVED_TEMPORARILY	: return "Moved Temporarily";
 		case HTTP_CODE_NOT_MODIFIED		: return "Not Modified";
 		case HTTP_CODE_BAD_REQUEST		: return "Bad Request";
+		case HTTP_CODE_UNAUTHORIZED		: return "Authorization Required";
 		case HTTP_CODE_FORBIDDEN		: return "Forbidden";
 		case HTTP_CODE_NOT_FOUND		: return "Not Found";
 		case HTTP_CODE_METHOD_NOT_ALLOWED	: return "Method Not Allowed";

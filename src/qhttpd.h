@@ -108,6 +108,7 @@
 #define HTTP_CODE_MOVED_TEMPORARILY		(302)
 #define HTTP_CODE_NOT_MODIFIED			(304)
 #define HTTP_CODE_BAD_REQUEST			(400)
+#define HTTP_CODE_UNAUTHORIZED			(401)
 #define HTTP_CODE_FORBIDDEN			(403)
 #define HTTP_CODE_NOT_FOUND			(404)
 #define HTTP_CODE_METHOD_NOT_ALLOWED		(405)
@@ -357,6 +358,7 @@ extern	const char*	httpResponseGetMsg(int nResCode);
 #define response204(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_NO_CONTENT, true, NULL);
 #define response304(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_MODIFIED, true, NULL);
 #define response400(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_BAD_REQUEST, false, httpResponseGetMsg(HTTP_CODE_BAD_REQUEST))
+#define response401(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_UNAUTHORIZED, true, httpResponseGetMsg(HTTP_CODE_UNAUTHORIZED))
 #define response403(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_FORBIDDEN, true, httpResponseGetMsg(HTTP_CODE_FORBIDDEN))
 #define response404(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_FOUND, true, httpResponseGetMsg(HTTP_CODE_NOT_FOUND))
 #define response404nc(pReq, pRes) httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_FOUND, true, NULL)
