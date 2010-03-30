@@ -196,7 +196,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	httpHeaderSetStr(pReq->pHeaders, "Host", pReq->pszRequestHost);
 
 	// set domain
-	pReq->pszRequestDomain = _getCorrectedHostname(pReq->pszRequestHost);
+	pReq->pszRequestDomain = _getCorrectedDomainname(pReq->pszRequestHost);
 
 	// Parse Contents
 	if(httpHeaderGetStr(pReq->pHeaders, "CONTENT-LENGTH") != NULL) {
