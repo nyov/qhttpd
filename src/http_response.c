@@ -164,6 +164,21 @@ bool httpResponseSetContentHtml(struct HttpResponse *pRes, const char *pszMsg) {
 	return httpResponseSetContent(pRes, "text/html", szContent, strlen(szContent));
 }
 
+bool httpResponseSetAuthRequired(struct HttpResponse *pRes, enum HttpAuthT nAuthType, const char *pszRealm) {
+	if(nAuthType == HTTP_AUTH_BASIC) {
+		httpHeaderSetStrf(pRes->pHeaders, "WWW-Authenticate", "Basic realm=\"%s\"", pszRealm);
+		return true;
+	} else if(nAuthType == HTTP_AUTH_DIGEST) {
+		char *pszNonce = qStrUnique(NULL);
+		httpHeaderSetStrf(pRes->pHeaders, "WWW-Authenticate", "Digest realm=\"%s\", nonce=\"%s\", algorithm=MD5, qop=\"auth\"", pszRealm, pszNonce);
+		free(pszNonce);
+		return true;
+	}
+
+	// not supported
+	return false;
+}
+
 bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
 	if(pRes->pszHttpVersion == NULL || pRes->nResponseCode == 0 || pRes->bOut == true) return false;
 

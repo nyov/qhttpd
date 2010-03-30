@@ -96,6 +96,13 @@
 #define KILL_IDLE_INTERVAL			(1000)		// the unit is ms, if idle servers are more than max idle server, it will be terminated one a the interval. must bigger than 1000.
 
 //
+// HTTP PROTOCOL CODES
+//
+#define	HTTP_PROTOCOL_09			"HTTP/0.9"
+#define	HTTP_PROTOCOL_10			"HTTP/1.0"
+#define	HTTP_PROTOCOL_11			"HTTP/1.1"
+
+//
 // HTTP RESPONSE CODES
 //
 #define HTTP_NO_RESPONSE			(0)
@@ -120,9 +127,13 @@
 #define HTTP_CODE_NOT_IMPLEMENTED		(501)
 #define HTTP_CODE_SERVICE_UNAVAILABLE		(503)
 
-#define	HTTP_PROTOCOL_09			"HTTP/0.9"
-#define	HTTP_PROTOCOL_10			"HTTP/1.0"
-#define	HTTP_PROTOCOL_11			"HTTP/1.1"
+//
+// TYPE DEFINES
+//
+enum HttpAuthT {
+	HTTP_AUTH_BASIC = 0,
+	HTTP_AUTH_DIGEST
+};
 
 //
 // CONFIGURATION STRUCTURES
@@ -254,7 +265,8 @@ struct HttpRequest {
 	char*	pszHttpVersion;		// version			ex) HTTP/1.1
 
 	// parsed request information
-	char*	pszRequestHost;		// host				ex) www.domain.com
+	char*	pszRequestHost;		// host				ex) www.domain.com or www.domain.com:8080
+	char*	pszRequestDomain;	// domain name			ex) www.domain.com (no port number)
 	char*	pszRequestPath;		// decoded path			ex) /data path
 	char*	pszQueryString;		// query string			ex) query=the%20value
 
@@ -278,6 +290,12 @@ struct HttpResponse {
 	off_t	nContentsLength;	// contents length
 	char*	pContent;		// contents data
 	bool	bChunked;		// flag for chunked data out
+};
+
+struct HttpUser {
+	enum HttpAuthT	nAuthType;	// HTTP_AUTH_BASIC or HTTP_AUTH_DIGEST
+	char		szUser[63+1];
+	char		szPassword[63+1];
 };
 
 //
@@ -348,6 +366,7 @@ extern	bool		httpResponseSetCode(struct HttpResponse *pRes, int nResCode, struct
 extern	bool		httpResponseSetContent(struct HttpResponse *pRes, const char *pszContentType, const char *pContent, off_t nContentsLength);
 extern	bool		httpResponseSetContentHtml(struct HttpResponse *pRes, const char *pszMsg);
 extern	bool		httpResponseSetContentChunked(struct HttpResponse *pRes, bool bChunked);
+extern	bool		httpResponseSetAuthRequired(struct HttpResponse *pRes, enum HttpAuthT nAuthType, const char *pszRealm);
 extern	bool		httpResponseOut(struct HttpResponse *pRes, int nSockFd);
 extern	int		httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize);
 extern	bool		httpResponseReset(struct HttpResponse *pRes);
@@ -376,6 +395,9 @@ extern	bool		httpHeaderRemove(Q_ENTRY *entries, const char *pszName);
 extern	bool		httpHeaderHasStr(Q_ENTRY *entries, const char *pszName, const char *pszValue);
 extern	bool		httpHeaderParseRange(const char *pszRangeHeader, off_t nFilesize, off_t *pnRangeOffset1, off_t *pnRangeOffset2, off_t *pnRangeSize);
 extern	bool		httpHeaderSetExpire(Q_ENTRY *entries, int nExpire);
+
+// http_auth.c
+extern	struct HttpUser* httpAuthParse(struct HttpRequest *pReq);
 
 // http_method.c
 extern	int		httpMethodOptions(struct HttpRequest *pReq, struct HttpResponse *pRes);

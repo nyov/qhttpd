@@ -28,7 +28,8 @@
 #include "qhttpd.h"
 
 static char *_requestRead(int nSockFd, size_t *nRequestSize, int nTimeout);
-static char *_getCorrectedHostname(const char *pszRequestHost);
+static char *_getCorrectedHostname(const char *pszHostname);
+static char *_getCorrectedDomainname(const char *pszDomainname);
 
 /*
  * @return	HttpRequest pointer
@@ -194,6 +195,9 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	}
 	httpHeaderSetStr(pReq->pHeaders, "Host", pReq->pszRequestHost);
 
+	// set domain
+	pReq->pszRequestDomain = _getCorrectedHostname(pReq->pszRequestHost);
+
 	// Parse Contents
 	if(httpHeaderGetStr(pReq->pHeaders, "CONTENT-LENGTH") != NULL) {
 		pReq->nContentsLength = (off_t)atoll(httpHeaderGetStr(pReq->pHeaders, "CONTENT-LENGTH"));
@@ -262,6 +266,7 @@ bool httpRequestFree(struct HttpRequest *pReq) {
 	if(pReq->pszHttpVersion != NULL) free(pReq->pszHttpVersion);
 
 	if(pReq->pszRequestHost != NULL) free(pReq->pszRequestHost);
+	if(pReq->pszRequestDomain != NULL) free(pReq->pszRequestDomain);
 	if(pReq->pszRequestPath != NULL) free(pReq->pszRequestPath);
 	if(pReq->pszQueryString != NULL) free(pReq->pszQueryString);
 
@@ -337,11 +342,10 @@ static char *_requestRead(int nSockFd, size_t *nRequestSize, int nTimeout) {
 	return NULL;
 }
 
-static char *_getCorrectedHostname(const char *pszRequestHost) {
+static char *_getCorrectedHostname(const char *pszHostname) {
 	char *pszHost = NULL;
-
-	if(pszRequestHost != NULL) {
-		pszHost = strdup(pszRequestHost);
+	if(pszHostname != NULL) {
+		pszHost = strdup(pszHostname);
 		qStrLower(pszHost);
 
 		// if port number is 80, take it off
@@ -350,4 +354,17 @@ static char *_getCorrectedHostname(const char *pszRequestHost) {
 	}
 
 	return pszHost;
+}
+
+static char *_getCorrectedDomainname(const char *pszDomainname) {
+	char *pszDomain = NULL;
+	if(pszDomainname != NULL) {
+		pszDomain = strdup(pszDomainname);
+		char *pszColon = strstr(pszDomain, ":");
+		if(pszColon != NULL) {
+			*pszColon = '\0';
+		}
+	}
+
+	return pszDomain;
 }
