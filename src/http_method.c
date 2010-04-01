@@ -188,7 +188,6 @@ int httpRealGet(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd, st
 	//
 	// set response headers
 	//
-
 	httpResponseSetCode(pRes, (bRangeRequest == false) ? HTTP_CODE_OK : HTTP_CODE_PARTIAL_CONTENT, pReq, true);
 	httpResponseSetContent(pRes, pszContentType, NULL, nRangeSize);
 
