@@ -65,6 +65,7 @@ distclean: clean
 		(cd $${DIR}; make clean; ${RM} -f Makefile); \
 		echo "<=== $${DIR}"; \
 	done
+	${RM} -rf sbin/qhttpd
 	${RM} -rf autom4te.cache
 	${RM} -f configure.lineno config.log config.status config.h
 	${RM} -f Makefile
