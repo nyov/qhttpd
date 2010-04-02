@@ -21,52 +21,29 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 ## THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## $Id$
+## $Id: Makefile 140 2010-03-30 01:38:56Z wolkykim $
 
-## 3rd party libraries
-QDECODER_INC = -I/usr/local/include
-QDECODER_LIB = /usr/local/lib/libqDecoder.a
-
-LUA_INC = -I/usr/local/include
-LUA_LIB = /usr/local/lib/liblua.a -lm
-## comment out below line on FreeBSD
-LUA_LIB += -ldl
+prefix		= @prefix@
+exec_prefix	= ${prefix}
 
 ## Compiler arguments
-CC	= gcc
-CFLAGS  = -Wall ${CFLAGS_ADD}
-DEFS	+= ${DEFS_ADD}
-DEFS	+= -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+CC	= @CC@
+CFLAGS	= @CFLAGS@
+DEFS	= @DEFS@ -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 @OPT_DEFS@ ${DEFS_ADD}
+INCLUDE	+= @OPT_INCS@ -I. -I/usr/include -I/usr/local/include
+LIBS	= -L/usr/lib/ -L/usr/local/lib/ @OPT_LIBS@
 
-INCLUDE = -I./				\
-	  -I/usr/include		\
-	  -I/usr/local/include
-
-LIB	= -L/usr/local/lib
-
-OBJ	= main.o version.o config.o daemon.o child.o pool.o mime.o \
+OBJS	= main.o version.o config.o daemon.o child.o pool.o mime.o \
 	  http_main.o http_request.o http_response.o http_header.o http_auth.o http_method.o http_method_dav.o http_status.o http_accesslog.o \
-	  stream.o util.o syscall.o \
-
-## qDecoder library
-INCLUDE	+= ${QDECODER_INC}
-LIB	+= ${QDECODER_LIB}
-
-## Enable hook
-#DEFS	+= -DENABLE_HOOK
-#OBJ	+= hook.o
-
-## Enable Lua script engine
-DEFS	+= -DENABLE_LUA
-OBJ	+= luascript.o
-INCLUDE	+= ${LUA_INC}
-LIB	+= ${LUA_LIB}
+	  stream.o util.o syscall.o
+OBJS	+= @OPT_OBJS@
 
 ## Make Library
 all:	qhttpd
 
-qhttpd: ${OBJ}
-	${CC} ${CFLAGS} ${OBJ} ${LIB} -o qhttpd
+qhttpd: ${OBJS}
+	${CC} ${CFLAGS} ${OBJS} ${LIBS} -o qhttpd
+	install -m 0755 qhttpd ../sbin/
 
 reall: clean all
 
@@ -87,4 +64,4 @@ install: all
 
 ## Clear Module
 clean:
-	rm -f ${OBJ} qhttpd
+	rm -f ${OBJS} qhttpd
