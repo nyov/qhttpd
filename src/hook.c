@@ -107,6 +107,8 @@ bool hookAfterConnEstablished(int nSockFd) {
 // return response code if you set response then step 4 will be skipped
 // otherwise return 0 to bypass then step 4 will handle the request.
 int hookRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	return 0;
+
 	/* EXAMPLE: how to add or override methods
 	int nResCode = 0;
 	if(!strcmp(pReq->pszRequestMethod, "METHOD_NAME_TO_ADD_OR_REPLACE")) {

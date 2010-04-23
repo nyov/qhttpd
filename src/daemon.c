@@ -49,17 +49,19 @@ void daemonStart(bool nDaemonize) {
 	// set mask
 	umask(0);
 
-	// open log
+	// open logs
 	g_errlog = qLog(g_conf.szErrorLog, g_conf.nLogRotate, true);
 	g_acclog = qLog(g_conf.szAccessLog, g_conf.nLogRotate, true);
 	if (g_errlog == NULL || g_acclog == NULL) {
-		printf("Can't open log file.\n");
+		fprintf(stderr, "Can't open log file.\n");
 		daemonEnd(EXIT_FAILURE);
 	}
 
 	// entering daemon mode
 	if (nDaemonize) {
+		FILE *dup_stderr = fdopen(dup(fileno(stderr)), "w");
 		daemon(false, false); // after this line, parent's pid will be changed.
+		g_errlog->duplicate(g_errlog, dup_stderr, true);
 	} else {
 		g_errlog->duplicate(g_errlog, stdout, true);
 		g_acclog->duplicate(g_acclog, stdout, false);
@@ -148,6 +150,11 @@ void daemonStart(bool nDaemonize) {
 		daemonEnd(EXIT_FAILURE);
 	}
 #endif
+
+	// succeed initialization, turn off error out
+	if (nDaemonize) {
+		g_errlog->duplicate(g_errlog, NULL, false);
+	}
 
 	// starting.
 	LOG_SYS("%s %s is ready on the port %d.", g_prgname, g_prgversion, g_conf.nPort);

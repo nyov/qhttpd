@@ -28,7 +28,7 @@ exec_prefix	= ${prefix}
 
 ## Compiler arguments
 CC	= @CC@
-CFLAGS	= @CFLAGS@ ${DEFS_ADD}
+CFLAGS	= @CFLAGS@ @OPT_DEFS@
 CPPFLAGS= @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 
@@ -46,11 +46,8 @@ qhttpd: ${OBJS}
 
 reall: clean all
 
-debug:
-	$(MAKE) CFLAGS_ADD="-g -O" DEFS_ADD="-DBUILD_DEBUG"
-
 install: all
-	install -m 0755 qhttpd ../sbin/
+	install -m 0755 qhttpd ../sbin/qhttpd
 
 ## Compile Module
 .SUFFIXES: .c .cpp .o

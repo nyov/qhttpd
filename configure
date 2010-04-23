@@ -339,7 +339,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE RM CPP EGREP OPT_DEFS OPT_LIBS OPT_OBJS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE RM CPP EGREP OPT_DEFS OPT_OBJS OPT_LIBS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -3663,8 +3663,8 @@ fi
 
 ## Set additional arguments
 opt_defs=""
-opt_libs=""
 opt_objs=""
+opt_libs=""
 
 ## Checks for 3rd libraries.
 if test "${ac_cv_header_qDecoder_h+set}" = set; then
@@ -3898,7 +3898,9 @@ fi;
 	if test "$enableval" = yes; then
 		{ echo "$as_me:$LINENO: 'luascript' feature is enabled" >&5
 echo "$as_me: 'luascript' feature is enabled" >&6;}
-		opt_defs="$opt_defs "
+		opt_defs="$opt_defs -DENABLE_LUA"
+		opt_objs="$opt_objs luascript.o"
+		opt_libs="$opt_libs -llua -ldl -lm"
 	fi
 
 if test "$enableval" = yes; then
@@ -4120,9 +4122,6 @@ echo "$as_me: error: Lua library 5.1.4 or above must be installed to enable Lua 
    { (exit 1); exit 1; }; }
 fi
 
-	opt_defs="$opt_defs -DENABLE_LUA"
-	opt_libs="$opt_libs -llua -ldl -lm"
-	opt_objs="$opt_objs luascript.o"
 fi
 
 
@@ -4136,13 +4135,11 @@ fi;
 	if test "$enableval" = yes; then
 		{ echo "$as_me:$LINENO: 'hook' feature is enabled" >&5
 echo "$as_me: 'hook' feature is enabled" >&6;}
-		opt_defs="$opt_defs "
+		opt_defs="$opt_defs -DENABLE_HOOK"
+		opt_objs="$opt_objs hook.o"
+		opt_libs="$opt_libs "
 	fi
 
-if test "$enableval" = yes; then
-	opt_defs="$opt_defs -DENABLE_HOOK"
-	opt_objs="$opt_objs hook.o"
-fi
 
 
 	# Check whether --enable-debug or --disable-debug was given.
@@ -4159,20 +4156,16 @@ echo "$as_me: 'debug' feature is disabled" >&6;}
 	fi
 
 if test "$enableval" = yes; then
-	#AC_MSG_NOTICE(['debug' feature is enabled])
 	opt_defs="$opt_defs -DBUILD_DEBUG"
 fi
 
-{ echo "$as_me:$LINENO: optional flags: $opt_defs $opt_libs" >&5
-echo "$as_me: optional flags: $opt_defs $opt_libs" >&6;}
+## Create Makefile
 OPT_DEFS=$opt_defs
-
-OPT_LIBS=$opt_libs
 
 OPT_OBJS=$opt_objs
 
+OPT_LIBS=$opt_libs
 
-## Create Makefile
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -4800,8 +4793,8 @@ s,@RM@,$RM,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@OPT_DEFS@,$OPT_DEFS,;t t
-s,@OPT_LIBS@,$OPT_LIBS,;t t
 s,@OPT_OBJS@,$OPT_OBJS,;t t
+s,@OPT_LIBS@,$OPT_LIBS,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF

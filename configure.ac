@@ -56,6 +56,8 @@ AC_DEFUN([Q_ARG_ENABLE], [
 	if test "$enableval" = yes; then
 		AC_MSG_NOTICE(['$1' feature is enabled])
 		opt_defs="$opt_defs $3"
+		opt_objs="$opt_objs $4"
+		opt_libs="$opt_libs $5"
 	fi
 ])
 
@@ -110,39 +112,29 @@ AC_TYPE_OFF_T
 
 ## Set additional arguments
 opt_defs=""
-opt_libs=""
 opt_objs=""
+opt_libs=""
 
 ## Checks for 3rd libraries.
 AC_CHECK_HEADER([qDecoder.h], [], AC_MSG_ERROR([qDecoder library 10.1.2 or above must be installed.]))
 AC_CHECK_LIB([qDecoder], [main], [], AC_MSG_ERROR([qDecoder library 10.1.2 or above must be installed.]))
 opt_libs="$opt_libs -lqDecoder"
 
-Q_ARG_ENABLE([luascript], [enable LUA script engine])
+Q_ARG_ENABLE([luascript], [enable LUA script engine], [-DENABLE_LUA], [luascript.o], [-llua -ldl -lm])
 if test "$enableval" = yes; then
 	AC_CHECK_HEADER([lua.h], [], AC_MSG_ERROR([Lua library 5.1.4 or above must be installed.]))
 	AC_CHECK_LIB([lua], [main], [], AC_MSG_ERROR([Lua library 5.1.4 or above must be installed to enable Lua Script feature.]))
-	opt_defs="$opt_defs -DENABLE_LUA"
-	opt_libs="$opt_libs -llua -ldl -lm"
-	opt_objs="$opt_objs luascript.o"
 fi
 
-Q_ARG_ENABLE([hook], [enable hook support - compile with hook.c])
-if test "$enableval" = yes; then
-	opt_defs="$opt_defs -DENABLE_HOOK"
-	opt_objs="$opt_objs hook.o"
-fi
+Q_ARG_ENABLE([hook], [enable hook support - compile with hook.c], [-DENABLE_HOOK], [hook.o])
 
-Q_ARG_DISABLE([debug], [disable debug build - take off all debugging codes], [])
+Q_ARG_DISABLE([debug], [disable debug build - take off all debugging codes])
 if test "$enableval" = yes; then
-	#AC_MSG_NOTICE(['debug' feature is enabled])
 	opt_defs="$opt_defs -DBUILD_DEBUG"
 fi
 
-AC_MSG_NOTICE([optional flags: $opt_defs $opt_libs])
-AC_SUBST([OPT_DEFS], [$opt_defs] )
-AC_SUBST([OPT_LIBS], [$opt_libs] )
-AC_SUBST([OPT_OBJS], [$opt_objs] )
-
 ## Create Makefile
+AC_SUBST([OPT_DEFS], [$opt_defs] )
+AC_SUBST([OPT_OBJS], [$opt_objs] )
+AC_SUBST([OPT_LIBS], [$opt_libs] )
 AC_OUTPUT
