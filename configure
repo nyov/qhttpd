@@ -339,7 +339,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE RM CPP EGREP OPT_DEFS OPT_INCS OPT_LIBS OPT_OBJS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE RM CPP EGREP OPT_DEFS OPT_LIBS OPT_OBJS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1367,6 +1367,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
                     ac_config_files="$ac_config_files Makefile src/Makefile"
 
 
+## Set path
+PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+CPPFLAGS="$CPPFLAGS -I/usr/include -I/usr/local/include -I./"
+LDFLAGS="$LDFLAGS -L/usr/lib -L/usr/local/lib"
+
 ## Set autoconf setting
 #AC_CANONICAL_TARGET
 
@@ -2304,7 +2309,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 if test $ac_compiler_gnu = yes; then
-	CFLAGS="$CFLAGS -Wall"
+	CFLAGS="$CFLAGS -Wall -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 #else
 #	AC_MSG_FAILURE([GCC is required to compile qDecoder.])
 fi
@@ -3658,7 +3663,6 @@ fi
 
 ## Set additional arguments
 opt_defs=""
-opt_incs=""
 opt_libs=""
 opt_objs=""
 
@@ -4159,11 +4163,9 @@ if test "$enableval" = yes; then
 	opt_defs="$opt_defs -DBUILD_DEBUG"
 fi
 
-{ echo "$as_me:$LINENO: optional flags: $opt_defs $opt_incs $opt_libs" >&5
-echo "$as_me: optional flags: $opt_defs $opt_incs $opt_libs" >&6;}
+{ echo "$as_me:$LINENO: optional flags: $opt_defs $opt_libs" >&5
+echo "$as_me: optional flags: $opt_defs $opt_libs" >&6;}
 OPT_DEFS=$opt_defs
-
-OPT_INCS=$opt_incs
 
 OPT_LIBS=$opt_libs
 
@@ -4798,7 +4800,6 @@ s,@RM@,$RM,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@OPT_DEFS@,$OPT_DEFS,;t t
-s,@OPT_INCS@,$OPT_INCS,;t t
 s,@OPT_LIBS@,$OPT_LIBS,;t t
 s,@OPT_OBJS@,$OPT_OBJS,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t

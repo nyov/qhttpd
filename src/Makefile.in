@@ -28,21 +28,20 @@ exec_prefix	= ${prefix}
 
 ## Compiler arguments
 CC	= @CC@
-CFLAGS	= @CFLAGS@
-DEFS	= @DEFS@ -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 @OPT_DEFS@ ${DEFS_ADD}
-INCLUDE	+= @OPT_INCS@ -I. -I/usr/include -I/usr/local/include
-LIBS	= -L/usr/lib/ -L/usr/local/lib/ @OPT_LIBS@
+CFLAGS	= @CFLAGS@ ${DEFS_ADD}
+CPPFLAGS= @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
 
+LIBS	= @LDFLAGS@ @OPT_LIBS@
 OBJS	= main.o version.o config.o daemon.o child.o pool.o mime.o \
 	  http_main.o http_request.o http_response.o http_header.o http_auth.o http_method.o http_method_dav.o http_status.o http_accesslog.o \
-	  stream.o util.o syscall.o
-OBJS	+= @OPT_OBJS@
+	  stream.o util.o syscall.o @OPT_OBJS@
 
 ## Make Library
 all:	qhttpd
 
 qhttpd: ${OBJS}
-	${CC} ${CFLAGS} ${OBJS} ${LIBS} -o qhttpd
+	${CC} ${CFLAGS} ${CPPFLAGS} ${OBJS} ${LDFLAGS} ${LIBS} -o qhttpd
 	install -m 0755 qhttpd ../sbin/
 
 reall: clean all
@@ -57,10 +56,10 @@ install: all
 .SUFFIXES: .c .cpp .o
 
 .c.o:
-	${CC} ${CFLAGS} ${INCLUDE} ${DEFS} -c -o $@ $<
+	${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -c -o $@ $<
 
 .cpp.o:
-	${CC} ${CFLAGS} ${INCLUDE} ${DEFS} -c -o $@ $<
+	${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -c -o $@ $<
 
 ## Clear Module
 clean:

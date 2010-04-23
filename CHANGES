@@ -1,11 +1,20 @@
 qHttpd Changes
 --------------
 
+[v1.2.5]
+o Support HTTP Basic Authentication Programming Module (refer http_auth.c)
+o Support Virtual Host (refer hook.c)
+o Performance improvements
+
+[v1.2.4]
+o Support HTTP extentions for WebDAV
+  AllowedMethods = OPTIONS,HEAD,GET,PUT,PROPFIND,PROPPATCH,MKCOL,MOVE,DELETE,LOCK,UNLOCK
+
 [v1.2.3]
 o Support PUT, DELETE methods
 o control allowed methods.
   [configuration file]
-  AllowedMethods         = OPTIONS,HEAD,GET,PUT,DELETE
+  AllowedMethods = OPTIONS,HEAD,GET,PUT,DELETE
 o Bug fixes
 
 [v1.2.0]

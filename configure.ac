@@ -68,12 +68,15 @@ AC_DEFUN([Q_ARG_DISABLE], [
 ])
 
 ## Initialize
-PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
-
 AC_INIT([qHttpd], [1 RELEASE], [http://www.qdecoder.org/])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
+
+## Set path
+PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+CPPFLAGS="$CPPFLAGS -I/usr/include -I/usr/local/include -I./"
+LDFLAGS="$LDFLAGS -L/usr/lib -L/usr/local/lib"
 
 ## Set autoconf setting
 #AC_CANONICAL_TARGET
@@ -83,7 +86,7 @@ AC_PREFIX_DEFAULT([/usr/local/qhttpd])
 ## Checks for programs.
 AC_PROG_CC
 if test $ac_compiler_gnu = yes; then
-	CFLAGS="$CFLAGS -Wall"
+	CFLAGS="$CFLAGS -Wall -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 #else
 #	AC_MSG_FAILURE([GCC is required to compile qDecoder.])
 fi
@@ -107,7 +110,6 @@ AC_TYPE_OFF_T
 
 ## Set additional arguments
 opt_defs=""
-opt_incs=""
 opt_libs=""
 opt_objs=""
 
@@ -137,9 +139,8 @@ if test "$enableval" = yes; then
 	opt_defs="$opt_defs -DBUILD_DEBUG"
 fi
 
-AC_MSG_NOTICE([optional flags: $opt_defs $opt_incs $opt_libs])
+AC_MSG_NOTICE([optional flags: $opt_defs $opt_libs])
 AC_SUBST([OPT_DEFS], [$opt_defs] )
-AC_SUBST([OPT_INCS], [$opt_incs] )
 AC_SUBST([OPT_LIBS], [$opt_libs] )
 AC_SUBST([OPT_OBJS], [$opt_objs] )
 
