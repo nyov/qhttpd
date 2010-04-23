@@ -1,9 +1,10 @@
 qHttpd Changes
 --------------
 
-[v1.2.5]
+[v1.2.6]
 o Support HTTP Basic Authentication Programming Module (refer http_auth.c)
 o Support Virtual Host (refer hook.c)
+o Support AutoConf
 o Performance improvements
 
 [v1.2.4]
