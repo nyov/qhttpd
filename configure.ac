@@ -55,9 +55,8 @@ AC_DEFUN([Q_ARG_ENABLE], [
 	AC_ARG_ENABLE([$1],[AS_HELP_STRING([--enable-$1], [$2])],,[enableval=no])
 	if test "$enableval" = yes; then
 		AC_MSG_NOTICE(['$1' feature is enabled])
-		opt_defs="$opt_defs $3"
-		opt_objs="$opt_objs $4"
-		opt_libs="$opt_libs $5"
+		opt_defs="$3 $opt_defs"
+		opt_objs="$4 $opt_objs"
 	fi
 ])
 
@@ -77,8 +76,8 @@ AC_CONFIG_FILES([Makefile src/Makefile])
 
 ## Set path
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
-CPPFLAGS="$CPPFLAGS -I/usr/include -I/usr/local/include -I./"
-LDFLAGS="$LDFLAGS -L/usr/lib -L/usr/local/lib"
+CPPFLAGS="-I/usr/include -I/usr/local/include -I./ $CPPFLAGS"
+LDFLAGS="-L/usr/lib -L/usr/local/lib $LDFLAGS"
 
 ## Set autoconf setting
 #AC_CANONICAL_TARGET
@@ -113,17 +112,17 @@ AC_TYPE_OFF_T
 ## Set additional arguments
 opt_defs=""
 opt_objs=""
-opt_libs=""
 
 ## Checks for 3rd libraries.
 AC_CHECK_HEADER([qDecoder.h], [], AC_MSG_ERROR([qDecoder library 10.1.2 or above must be installed.]))
 AC_CHECK_LIB([qDecoder], [main], [], AC_MSG_ERROR([qDecoder library 10.1.2 or above must be installed.]))
-opt_libs="$opt_libs -lqDecoder"
 
-Q_ARG_ENABLE([luascript], [enable LUA script engine], [-DENABLE_LUA], [luascript.o], [-llua -ldl -lm])
+Q_ARG_ENABLE([luascript], [enable LUA script engine], [-DENABLE_LUA], [luascript.o])
 if test "$enableval" = yes; then
 	AC_CHECK_HEADER([lua.h], [], AC_MSG_ERROR([Lua library 5.1.4 or above must be installed.]))
 	AC_CHECK_LIB([lua], [main], [], AC_MSG_ERROR([Lua library 5.1.4 or above must be installed to enable Lua Script feature.]))
+	AC_CHECK_LIB([dl], [main])
+	AC_CHECK_LIB([m], [main])
 fi
 
 Q_ARG_ENABLE([hook], [enable hook support - compile with hook.c], [-DENABLE_HOOK], [hook.o])
@@ -133,8 +132,12 @@ if test "$enableval" = yes; then
 	opt_defs="$opt_defs -DBUILD_DEBUG"
 fi
 
+AC_MSG_NOTICE([CFLAGS=$CFLAGS $opt_defs])
+AC_MSG_NOTICE([CPPFLAGS=$CPPFLAGS])
+AC_MSG_NOTICE([LDFLAGS=$LDFLAGS])
+AC_MSG_NOTICE([LIBS=$LIBS$opt_objs])
+
 ## Create Makefile
 AC_SUBST([OPT_DEFS], [$opt_defs] )
 AC_SUBST([OPT_OBJS], [$opt_objs] )
-AC_SUBST([OPT_LIBS], [$opt_libs] )
 AC_OUTPUT

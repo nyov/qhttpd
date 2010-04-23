@@ -339,7 +339,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE RM CPP EGREP OPT_DEFS OPT_OBJS OPT_LIBS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE RM CPP EGREP OPT_DEFS OPT_OBJS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1369,8 +1369,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 ## Set path
 PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
-CPPFLAGS="$CPPFLAGS -I/usr/include -I/usr/local/include -I./"
-LDFLAGS="$LDFLAGS -L/usr/lib -L/usr/local/lib"
+CPPFLAGS="-I/usr/include -I/usr/local/include -I./ $CPPFLAGS"
+LDFLAGS="-L/usr/lib -L/usr/local/lib $LDFLAGS"
 
 ## Set autoconf setting
 #AC_CANONICAL_TARGET
@@ -3664,7 +3664,6 @@ fi
 ## Set additional arguments
 opt_defs=""
 opt_objs=""
-opt_libs=""
 
 ## Checks for 3rd libraries.
 if test "${ac_cv_header_qDecoder_h+set}" = set; then
@@ -3885,7 +3884,6 @@ echo "$as_me: error: qDecoder library 10.1.2 or above must be installed." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
-opt_libs="$opt_libs -lqDecoder"
 
 
 	# Check whether --enable-luascript or --disable-luascript was given.
@@ -3898,9 +3896,8 @@ fi;
 	if test "$enableval" = yes; then
 		{ echo "$as_me:$LINENO: 'luascript' feature is enabled" >&5
 echo "$as_me: 'luascript' feature is enabled" >&6;}
-		opt_defs="$opt_defs -DENABLE_LUA"
-		opt_objs="$opt_objs luascript.o"
-		opt_libs="$opt_libs -llua -ldl -lm"
+		opt_defs="-DENABLE_LUA $opt_defs"
+		opt_objs="luascript.o $opt_objs"
 	fi
 
 if test "$enableval" = yes; then
@@ -4122,6 +4119,142 @@ echo "$as_me: error: Lua library 5.1.4 or above must be installed to enable Lua 
    { (exit 1); exit 1; }; }
 fi
 
+
+echo "$as_me:$LINENO: checking for main in -ldl" >&5
+echo $ECHO_N "checking for main in -ldl... $ECHO_C" >&6
+if test "${ac_cv_lib_dl_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ldl  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_dl_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_dl_main=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_dl_main" >&5
+echo "${ECHO_T}$ac_cv_lib_dl_main" >&6
+if test $ac_cv_lib_dl_main = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBDL 1
+_ACEOF
+
+  LIBS="-ldl $LIBS"
+
+fi
+
+
+echo "$as_me:$LINENO: checking for main in -lm" >&5
+echo $ECHO_N "checking for main in -lm... $ECHO_C" >&6
+if test "${ac_cv_lib_m_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lm  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_m_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_m_main=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_m_main" >&5
+echo "${ECHO_T}$ac_cv_lib_m_main" >&6
+if test $ac_cv_lib_m_main = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBM 1
+_ACEOF
+
+  LIBS="-lm $LIBS"
+
+fi
+
 fi
 
 
@@ -4135,9 +4268,8 @@ fi;
 	if test "$enableval" = yes; then
 		{ echo "$as_me:$LINENO: 'hook' feature is enabled" >&5
 echo "$as_me: 'hook' feature is enabled" >&6;}
-		opt_defs="$opt_defs -DENABLE_HOOK"
-		opt_objs="$opt_objs hook.o"
-		opt_libs="$opt_libs "
+		opt_defs="-DENABLE_HOOK $opt_defs"
+		opt_objs="hook.o $opt_objs"
 	fi
 
 
@@ -4159,12 +4291,19 @@ if test "$enableval" = yes; then
 	opt_defs="$opt_defs -DBUILD_DEBUG"
 fi
 
+{ echo "$as_me:$LINENO: CFLAGS=$CFLAGS $opt_defs" >&5
+echo "$as_me: CFLAGS=$CFLAGS $opt_defs" >&6;}
+{ echo "$as_me:$LINENO: CPPFLAGS=$CPPFLAGS" >&5
+echo "$as_me: CPPFLAGS=$CPPFLAGS" >&6;}
+{ echo "$as_me:$LINENO: LDFLAGS=$LDFLAGS" >&5
+echo "$as_me: LDFLAGS=$LDFLAGS" >&6;}
+{ echo "$as_me:$LINENO: LIBS=$LIBS$opt_objs" >&5
+echo "$as_me: LIBS=$LIBS$opt_objs" >&6;}
+
 ## Create Makefile
 OPT_DEFS=$opt_defs
 
 OPT_OBJS=$opt_objs
-
-OPT_LIBS=$opt_libs
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4794,7 +4933,6 @@ s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@OPT_DEFS@,$OPT_DEFS,;t t
 s,@OPT_OBJS@,$OPT_OBJS,;t t
-s,@OPT_LIBS@,$OPT_LIBS,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
