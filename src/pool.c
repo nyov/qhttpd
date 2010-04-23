@@ -121,13 +121,13 @@ bool poolCheck(void) {
 	// check current child
 	bool bFixed = false;
 	if(m_pShm->nRunningChilds != nTotal) {
-		LOG_WARN("Child counter adjusted from %d to %d.", m_pShm->nRunningChilds, nTotal);
+		LOG_INFO("Child counter adjusted from %d to %d.", m_pShm->nRunningChilds, nTotal);
 		m_pShm->nRunningChilds = nTotal;
 		bFixed = true;
 	}
 
 	if(m_pShm->nWorkingChilds != nWorking) {
-		LOG_WARN("Working counter adjusted from %d to %d.", m_pShm->nWorkingChilds, nWorking);
+		LOG_INFO("Working counter adjusted from %d to %d.", m_pShm->nWorkingChilds, nWorking);
 		m_pShm->nWorkingChilds = nWorking;
 		bFixed = true;
 	}

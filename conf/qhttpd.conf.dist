@@ -19,7 +19,7 @@ PidFile			= ${RunDir}/qhttpd.pid
 MimeFile		= ${ConfDir}/mimetypes.conf
 
 ## Port: listening port to serve.
-Port			= 8080
+Port			= 80
 
 ## StartServers:    number of server processes to start.
 ## MinSpareServers: minimum number of server processes which are kept spare.
