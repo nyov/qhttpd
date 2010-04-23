@@ -24,7 +24,7 @@
 ## $Id: Makefile.in 553 2010-03-11 05:20:02Z wolkykim $
 
 prefix		= @prefix@
-exec_prefix	= ${prefix}
+
 RM		= @RM@
 
 all:

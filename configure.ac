@@ -55,8 +55,8 @@ AC_DEFUN([Q_ARG_ENABLE], [
 	AC_ARG_ENABLE([$1],[AS_HELP_STRING([--enable-$1], [$2])],,[enableval=no])
 	if test "$enableval" = yes; then
 		AC_MSG_NOTICE(['$1' feature is enabled])
-		opt_defs="$3 $opt_defs"
-		opt_objs="$4 $opt_objs"
+		CPPFLAGS="$CPPFLAGS $3"
+		OPT_OBJS="$OPT_OBJS $4"
 	fi
 ])
 
@@ -64,7 +64,7 @@ AC_DEFUN([Q_ARG_DISABLE], [
 	AC_ARG_ENABLE([$1],[AS_HELP_STRING([--disable-$1], [$2])],,[enableval=yes])
 	if test "$enableval" = no; then
 		AC_MSG_NOTICE(['$1' feature is disabled])
-		opt_defs="$opt_defs $3"
+		CPPFLAGS="$CPPFLAGS $3"
 	fi
 ])
 
@@ -75,9 +75,9 @@ AC_CONFIG_HEADER([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
 
 ## Set path
-PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
-CPPFLAGS="-I/usr/include -I/usr/local/include -I./ $CPPFLAGS"
-LDFLAGS="-L/usr/lib -L/usr/local/lib $LDFLAGS"
+PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+CPPFLAGS="$CPPFLAGS -I/usr/include -I/usr/local/include -I./ -D_GNU_SOURCE"
+LDFLAGS="$LDFLAGS -L/usr/lib -L/usr/local/lib"
 
 ## Set autoconf setting
 #AC_CANONICAL_TARGET
@@ -87,7 +87,7 @@ AC_PREFIX_DEFAULT([/usr/local/qhttpd])
 ## Checks for programs.
 AC_PROG_CC
 if test $ac_compiler_gnu = yes; then
-	CFLAGS="$CFLAGS -Wall -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+	CFLAGS="-Wall"
 #else
 #	AC_MSG_FAILURE([GCC is required to compile qDecoder.])
 fi
@@ -110,8 +110,7 @@ AC_TYPE_OFF_T
 #AC_CHECK_FUNCS([socket sendfile])
 
 ## Set additional arguments
-opt_defs=""
-opt_objs=""
+OPT_OBJS=""
 
 ## Checks for 3rd libraries.
 AC_CHECK_HEADER([qDecoder.h], [], AC_MSG_ERROR([qDecoder library 10.1.2 or above must be installed.]))
@@ -127,17 +126,21 @@ fi
 
 Q_ARG_ENABLE([hook], [enable hook support - compile with hook.c], [-DENABLE_HOOK], [hook.o])
 
+Q_ARG_ENABLE([lfs], [enable large file supports], [-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64])
+
 Q_ARG_DISABLE([debug], [disable debug build - take off all debugging codes])
 if test "$enableval" = yes; then
-	opt_defs="$opt_defs -DBUILD_DEBUG"
+	CFLAGS="$CFLAGS -g -O2"
+	CPPFLAGS="$CPPFLAGS -DBUILD_DEBUG"
+else
+	CFLAGS="$CFLAGS -O2"
 fi
 
-AC_MSG_NOTICE([CFLAGS=$CFLAGS $opt_defs])
-AC_MSG_NOTICE([CPPFLAGS=$CPPFLAGS])
-AC_MSG_NOTICE([LDFLAGS=$LDFLAGS])
-AC_MSG_NOTICE([LIBS=$LIBS$opt_objs])
+AC_MSG_NOTICE([CFLAGS $CFLAGS])
+AC_MSG_NOTICE([CPPFLAGS $CPPFLAGS])
+AC_MSG_NOTICE([LDFLAGS $LDFLAGS])
+AC_MSG_NOTICE([LIBS $LIBS $OPT_OBJS])
 
 ## Create Makefile
-AC_SUBST([OPT_DEFS], [$opt_defs] )
-AC_SUBST([OPT_OBJS], [$opt_objs] )
+AC_SUBST([OPT_OBJS], [$OPT_OBJS] )
 AC_OUTPUT

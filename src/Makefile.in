@@ -24,11 +24,10 @@
 ## $Id: Makefile 140 2010-03-30 01:38:56Z wolkykim $
 
 prefix		= @prefix@
-exec_prefix	= ${prefix}
 
 ## Compiler arguments
 CC	= @CC@
-CFLAGS	= @CFLAGS@ @OPT_DEFS@
+CFLAGS	= @CFLAGS@
 CPPFLAGS= @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS	= @LIBS@
