@@ -113,8 +113,8 @@ AC_TYPE_OFF_T
 OPT_OBJS=""
 
 ## Checks for 3rd libraries.
-AC_CHECK_HEADER([qDecoder.h], [], AC_MSG_ERROR([qDecoder library 10.1.2 or above must be installed.]))
-AC_CHECK_LIB([qDecoder], [main], [], AC_MSG_ERROR([qDecoder library 10.1.2 or above must be installed.]))
+AC_CHECK_HEADER([qDecoder.h], [], AC_MSG_ERROR([qDecoder library 10.1.4 or above must be installed.]))
+AC_CHECK_LIB([qDecoder], [main], [], AC_MSG_ERROR([qDecoder library 10.1.4 or above must be installed.]))
 
 Q_ARG_ENABLE([luascript], [enable LUA script engine], [-DENABLE_LUA], [luascript.o])
 if test "$enableval" = yes; then
@@ -136,6 +136,7 @@ else
 	CFLAGS="$CFLAGS -O2"
 fi
 
+## Print out setting
 AC_MSG_NOTICE([CFLAGS $CFLAGS])
 AC_MSG_NOTICE([CPPFLAGS $CPPFLAGS])
 AC_MSG_NOTICE([LDFLAGS $LDFLAGS])
