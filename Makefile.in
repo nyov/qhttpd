@@ -25,7 +25,7 @@
 
 prefix		= @prefix@
 exec_prefix	= ${prefix}
-RM	= @RM@
+RM		= @RM@
 
 all:
 	@for DIR in src; do \
@@ -35,22 +35,28 @@ all:
 	done
 
 install: all
+	install -d ${prefix}
 	install -d ${prefix}/sbin
-	install -d ${prefix}/conf
-	install -d ${prefix}/logs
-	install -d ${prefix}/run
-	install -d ${prefix}/htdocs
 	install -m 0755 sbin/qhttpd ${prefix}/sbin/qhttpd
-	install -m 0755 conf/qhttpd.conf.dist ${prefix}/conf/qhttpd.conf.dist
-	install -m 0755 conf/mimetypes.conf ${prefix}/conf/mimetypes.conf
-	install -m 0755 conf/qhttpd.lua.dist ${prefix}/conf/qhttpd.lua.dist
+	install -d ${prefix}/conf
+	install -m 0644 conf/qhttpd.conf.dist ${prefix}/conf/qhttpd.conf.dist
+	install -m 0644 conf/mimetypes.conf ${prefix}/conf/mimetypes.conf
+	install -m 0644 conf/qhttpd.lua.dist ${prefix}/conf/qhttpd.lua.dist
+	install -d ${prefix}/htdocs
+	install -m 0644 htdocs/index.html ${prefix}/htdocs/index.html
+	install -d ${prefix}/logs
 
 deinstall: uninstall
 uninstall:
 	${RM} -f ${prefix}/sbin/qhttpd
+	rmdir ${prefix}/sbin
 	${RM} -f ${prefix}/conf/qhttpd.conf.dist
 	${RM} -f ${prefix}/conf/mimetypes.conf
 	${RM} -f ${prefix}/conf/qhttpd.lua.dist
+	rmdir ${prefix}/conf
+	${RM} -f ${prefix}/htdocs/index.html
+	rmdir ${prefix}/htdocs
+	rmdir ${prefix}
 
 clean:
 	@for DIR in src; do \
@@ -60,8 +66,12 @@ clean:
 	done
 
 distclean: clean
-	${RM} -f src/Makefile
-	${RM} -f Makefile
+	@for DIR in src examples; do \
+		echo "===> $${DIR}"; \
+		(cd $${DIR}; make clean; ${RM} -f Makefile); \
+		echo "<=== $${DIR}"; \
+	done
 	${RM} -rf sbin/qhttpd
 	${RM} -rf autom4te.cache
 	${RM} -f configure.lineno config.log config.status config.h
+	${RM} -f Makefile

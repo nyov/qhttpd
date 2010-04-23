@@ -62,7 +62,7 @@
 #define PRG_NAME				"qhttpd"
 #define PRG_VERSION				"1.2.5"
 
-#define DEF_CONFIG				"/usr/local/qhttpd/conf/qhttpd.conf"
+#define DEF_CONFIG				"/usr/local/etc/qhttpd/qhttpd.conf"
 
 //
 // HARD-CODED INTERNAL LIMITATIONS

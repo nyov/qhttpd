@@ -7,8 +7,9 @@
 
 ## These are variables and not configuration mandatory entries.
 BaseDir			= /usr/local/qhttpd
-RunDir			= ${BaseDir}/run
+ConfDir			= ${BaseDir}/conf
 LogDir			= ${BaseDir}/logs
+RunDir			= /var/run
 
 ## PidFile: The file in which the server should record its process
 ## identification number when it starts.
