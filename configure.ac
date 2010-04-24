@@ -116,7 +116,9 @@ OPT_OBJS=""
 AC_CHECK_HEADER([qDecoder.h], [], AC_MSG_ERROR([qDecoder library 10.1.4 or above must be installed.]))
 AC_CHECK_LIB([qDecoder], [main], [], AC_MSG_ERROR([qDecoder library 10.1.4 or above must be installed.]))
 
-Q_ARG_ENABLE([luascript], [enable LUA script engine], [-DENABLE_LUA], [luascript.o])
+Q_ARG_ENABLE([lfs], [enable large file supports], [-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64])
+
+Q_ARG_ENABLE([lua], [enable LUA script engine], [-DENABLE_LUA], [luascript.o])
 if test "$enableval" = yes; then
 	AC_CHECK_HEADER([lua.h], [], AC_MSG_ERROR([Lua library 5.1.4 or above must be installed.]))
 	AC_CHECK_LIB([lua], [main], [], AC_MSG_ERROR([Lua library 5.1.4 or above must be installed to enable Lua Script feature.]))
@@ -125,8 +127,6 @@ if test "$enableval" = yes; then
 fi
 
 Q_ARG_ENABLE([hook], [enable hook support - compile with hook.c], [-DENABLE_HOOK], [hook.o])
-
-Q_ARG_ENABLE([lfs], [enable large file supports], [-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64])
 
 Q_ARG_DISABLE([debug], [disable debug build - take off all debugging codes])
 if test "$enableval" = yes; then

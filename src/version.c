@@ -38,12 +38,30 @@ void printUsages(void) {
 }
 
 void printVersion(void) {
-	char *pszBuildMode = "RELEASE";
 #ifdef BUILD_DEBUG
-	pszBuildMode = "DEBUG";
+#define	MSG_BUILD	"DEBUG"
+#else
+#define	MSG_BUILD	"RELEASE"
 #endif
 
-	fprintf(stderr, "%s v%s (%s; %s; %s)\n",
-	    g_prgname, g_prgversion, __DATE__, __TIME__,
-	    pszBuildMode);
+#ifdef _LARGEFILE_SOURCE
+#define	MSG_LFS		" --enable-lfs"
+#else
+#define	MSG_LFS		""
+#endif
+
+#ifdef ENABLE_LUA
+#define	MSG_LUA		" --enable-lua"
+#else
+#define	MSG_LUA		""
+#endif
+
+#ifdef ENABLE_HOOK
+#define	MSG_HOOK	" --enable-hook"
+#else
+#define	MSG_HOOK	""
+#endif
+
+	fprintf(stderr, "%s v%s (%s; %s; " MSG_BUILD ";" MSG_LFS MSG_LUA MSG_HOOK ")\n",
+	    g_prgname, g_prgversion, __DATE__, __TIME__);
 }

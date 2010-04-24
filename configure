@@ -872,9 +872,9 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-luascript      enable LUA script engine
-  --enable-hook           enable hook support - compile with hook.c
   --enable-lfs            enable large file supports
+  --enable-lua            enable LUA script engine
+  --enable-hook           enable hook support - compile with hook.c
   --disable-debug         disable debug build - take off all debugging codes
 
 Some influential environment variables:
@@ -3886,16 +3886,32 @@ fi
 
 
 
-	# Check whether --enable-luascript or --disable-luascript was given.
-if test "${enable_luascript+set}" = set; then
-  enableval="$enable_luascript"
+	# Check whether --enable-lfs or --disable-lfs was given.
+if test "${enable_lfs+set}" = set; then
+  enableval="$enable_lfs"
 
 else
   enableval=no
 fi;
 	if test "$enableval" = yes; then
-		{ echo "$as_me:$LINENO: 'luascript' feature is enabled" >&5
-echo "$as_me: 'luascript' feature is enabled" >&6;}
+		{ echo "$as_me:$LINENO: 'lfs' feature is enabled" >&5
+echo "$as_me: 'lfs' feature is enabled" >&6;}
+		CPPFLAGS="$CPPFLAGS -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+		OPT_OBJS="$OPT_OBJS "
+	fi
+
+
+
+	# Check whether --enable-lua or --disable-lua was given.
+if test "${enable_lua+set}" = set; then
+  enableval="$enable_lua"
+
+else
+  enableval=no
+fi;
+	if test "$enableval" = yes; then
+		{ echo "$as_me:$LINENO: 'lua' feature is enabled" >&5
+echo "$as_me: 'lua' feature is enabled" >&6;}
 		CPPFLAGS="$CPPFLAGS -DENABLE_LUA"
 		OPT_OBJS="$OPT_OBJS luascript.o"
 	fi
@@ -4270,22 +4286,6 @@ fi;
 echo "$as_me: 'hook' feature is enabled" >&6;}
 		CPPFLAGS="$CPPFLAGS -DENABLE_HOOK"
 		OPT_OBJS="$OPT_OBJS hook.o"
-	fi
-
-
-
-	# Check whether --enable-lfs or --disable-lfs was given.
-if test "${enable_lfs+set}" = set; then
-  enableval="$enable_lfs"
-
-else
-  enableval=no
-fi;
-	if test "$enableval" = yes; then
-		{ echo "$as_me:$LINENO: 'lfs' feature is enabled" >&5
-echo "$as_me: 'lfs' feature is enabled" >&6;}
-		CPPFLAGS="$CPPFLAGS -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
-		OPT_OBJS="$OPT_OBJS "
 	fi
 
 
