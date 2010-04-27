@@ -95,7 +95,7 @@ void daemonStart(bool nDaemonize) {
 			LOG_WARN("Can't load mimetypes from %s", g_conf.szMimeFile);
 		}
 	} else {
-		LOG_WARN("No mimetype configuration file set.");
+		LOG_INFO("No mimetype configuration file set.");
 	}
 
 	// init socket
