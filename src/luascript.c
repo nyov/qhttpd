@@ -60,12 +60,14 @@ static const struct luaL_Reg lualib_request [] = {
 };
 
 static int lualib_response_getCode(lua_State *lua);
+static int lualib_response_setCode(lua_State *lua);
 static int lualib_response_setContent(lua_State *lua);
 static int lualib_response_getHeader(lua_State *lua);
 static int lualib_response_setHeader(lua_State *lua);
 static int lualib_response_delHeader(lua_State *lua);
 static const struct luaL_Reg lualib_response [] = {
 	{"getCode", lualib_response_getCode},
+	{"setCode", lualib_response_setCode},
 	{"setContent", lualib_response_setContent},
 	{"getHeader", lualib_response_getHeader},
 	{"setHeader", lualib_response_setHeader},
@@ -143,7 +145,7 @@ int luaRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	int nResCode = 0;
 	if(lua_isnumber (m_lua, -1) == 1) {
 		nResCode = lua_tonumber(m_lua, -1); lua_pop(m_lua, 1);
-		httpResponseSetCode(pRes, nResCode, pReq, true);
+		httpResponseSetCode(pRes, nResCode, true);
 	}
 
 	DEBUG("luaRequestHandler: %d", nResCode);
@@ -152,8 +154,8 @@ int luaRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 }
 
 // in case of bad request, hook will not be called.
-bool luaResponseHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	if(m_lua == NULL) return false;
+bool luaResponseHandler(void) {
+	if(m_lua == NULL || m_pReq == NULL || m_pRes == NULL) return false;
 
 	lua_getglobal(m_lua, "responseHandler");
 	if(lua_pcall(m_lua, 0, 1, 0) != 0) {
@@ -298,6 +300,20 @@ static int lualib_response_getCode(lua_State *lua) {
 	}
 
 	lua_pushinteger(lua, m_pRes->nResponseCode);
+	return 1;
+}
+
+static int lualib_response_setCode(lua_State *lua) {
+	if(m_pRes == NULL) {
+		lua_pushboolean(lua, false);
+		return 1;
+	}
+
+	int nResCode = lua_tonumber(m_lua, -1); lua_pop(m_lua, 1);
+	m_pRes->nResponseCode = nResCode;
+
+	// return true
+	lua_pushboolean(lua, true);
 	return 1;
 }
 

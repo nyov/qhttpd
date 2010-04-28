@@ -27,7 +27,7 @@
 
 #include "qhttpd.h"
 
-struct HttpResponse *httpResponseCreate(void) {
+struct HttpResponse *httpResponseCreate(struct HttpRequest *pReq) {
 	struct HttpResponse *pRes;
 
 	// initialize response structure
@@ -42,12 +42,13 @@ struct HttpResponse *httpResponseCreate(void) {
 
 	memset((void *)pRes, 0, sizeof(struct HttpResponse));
 	pRes->pHeaders = pHeaders;
+	pRes->pReq = pReq;
 
 	return pRes;
 }
 
-int httpResponseSetSimple(struct HttpRequest *pReq, struct HttpResponse *pRes, int nResCode, bool nKeepAlive, const char *pszText) {
-	httpResponseSetCode(pRes, nResCode, pReq, nKeepAlive);
+int httpResponseSetSimple(struct HttpResponse *pRes, int nResCode, bool nKeepAlive, const char *pszText) {
+	httpResponseSetCode(pRes, nResCode, nKeepAlive);
 
 	if(pszText != NULL) {
 		httpResponseSetContentHtml(pRes, pszText);
@@ -60,9 +61,14 @@ int httpResponseSetSimple(struct HttpRequest *pReq, struct HttpResponse *pRes, i
  * @param pszHttpVer response protocol version, can be NULL to set response protocol as request protocol
  * @param bKeepAlive Keep-Alive. automatically turned of if request is not HTTP/1.1 or there is no keep-alive request.
  */
-bool httpResponseSetCode(struct HttpResponse *pRes, int nResCode, struct HttpRequest *pReq, bool bKeepAlive) {
+bool httpResponseSetCode(struct HttpResponse *pRes, int nResCode, bool bKeepAlive) {
+	struct HttpRequest *pReq = pRes->pReq;
+
 	// version setting
-	char *pszHttpVer = pszHttpVer = pReq->pszHttpVersion;
+	char *pszHttpVer = NULL;
+	if(pReq != NULL) {
+		pszHttpVer = pReq->pszHttpVersion;
+	}
 	if(pszHttpVer == NULL) pszHttpVer = HTTP_PROTOCOL_11;
 
 	// default headers
@@ -70,7 +76,8 @@ bool httpResponseSetCode(struct HttpResponse *pRes, int nResCode, struct HttpReq
 	httpHeaderSetStrf(pRes->pHeaders, "Server", "%s/%s (%s)", g_prgname, g_prgversion, g_prginfo);
 
 	// decide to turn on/off keep-alive
-	if(g_conf.bEnableKeepAlive == true && bKeepAlive == true) {
+	if(pReq != NULL
+	&& g_conf.bEnableKeepAlive == true && bKeepAlive == true) {
 		bKeepAlive = false;
 
 		if(!strcmp(pszHttpVer, HTTP_PROTOCOL_11)) {
@@ -180,12 +187,42 @@ bool httpResponseSetAuthRequired(struct HttpResponse *pRes, enum HttpAuthT nAuth
 }
 
 bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
-	if(pRes->pszHttpVersion == NULL || pRes->nResponseCode == 0 || pRes->bOut == true) return false;
+	if(pRes->bOut == true) return false;
+
+	//
+	// hook handling
+	//
+#ifdef ENABLE_HOOK
+	if(hookResponseHandler(pRes->pReq, pRes) == false) {
+		LOG_WARN("An error occured while processing hookResponseHandler().");
+	}
+#endif
+
+#ifdef ENABLE_LUA
+	if(g_conf.bEnableLua == true
+	&& luaResponseHandler() == false) {
+		LOG_WARN("An error occured while processing luaResponseHandler().");
+	}
+#endif
+
+	// check header
+	if(pRes->pszHttpVersion == NULL || pRes->nResponseCode == 0) return false;
+
+	// set response information
+	poolSetConnResponse(pRes);
 
 	//
 	// set headers
 	//
 
+	// check exit request and adjust keep-alive header
+	if(poolGetExitRequest() == true
+	|| (g_conf.nMaxKeepAliveRequests > 0 && poolGetChildKeepaliveRequests() >= g_conf.nMaxKeepAliveRequests))
+	{
+		httpHeaderSetStr(pRes->pHeaders, "Connection", "close");
+	}
+
+	// check chunked transfer header
 	if(pRes->bChunked == true) {
 		httpHeaderSetStr(pRes->pHeaders, "Transfer-Encoding", "chunked");
 	} else if(pRes->nContentsLength > 0 || pRes->pContent != NULL) {
@@ -244,7 +281,7 @@ bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
 }
 
 /*
- * call after sending every chunk data with nSize 0.
+ * set nSize to 0 for final call
  *
  * @return	a number of octets sent (do not include bytes which are sent for chunk boundary string)
  */

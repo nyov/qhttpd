@@ -41,7 +41,7 @@ static char *_getXmlEntry(char *pszXml, char *pszEntryName);
  */
 #define	CHUNK_SIZE			(10 * 1024)
 int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	if(g_conf.methods.bPropfind == false) return response405(pReq, pRes);
+	if(g_conf.methods.bPropfind == false) return response405(pRes);
 
 	// generate abs path
 	char szFilePath[PATH_MAX];
@@ -50,7 +50,7 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	// get file stat
 	struct stat filestat;
 	if(sysStat(szFilePath, &filestat) < 0) {
-		return response404(pReq, pRes);
+		return response404(pRes);
 	}
 
 	// parse DEPTH header
@@ -58,11 +58,11 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	if(nDepth == 1) {
 		// if the file is not a directory file.
 		if(!S_ISDIR(filestat.st_mode)) {
-			return response404(pReq, pRes);
+			return response404(pRes);
 		}
 	} else if(nDepth > 1) {
 		// not supported
-		return response400(pReq, pRes);
+		return response400(pRes);
 	}
 
 	//
@@ -70,7 +70,7 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	//
 
 	// set response as chunked
-	httpResponseSetCode(pRes, HTTP_CODE_MULTI_STATUS, pReq, true);
+	httpResponseSetCode(pRes, HTTP_CODE_MULTI_STATUS, true);
 	httpResponseSetContent(pRes, "text/xml; charset=\"utf-8\"", NULL, 0);
 	httpResponseSetContentChunked(pRes, true); // set transfer-encoding to chunked
 	httpResponseOut(pRes, pReq->nSockFd);
@@ -144,7 +144,7 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
  * WebDAV method - PROPPATCH
  */
 int httpMethodProppatch(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	if(g_conf.methods.bProppatch == false) return response405(pReq, pRes);
+	if(g_conf.methods.bProppatch == false) return response405(pRes);
 
 	// generate abs path
 	char szFilePath[PATH_MAX];
@@ -153,7 +153,7 @@ int httpMethodProppatch(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	// get file stat
 	struct stat filestat;
 	if(sysStat(szFilePath, &filestat) < 0) {
-		return response404(pReq, pRes);
+		return response404(pRes);
 	}
 
 	//
@@ -170,7 +170,7 @@ int httpMethodProppatch(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	size_t nXmlSize;
 	char *pszXmlData = (char*)obXml->getFinal(obXml, &nXmlSize);
 
-	httpResponseSetCode(pRes, HTTP_CODE_MULTI_STATUS, pReq, true);
+	httpResponseSetCode(pRes, HTTP_CODE_MULTI_STATUS, true);
 	httpResponseSetContent(pRes, "text/xml; charset=\"utf-8\"", pszXmlData, nXmlSize);
 
 	// free
@@ -184,7 +184,7 @@ int httpMethodProppatch(struct HttpRequest *pReq, struct HttpResponse *pRes) {
  * WebDAV method - MKCOL
  */
 int httpMethodMkcol(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	if(g_conf.methods.bMkcol == false) return response405(pReq, pRes);
+	if(g_conf.methods.bMkcol == false) return response405(pRes);
 
 	// generate abs path
 	char szFilePath[PATH_MAX];
@@ -194,27 +194,27 @@ int httpMethodMkcol(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	struct stat filestat;
 	if (sysStat(szFilePath, &filestat) == 0) {
 		// exists
-		return response403(pReq, pRes);
+		return response403(pRes);
 	}
 
 	// try to create directory
 	if(sysMkdir(szFilePath, DEF_DIR_MODE) != 0) {
-		return response500(pReq, pRes);
+		return response500(pRes);
 	}
 
 	// success
-	return response201(pReq, pRes);
+	return response201(pRes);
 }
 
 /*
  * WebDAV method - MOVE
  */
 int httpMethodMove(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	if(g_conf.methods.bMove == false) return response405(pReq, pRes);
+	if(g_conf.methods.bMove == false) return response405(pRes);
 
 	// fetch destination header
 	const char *pszDestination = httpHeaderGetStr(pReq->pHeaders, "DESTINATION");
-	if(pszDestination == NULL) return response400(pReq, pRes);
+	if(pszDestination == NULL) return response400(pRes);
 
 	// decode url encoded uri
 	char *pszTmp = strdup(pszDestination);
@@ -229,9 +229,9 @@ int httpMethodMove(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 		pszDestPath = pszDecDestination;
 	} else if(!strncasecmp(pszDecDestination, "HTTP://", CONST_STRLEN("HTTP://"))) {
 		pszDestPath = strstr(pszDecDestination + CONST_STRLEN("HTTP://"), "/");
-		if(pszDestPath == NULL) return response400(pReq, pRes);
+		if(pszDestPath == NULL) return response400(pRes);
 	} else {
-		return response400(pReq, pRes);
+		return response400(pRes);
 	}
 
 	// generate system path
@@ -241,17 +241,17 @@ int httpMethodMove(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 
 	// move
 	if(sysRename(szOldPath, szNewPath) != 0) {
-		return response500(pReq, pRes);
+		return response500(pRes);
 	}
 
-	return response201(pReq, pRes);
+	return response201(pRes);
 }
 
 /*
  * WebDAV method - DELETE
  */
 int httpMethodDelete(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	if(g_conf.methods.bDelete == false) return response405(pReq, pRes);
+	if(g_conf.methods.bDelete == false) return response405(pRes);
 
 	// generate abs path
 	char szFilePath[PATH_MAX];
@@ -260,30 +260,30 @@ int httpMethodDelete(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	// file info
 	struct stat filestat;
 	if (sysStat(szFilePath, &filestat) < 0) {
-		return response404(pReq, pRes);
+		return response404(pRes);
 	}
 
 	// remove
 	if(S_ISDIR(filestat.st_mode)) {
 		if(sysRmdir(szFilePath) != 0) {
-			return response403(pReq, pRes);
+			return response403(pRes);
 		}
 	} else {
 		if(sysUnlink(szFilePath) != 0) {
-			return response403(pReq, pRes);
+			return response403(pRes);
 		}
 	}
 
-	return response204(pReq, pRes); // no contents
+	return response204(pRes); // no contents
 }
 
 /*
  * WebDAV method - LOCK
  */
 int httpMethodLock(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	if(g_conf.methods.bLock == false) return response405(pReq, pRes);
+	if(g_conf.methods.bLock == false) return response405(pRes);
 
-	if(pReq->nContentsLength <= 0) return response400(pReq, pRes); // bad request
+	if(pReq->nContentsLength <= 0) return response400(pRes); // bad request
 
 	// parse request XML
 	char *pszLocktype = _getXmlEntry(pReq->pContents, "locktype");
@@ -322,7 +322,7 @@ int httpMethodLock(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	size_t nXmlSize;
 	char *pszXmlData = (char*)obXml->getFinal(obXml, &nXmlSize);
 
-	httpResponseSetCode(pRes, HTTP_CODE_OK, pReq, true);
+	httpResponseSetCode(pRes, HTTP_CODE_OK, true);
 	httpHeaderSetStrf(pRes->pHeaders, "Lock-Token", "<opaquelocktoken:%s>", szToken);
 	httpResponseSetContent(pRes, "text/xml; charset=\"utf-8\"", pszXmlData, nXmlSize);
 	free(pszXmlData);
@@ -341,9 +341,9 @@ int httpMethodLock(struct HttpRequest *pReq, struct HttpResponse *pRes) {
  * WebDAV method - UNLOCK
  */
 int httpMethodUnlock(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	if(g_conf.methods.bUnlock == false) return response405(pReq, pRes);
+	if(g_conf.methods.bUnlock == false) return response405(pRes);
 
-        return response204(pReq, pRes);
+        return response204(pRes);
 }
 
 //

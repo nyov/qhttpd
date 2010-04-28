@@ -15,14 +15,15 @@
 --
 --   + [request] functions
 --	table	request:getRequest()		: get request information table
---	boolean	request:setRequest(request_table)	: set/modify request information
+--	boolean	request:setRequest(request_table) : set/modify request information
 --	string	request:getHeader(name)		: get request header
 --	boolean	request:setHeader(name, value)	: set request header
 --	boolean	request:delHeader(name)		: remove request header
 --
 --   + [response] functions
 --	number	response:getCode()		: get response code
---	boolean	response:setContent(mimetype, content)	: set response content
+--	boolean	response:setCode()		: set response code
+--	boolean	response:setContent(mimetype, content) : set response content
 --	string	response:getHeader(name)	: get response header
 --	boolean	response:setHeader(name, value)	: set requresponseest header
 --	boolean	response:delHeader(name)	: remove response header

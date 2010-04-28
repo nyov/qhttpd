@@ -60,7 +60,7 @@
 //
 #define PRG_INFO				"The qDecoder Project"
 #define PRG_NAME				"qhttpd"
-#define PRG_VERSION				"1.2.6"
+#define PRG_VERSION				"1.2.7"
 
 #define DEF_CONFIG				"/usr/local/qhttpd/conf/qhttpd.conf"
 
@@ -280,6 +280,7 @@ struct HttpRequest {
 
 struct HttpResponse {
 	bool	bOut;			// flag for response out already
+	struct HttpRequest* pReq;	// request referer link. can be NULL.
 
 	char*	pszHttpVersion;		// response protocol
 	int	nResponseCode;		// response code
@@ -360,9 +361,9 @@ extern	char*		httpRequestGetSysPath(struct HttpRequest *pReq, char *pszBuf, size
 extern	bool		httpRequestFree(struct HttpRequest *pReq);
 
 // http_response.c
-extern	struct HttpResponse* httpResponseCreate(void);
-extern	int		httpResponseSetSimple(struct HttpRequest *pReq, struct HttpResponse *pRes, int nResCode, bool nKeepAlive, const char *pszText);
-extern	bool		httpResponseSetCode(struct HttpResponse *pRes, int nResCode, struct HttpRequest *pReq, bool bKeepAlive);
+extern	struct HttpResponse*	httpResponseCreate(struct HttpRequest *pReq);
+extern	int		httpResponseSetSimple(struct HttpResponse *pRes, int nResCode, bool nKeepAlive, const char *pszText);
+extern	bool		httpResponseSetCode(struct HttpResponse *pRes, int nResCode, bool bKeepAlive);
 extern	bool		httpResponseSetContent(struct HttpResponse *pRes, const char *pszContentType, const char *pContent, off_t nContentsLength);
 extern	bool		httpResponseSetContentHtml(struct HttpResponse *pRes, const char *pszMsg);
 extern	bool		httpResponseSetContentChunked(struct HttpResponse *pRes, bool bChunked);
@@ -373,18 +374,18 @@ extern	bool		httpResponseReset(struct HttpResponse *pRes);
 extern	void		httpResponseFree(struct HttpResponse *pRes);
 extern	const char*	httpResponseGetMsg(int nResCode);
 
-#define response201(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_CREATED, true, httpResponseGetMsg(HTTP_CODE_CREATED));
-#define response204(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_NO_CONTENT, true, NULL);
-#define response304(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_MODIFIED, true, NULL);
-#define response400(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_BAD_REQUEST, false, httpResponseGetMsg(HTTP_CODE_BAD_REQUEST))
-#define response403(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_FORBIDDEN, true, httpResponseGetMsg(HTTP_CODE_FORBIDDEN))
-#define response404(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_FOUND, true, httpResponseGetMsg(HTTP_CODE_NOT_FOUND))
-#define response404nc(pReq, pRes) httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_FOUND, true, NULL)
-#define response405(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_METHOD_NOT_ALLOWED, true, httpResponseGetMsg(HTTP_CODE_METHOD_NOT_ALLOWED))
-#define response414(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_REQUEST_URI_TOO_LONG, true, httpResponseGetMsg(HTTP_CODE_REQUEST_URI_TOO_LONG))
-#define response500(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_INTERNAL_SERVER_ERROR, false, httpResponseGetMsg(HTTP_CODE_INTERNAL_SERVER_ERROR))
-#define response501(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_IMPLEMENTED, false, httpResponseGetMsg(HTTP_CODE_NOT_IMPLEMENTED))
-#define response503(pReq, pRes)	httpResponseSetSimple(pReq, pRes, HTTP_CODE_SERVICE_UNAVAILABLE, true, httpResponseGetMsg(HTTP_CODE_SERVICE_UNAVAILABLE))
+#define response201(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_CREATED, true, httpResponseGetMsg(HTTP_CODE_CREATED));
+#define response204(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_NO_CONTENT, true, NULL);
+#define response304(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_NOT_MODIFIED, true, NULL);
+#define response400(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_BAD_REQUEST, false, httpResponseGetMsg(HTTP_CODE_BAD_REQUEST))
+#define response403(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_FORBIDDEN, true, httpResponseGetMsg(HTTP_CODE_FORBIDDEN))
+#define response404(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_NOT_FOUND, true, httpResponseGetMsg(HTTP_CODE_NOT_FOUND))
+#define response404nc(pRes) httpResponseSetSimple(pRes, HTTP_CODE_NOT_FOUND, true, NULL)
+#define response405(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_METHOD_NOT_ALLOWED, true, httpResponseGetMsg(HTTP_CODE_METHOD_NOT_ALLOWED))
+#define response414(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_REQUEST_URI_TOO_LONG, true, httpResponseGetMsg(HTTP_CODE_REQUEST_URI_TOO_LONG))
+#define response500(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_INTERNAL_SERVER_ERROR, false, httpResponseGetMsg(HTTP_CODE_INTERNAL_SERVER_ERROR))
+#define response501(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_NOT_IMPLEMENTED, false, httpResponseGetMsg(HTTP_CODE_NOT_IMPLEMENTED))
+#define response503(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_SERVICE_UNAVAILABLE, true, httpResponseGetMsg(HTTP_CODE_SERVICE_UNAVAILABLE))
 
 // http_header.c
 extern	const char*	httpHeaderGetStr(Q_ENTRY *entries, const char *pszName);
@@ -443,6 +444,7 @@ extern	ssize_t		streamWritev(int nSockFd,  const struct iovec *pVector, int nCou
 extern	off_t		streamSend(int nSockFd, int nFd, off_t nSize, int nTimeoutMs);
 
 // util.c
+extern	int		closeSocket(int nSockFd);
 extern	char*		getEtag(char *pszBuf, size_t nBufSize, const char *pszPath, struct stat *pStat);
 extern	unsigned int	getIp2Uint(const char *szIp);
 extern	float		getDiffTimeval(struct timeval *t1, struct timeval *t0);
@@ -468,7 +470,7 @@ extern	int		sysClosedir(DIR *pDir);
 extern	bool		luaInit(const char *pszScriptPath);
 extern	bool		luaFree(void);
 extern	int		luaRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes);
-extern	bool		luaResponseHandler(struct HttpRequest *pReq, struct HttpResponse *pRes);
+extern	bool		luaResponseHandler(void);
 #endif
 
 // hook.c

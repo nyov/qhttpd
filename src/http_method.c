@@ -31,9 +31,9 @@
  * http method - OPTIONS
  */
 int httpMethodOptions(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	if(g_conf.methods.bOptions == false) return response405(pReq, pRes);
+	if(g_conf.methods.bOptions == false) return response405(pRes);
 
-	httpResponseSetCode(pRes, HTTP_CODE_OK, pReq, true);
+	httpResponseSetCode(pRes, HTTP_CODE_OK, true);
 	httpHeaderSetStr(pRes->pHeaders, "Allow", g_conf.szAllowedMethods);
 	httpResponseSetContent(pRes, "httpd/unix-directory", "", 0);
 
@@ -44,7 +44,7 @@ int httpMethodOptions(struct HttpRequest *pReq, struct HttpResponse *pRes) {
  * http method - HEAD
  */
 int httpMethodHead(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	if(g_conf.methods.bHead == false) return response405(pReq, pRes);
+	if(g_conf.methods.bHead == false) return response405(pRes);
 
 	// generate abs path
 	char szFilePath[PATH_MAX];
@@ -53,7 +53,7 @@ int httpMethodHead(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	// get file stat
 	struct stat filestat;
 	if (sysStat(szFilePath, &filestat) < 0) {
-		return response404(pReq, pRes);
+		return response404(pRes);
 	}
 
 	// do action
@@ -77,7 +77,7 @@ int httpMethodHead(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	}
 
 	// set response
-	httpResponseSetSimple(pReq, pRes, nResCode, true, pszHtmlMsg);
+	httpResponseSetSimple(pRes, nResCode, true, pszHtmlMsg);
 	return nResCode;
 }
 
@@ -85,7 +85,7 @@ int httpMethodHead(struct HttpRequest *pReq, struct HttpResponse *pRes) {
  * http method - GET
  */
 int httpMethodGet(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	if(g_conf.methods.bGet == false) return response405(pReq, pRes);
+	if(g_conf.methods.bGet == false) return response405(pRes);
 
 	// generate abs path
 	char szFilePath[PATH_MAX];
@@ -94,14 +94,14 @@ int httpMethodGet(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	// get file stat
 	struct stat filestat;
 	if (sysStat(szFilePath, &filestat) < 0) {
-		return response404(pReq, pRes);
+		return response404(pRes);
 	}
 
  	// is directory?
  	if(S_ISDIR(filestat.st_mode) && pReq->pszDirectoryIndex != NULL) {
  		qStrCatf(szFilePath, "/%s", pReq->pszDirectoryIndex);
  		if (sysStat(szFilePath, &filestat) < 0) {
-			return response404(pReq, pRes);
+			return response404(pRes);
 		}
  	}
 
@@ -110,7 +110,7 @@ int httpMethodGet(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	if(S_ISREG(filestat.st_mode)) {
 		// open file
 		int nFd = sysOpen(szFilePath, O_RDONLY , 0);
-		if(nFd < 0) return response404(pReq, pRes);
+		if(nFd < 0) return response404(pRes);
 
 		// send file
 		nResCode = httpRealGet(pReq, pRes, nFd, &filestat, mimeDetect(szFilePath));
@@ -121,7 +121,7 @@ int httpMethodGet(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 
 	// set response if response code did not set
 	if(pRes->nResponseCode == 0) {
-		httpResponseSetSimple(pReq, pRes, nResCode, true, httpResponseGetMsg(nResCode));
+		httpResponseSetSimple(pRes, nResCode, true, httpResponseGetMsg(nResCode));
 	}
 
 	return nResCode;
@@ -151,7 +151,7 @@ int httpRealGet(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd, st
 		if(nUnivTime >= 0 && nUnivTime > pStat->st_mtime) {
 			httpHeaderSetStrf(pRes->pHeaders, "ETag", "\"%s\"", szEtag);
 			httpHeaderSetExpire(pRes->pHeaders, g_conf.nResponseExpires);
-			return httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_MODIFIED, true, NULL);
+			return httpResponseSetSimple(pRes, HTTP_CODE_NOT_MODIFIED, true, NULL);
 		}
 	}
 
@@ -165,7 +165,7 @@ int httpRealGet(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd, st
 		if(!strcmp(pszMatchEtag, szEtag)) {
 			httpHeaderSetStrf(pRes->pHeaders, "ETag", "\"%s\"", szEtag);
 			httpHeaderSetExpire(pRes->pHeaders, g_conf.nResponseExpires);
-			return httpResponseSetSimple(pReq, pRes, HTTP_CODE_NOT_MODIFIED, true, NULL);
+			return httpResponseSetSimple(pRes, HTTP_CODE_NOT_MODIFIED, true, NULL);
 		}
 		free(pszMatchEtag);
 	}
@@ -188,7 +188,7 @@ int httpRealGet(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd, st
 	//
 	// set response headers
 	//
-	httpResponseSetCode(pRes, (bRangeRequest == false) ? HTTP_CODE_OK : HTTP_CODE_PARTIAL_CONTENT, pReq, true);
+	httpResponseSetCode(pRes, (bRangeRequest == false) ? HTTP_CODE_OK : HTTP_CODE_PARTIAL_CONTENT, true);
 	httpResponseSetContent(pRes, pszContentType, NULL, nRangeSize);
 
 	httpHeaderSetStr(pRes->pHeaders, "Accept-Ranges", "bytes");
@@ -224,12 +224,12 @@ int httpRealGet(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd, st
  * http method - PUT
  */
 int httpMethodPut(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	if(g_conf.methods.bPut == false) return response405(pReq, pRes);
+	if(g_conf.methods.bPut == false) return response405(pRes);
 
 	// check contents length or transfer-encoding
 	if(pReq->nContentsLength < 0
 	&& httpHeaderHasStr(pReq->pHeaders, "TRANSFER-ENCODING", "CHUNKED") == false) {
-		return response400(pReq, pRes);
+		return response400(pRes);
 	}
 
 	// generate abs path
@@ -239,7 +239,7 @@ int httpMethodPut(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	// open file for writing
 	int nFd = sysOpen(szFilePath, O_WRONLY|O_CREAT|O_TRUNC, DEF_FILE_MODE);
 	if(nFd < 0) {
-		return response403(pReq, pRes); // forbidden - can't open file
+		return response403(pRes); // forbidden - can't open file
 	}
 
 	// receive file
@@ -251,7 +251,7 @@ int httpMethodPut(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	// response
 	bool bKeepAlive = false;
 	if(nResCode == HTTP_CODE_CREATED) bKeepAlive = true;
-	httpResponseSetSimple(pReq, pRes, nResCode, bKeepAlive, httpResponseGetMsg(nResCode));
+	httpResponseSetSimple(pRes, nResCode, bKeepAlive, httpResponseGetMsg(nResCode));
 	return nResCode;
 }
 
@@ -323,5 +323,5 @@ int httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd) {
  * method not implemented
  */
 int httpMethodNotImplemented(struct HttpRequest *pReq, struct HttpResponse *pRes) {
-	return response501(pReq, pRes);
+	return response501(pRes);
 }

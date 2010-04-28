@@ -147,15 +147,7 @@ void childStart(int nSockFd) {
 		}
 #endif
 		// close connection
-		if(shutdown(nNewSockFd, SHUT_WR) == 0) {
-			char szDummyBuf[1024];
-			while(true) {
-				ssize_t nDummyRead = streamRead(szDummyBuf, nNewSockFd, sizeof(szDummyBuf), MAX_SHUTDOWN_WAIT);
-				if(nDummyRead <= 0) break;
-				DEBUG("Throw %zu bytes from dummy input stream.", nDummyRead);
-			}
-		}
-		close(nNewSockFd);
+		closeSocket(nNewSockFd);
 
 		// clear client information
 		poolClearConnInfo();

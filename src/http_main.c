@@ -54,7 +54,7 @@ int httpMain(int nSockFd) {
 		}
 
 		// create response
-		struct HttpResponse *pRes = httpResponseCreate();
+		struct HttpResponse *pRes = httpResponseCreate(pReq);
 		if(pRes == NULL) {
 			LOG_ERR("Can't create response.");
 			httpRequestFree(pReq);
@@ -89,42 +89,21 @@ int httpMain(int nSockFd) {
 					nResCode = hookRequestHandler(pReq, pRes);
 				}
 #endif
-				if(nResCode == 0) { // if nothing done, call native handler
+				if(nResCode == 0) { // if nothing done, call default handler
 					nResCode =  httpRequestHandler(pReq, pRes);
 				}
 
 				if(nResCode == 0) { // never reach here
-					nResCode = response500(pReq, pRes);
+					nResCode = response500(pRes);
 					LOG_ERR("An error occured while processing method.");
 				}
 			} else { // bad request
-				httpResponseSetSimple(pReq, pRes, HTTP_CODE_BAD_REQUEST, false, "Your browser sent a request that this server could not understand.");
-			}
-
-			// hook response
-#ifdef ENABLE_HOOK
-			if(hookResponseHandler(pReq, pRes) == false) {
-				LOG_WARN("An error occured while processing hookResponseHandler().");
-			}
-#endif
-
-#ifdef ENABLE_LUA
-			if(g_conf.bEnableLua == true
-			&& luaResponseHandler(pReq, pRes) == false) {
-				LOG_WARN("An error occured while processing luaResponseHandler().");
-			}
-#endif
-			 // set response information
-			poolSetConnResponse(pRes);
-
-			// check exit request
-			if(poolGetExitRequest() == true
-			|| (g_conf.nMaxKeepAliveRequests > 0 && poolGetChildKeepaliveRequests() >= g_conf.nMaxKeepAliveRequests))
-			{
-				httpHeaderSetStr(pRes->pHeaders, "Connection", "close");
+				httpResponseSetSimple(pRes, HTTP_CODE_BAD_REQUEST, false, "Your browser sent a request that this server could not understand.");
 			}
 
 			// serialize & stream out
+			//   hook will be handled inside of httpResponseOut().
+			//   keep-alive header may be adjusted
 			httpResponseOut(pRes, nSockFd);
 
 			// logging
@@ -141,8 +120,8 @@ int httpMain(int nSockFd) {
 		/////////////////////////////////////////////////////////
 
 		// free resources
-		if(pReq != NULL) httpRequestFree(pReq);
 		if(pRes != NULL) httpResponseFree(pRes);
+		if(pReq != NULL) httpRequestFree(pReq);
 	} while(bKeepAlive == true);
 
 	return 0;
@@ -198,13 +177,13 @@ int httpSpecialRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRe
 	&& !strcmp(pReq->pszRequestMethod, "GET")
 	&& !strcmp(pReq->pszRequestPath, g_conf.szStatusUrl)) {
 		Q_OBSTACK *obHtml = httpGetStatusHtml();
-		if(obHtml == NULL) return response500(pReq, pRes);
+		if(obHtml == NULL) return response500(pRes);
 
 		// get size
 		size_t nHtmlSize = obHtml->getSize(obHtml);
 
 		// set response
-		httpResponseSetCode(pRes, HTTP_CODE_OK, pReq, true);
+		httpResponseSetCode(pRes, HTTP_CODE_OK, true);
 		httpResponseSetContent(pRes, "text/html; charset=\"utf-8\"", NULL, nHtmlSize);
 
 		// print out header

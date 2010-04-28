@@ -27,6 +27,19 @@
 
 #include "qhttpd.h"
 
+int closeSocket(int nSockFd) {
+	// close connection
+	if(shutdown(nSockFd, SHUT_WR) == 0) {
+		char szDummyBuf[1024];
+		while(true) {
+			ssize_t nDummyRead = streamRead(szDummyBuf, nSockFd, sizeof(szDummyBuf), MAX_SHUTDOWN_WAIT);
+			if(nDummyRead <= 0) break;
+			DEBUG("Throw %zu bytes from dummy input stream.", nDummyRead);
+		}
+	}
+	return close(nSockFd);
+}
+
 char *getEtag(char *pszBuf, size_t nBufSize, const char *pszPath, struct stat *pStat) {
 	unsigned int nFilepathHash = qHashFnv32(0, (const void*)pszPath, strlen(pszPath));
 	snprintf(pszBuf, nBufSize, "%08x-%08x-%08x", nFilepathHash, (unsigned int)pStat->st_size, (unsigned int)pStat->st_mtime);

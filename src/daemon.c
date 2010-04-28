@@ -509,10 +509,20 @@ static bool ignoreConnection(int nSockFd, long int nTimeoutMs) {
 	// caughted connection
 	//
 
+	// parse request
+	struct HttpRequest *pReq = httpRequestParse(nSockFd, g_conf.nConnectionTimeout);
+	if(pReq == NULL) {
+		LOG_ERR("Can't parse request.");
+		closeSocket(nNewSockFd);
+		return false;
+	}
+
 	// create response
-	struct HttpResponse *pRes = httpResponseCreate();
+	struct HttpResponse *pRes = httpResponseCreate(pReq);
 	if(pRes == NULL) {
 		LOG_ERR("Can't create response.");
+		httpRequestFree(pReq);
+		closeSocket(nNewSockFd);
 		return false;
 	}
 
@@ -524,8 +534,15 @@ static bool ignoreConnection(int nSockFd, long int nTimeoutMs) {
 	// serialize & stream out
 	httpResponseOut(pRes, nSockFd);
 
+	// logging
+	httpAccessLog(pReq, pRes);
+
 	// close connection immediately
-	close(nNewSockFd);
+	closeSocket(nNewSockFd);
+
+	// free resources
+	if(pRes != NULL) httpResponseFree(pRes);
+	if(pReq != NULL) httpRequestFree(pReq);
 
 	return true;
 }
