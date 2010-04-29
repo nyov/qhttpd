@@ -534,7 +534,7 @@ do {											\
 #define _LOG(log, level, prestr, fmt, args...)	do {					\
 	if (g_loglevel >= level) {							\
 		char _timestr[14+1];							\
-		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
+		qTimeGetGmtStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
 		if(log != NULL)								\
 			log->writef(log, "%s(%d):" prestr fmt				\
 			, _timestr, getpid(), ##args);					\
@@ -547,7 +547,7 @@ do {											\
 #define _LOG2(log, level, prestr, fmt, args...)	do {					\
 	if (g_loglevel >= level) {							\
 		char _timestr[14+1];							\
-		qTimeGetLocalStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
+		qTimeGetGmtStrf(_timestr, sizeof(_timestr), 0, "%Y%m%d%H%M%S");	\
 		if(log != NULL)								\
 			log->writef(log, "%s(%d):" prestr fmt " (%s:%d)"		\
 			, _timestr, getpid(), ##args, __FILE__, __LINE__);		\

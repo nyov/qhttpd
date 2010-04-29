@@ -49,13 +49,11 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 	obHtml->growStr(obHtml, "</head>" CRLF);
 	obHtml->growStr(obHtml, "<body>" CRLF);
 
-	char *pszCurrentTime = qTimeGetLocalStr(0);
-	char *pszStartTime = qTimeGetLocalStr(pShm->nStartTime);
 	obHtml->growStrf(obHtml,"<h1>%s/%s Status</h1>" CRLF, g_prgname, g_prgversion);
 	obHtml->growStr(obHtml, "<dl>" CRLF);
 	obHtml->growStrf(obHtml,"  <dt>Server Version: %s v%s (%s; %s; %s)</dt>" CRLF, g_prgname, g_prgversion, __DATE__, __TIME__, pszBuildMode);
-	obHtml->growStrf(obHtml,"  <dt>Current Time: %s" CRLF, pszCurrentTime);
-	obHtml->growStrf(obHtml,"  , Start Time: %s</dt>" CRLF, pszStartTime);
+	obHtml->growStrf(obHtml,"  <dt>Current Time: %s" CRLF, qTimeGetGmtStaticStr(0));
+	obHtml->growStrf(obHtml,"  , Start Time: %s</dt>" CRLF, qTimeGetGmtStaticStr(pShm->nStartTime));
 	obHtml->growStrf(obHtml,"  <dt>Total Connections : %d" CRLF, pShm->nTotalConnected);
 	obHtml->growStrf(obHtml,"  , Total Requests : %d</dt>" CRLF, pShm->nTotalRequests);
 	obHtml->growStrf(obHtml,"  , Total Launched: %d" CRLF, pShm->nTotalLaunched);
@@ -66,8 +64,6 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 	obHtml->growStrf(obHtml,"  , Max Spare Servers: %d" CRLF, g_conf.nMaxSpareServers);
 	obHtml->growStrf(obHtml,"  , Max Clients: %d</dt>" CRLF, g_conf.nMaxClients);
 	obHtml->growStr(obHtml, "</dl>" CRLF);
-	free(pszCurrentTime);
-	free(pszStartTime);
 
 	obHtml->growStr(obHtml, "<table width='100%%' border=1 cellpadding=1 cellspacing=0>" CRLF);
 	obHtml->growStr(obHtml, "  <tr>" CRLF);

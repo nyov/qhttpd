@@ -35,7 +35,7 @@ bool httpAccessLog(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	const char *pszAgent = httpHeaderGetStr(pReq->pHeaders, "USER-AGENT");
 
 	g_acclog->writef(g_acclog, "%s - - [%s] \"%s http://%s%s %s\" %d %jd \"%s\" \"%s\"",
-		poolGetConnAddr(),  qTimeGetLocalStaticStr(poolGetConnReqTime()),
+		poolGetConnAddr(),  qTimeGetGmtStaticStr(poolGetConnReqTime()),
 		pReq->pszRequestMethod, pszHost, pReq->pszRequestUri, pReq->pszHttpVersion,
 		pRes->nResponseCode, pRes->nContentsLength,
 		(pszReferer != NULL) ? pszReferer : "-",

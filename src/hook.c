@@ -169,6 +169,8 @@ int hookRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 }
 
 bool hookResponseHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	if(pRes->bOut == true) return true;
+
 	// returns false if you want to log out failure during this call.
 	return true;
 }
