@@ -135,7 +135,7 @@ ssize_t streamWritev(int nSockFd,  const struct iovec *pVector, int nCount) {
 
 off_t streamSend(int nSockFd, int nFd, off_t nSize, int nTimeoutMs) {
 	off_t nSent = qIoSend(nSockFd, nFd, nSize, nTimeoutMs);
-        DEBUG("[TX] (send %jd/%jd bytes)", nSent, nSize);
+	DEBUG("[TX] (send %jd/%jd bytes)", nSent, nSize);
 
 	return nSent;
 }
