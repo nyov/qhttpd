@@ -374,13 +374,14 @@ extern	bool		httpResponseReset(struct HttpResponse *pRes);
 extern	void		httpResponseFree(struct HttpResponse *pRes);
 extern	const char*	httpResponseGetMsg(int nResCode);
 
+#define response200(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_OK, true, httpResponseGetMsg(HTTP_CODE_OK));
 #define response201(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_CREATED, true, httpResponseGetMsg(HTTP_CODE_CREATED));
 #define response204(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_NO_CONTENT, true, NULL);
 #define response304(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_NOT_MODIFIED, true, NULL);
 #define response400(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_BAD_REQUEST, false, httpResponseGetMsg(HTTP_CODE_BAD_REQUEST))
 #define response403(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_FORBIDDEN, true, httpResponseGetMsg(HTTP_CODE_FORBIDDEN))
 #define response404(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_NOT_FOUND, true, httpResponseGetMsg(HTTP_CODE_NOT_FOUND))
-#define response404nc(pRes) httpResponseSetSimple(pRes, HTTP_CODE_NOT_FOUND, true, NULL)
+#define response404nc(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_NOT_FOUND, true, NULL)
 #define response405(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_METHOD_NOT_ALLOWED, true, httpResponseGetMsg(HTTP_CODE_METHOD_NOT_ALLOWED))
 #define response414(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_REQUEST_URI_TOO_LONG, true, httpResponseGetMsg(HTTP_CODE_REQUEST_URI_TOO_LONG))
 #define response500(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_INTERNAL_SERVER_ERROR, false, httpResponseGetMsg(HTTP_CODE_INTERNAL_SERVER_ERROR))
