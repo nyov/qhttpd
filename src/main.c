@@ -74,14 +74,14 @@ int main(int argc, char *argv[]) {
 				return EXIT_FAILURE;
 				#endif
 
-				fprintf(stderr, "Entering debugging mode.\n");
+				fprintf(stdout, "Entering debugging mode.\n");
 				g_debug = true; // common ¼Ò½ºÀÇ µð¹ö±ëÀ» ÄÔ
 				g_loglevel  = MAX_LOGLEVEL;
 				nDaemonize = false;
 				break;
 			}
 			case 'D': {
-				fprintf(stderr, "Entering console mode.\n");
+				fprintf(stdout, "Entering console mode.\n");
 				nDaemonize = false;
 				break;
 			}
