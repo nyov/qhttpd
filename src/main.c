@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 
 	// parse command line arguments
 	int nOpt;
-	while ((nOpt = getopt(argc, argv, "hvdDc:")) != -1) {
+	while ((nOpt = getopt(argc, argv, "dDc:Vh")) != -1) {
 		switch (nOpt) {
 			case 'd': {
 				#ifndef BUILD_DEBUG
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 				qStrCpy(szConfigFile, sizeof(szConfigFile), optarg);
 				break;
 			}
-			case 'v': {
+			case 'V': {
 				printVersion();
 				return EXIT_SUCCESS;
 			}
