@@ -385,8 +385,14 @@ static void daemonEnd(int nStatus) {
 	LOG_SYS("%s Terminated.", g_prgname);
 
 	// close log
-	if(g_acclog != NULL) g_acclog->free(g_acclog);
-	if(g_errlog != NULL) g_errlog->free(g_errlog);
+	if(g_acclog != NULL) {
+		g_acclog->free(g_acclog);
+		g_acclog = NULL;
+	}
+	if(g_errlog != NULL) {
+		g_errlog->free(g_errlog);
+		g_errlog = NULL;
+	}
 
 	exit(nStatus);
 }
