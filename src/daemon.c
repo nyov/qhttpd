@@ -50,8 +50,8 @@ void daemonStart(bool nDaemonize) {
 	umask(0);
 
 	// open logs
-	g_errlog = qLog(g_conf.szErrorLog, g_conf.nLogRotate, true);
-	g_acclog = qLog(g_conf.szAccessLog, g_conf.nLogRotate, true);
+	g_errlog = qLog(g_conf.szErrorLog, 0644, g_conf.nLogRotate, true);
+	g_acclog = qLog(g_conf.szAccessLog, 0644, g_conf.nLogRotate, true);
 	if (g_errlog == NULL || g_acclog == NULL) {
 		fprintf(stderr, "Can't open log file.\n");
 		daemonEnd(EXIT_FAILURE);
