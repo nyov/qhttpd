@@ -27,7 +27,7 @@
 
 #include "qhttpd.h"
 
-static char *_requestRead(int nSockFd, size_t *nRequestSize, int nTimeout);
+static char *_readRequest(int nSockFd, size_t *nRequestSize, int nTimeout);
 static char *_getCorrectedHostname(const char *pszHostname);
 static char *_getCorrectedDomainname(const char *pszDomainname);
 
@@ -61,7 +61,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	//
 	// Read whole request at once to reduce a amount of read() system call.
 	//
-	pReq->pszRequestBody = _requestRead(nSockFd, &pReq->nRequestSize, pReq->nTimeout * 1000);
+	pReq->pszRequestBody = _readRequest(nSockFd, &pReq->nRequestSize, pReq->nTimeout * 1000);
 	if(pReq->pszRequestBody == NULL) {
 		DEBUG("Connection is closed before request completion.");
 		pReq->nReqStatus = -1;
@@ -279,7 +279,7 @@ bool httpRequestFree(struct HttpRequest *pReq) {
 }
 
 #define REQ_READ_BLOCK_SIZE		(1024 * 4)
-static char *_requestRead(int nSockFd, size_t *nRequestSize, int nTimeout) {
+static char *_readRequest(int nSockFd, size_t *nRequestSize, int nTimeout) {
 	// read headers
 	int nBlockRead = 0;	// 0: read 1 byte, 1: enable block read, -1 block read disabled
 	bool bEndOfHeader = false;
