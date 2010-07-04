@@ -421,6 +421,7 @@ extern	int		httpMethodLock(struct HttpRequest *pReq, struct HttpResponse *pRes);
 extern	int		httpMethodUnlock(struct HttpRequest *pReq, struct HttpResponse *pRes);
 
 // http_status.c
+extern	int		httpStatusResponse(struct HttpRequest *pReq, struct HttpResponse *pRes);
 extern	Q_OBSTACK*	httpGetStatusHtml(void);
 
 // http_accesslog.c

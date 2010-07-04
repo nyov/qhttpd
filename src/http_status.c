@@ -27,6 +27,31 @@
 
 #include "qhttpd.h"
 
+int httpStatusResponse(struct HttpRequest *pReq, struct HttpResponse *pRes) {
+	if(pReq == NULL || pRes == NULL) return 0;
+
+	Q_OBSTACK *obHtml = httpGetStatusHtml();
+	if(obHtml == NULL) return response500(pRes);
+
+	// get size
+	size_t nHtmlSize = obHtml->getSize(obHtml);
+
+	// set response
+	httpResponseSetCode(pRes, HTTP_CODE_OK, true);
+	httpResponseSetContent(pRes, "text/html; charset=\"utf-8\"", NULL, nHtmlSize);
+
+	// print out header
+	httpResponseOut(pRes, pReq->nSockFd);
+
+	// print out contents
+	streamStackOut(pReq->nSockFd, obHtml);
+
+	// free
+	obHtml->free(obHtml);
+
+	return HTTP_CODE_OK;
+}
+
 Q_OBSTACK *httpGetStatusHtml(void) {
 	struct SharedData *pShm = NULL;
 	pShm = poolGetShm();

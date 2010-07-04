@@ -172,31 +172,14 @@ int httpRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 int httpSpecialRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	if(pReq == NULL || pRes == NULL) return 0;
 
+	int nResCode = 0;
+
 	// check if the request is for server status page
 	if(g_conf.bEnableStatus == true
 	&& !strcmp(pReq->pszRequestMethod, "GET")
 	&& !strcmp(pReq->pszRequestPath, g_conf.szStatusUrl)) {
-		Q_OBSTACK *obHtml = httpGetStatusHtml();
-		if(obHtml == NULL) return response500(pRes);
-
-		// get size
-		size_t nHtmlSize = obHtml->getSize(obHtml);
-
-		// set response
-		httpResponseSetCode(pRes, HTTP_CODE_OK, true);
-		httpResponseSetContent(pRes, "text/html; charset=\"utf-8\"", NULL, nHtmlSize);
-
-		// print out header
-		httpResponseOut(pRes, pReq->nSockFd);
-
-		// print out contents
-		streamStackOut(pReq->nSockFd, obHtml);
-
-		// free
-		obHtml->free(obHtml);
-
-		return HTTP_CODE_OK;
+		nResCode = httpStatusResponse(pReq, pRes);
 	}
 
-	return 0;
+	return nResCode;
 }
