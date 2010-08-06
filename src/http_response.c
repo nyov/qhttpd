@@ -132,22 +132,6 @@ bool httpResponseSetContent(struct HttpResponse *pRes, const char *pszContentTyp
 	return true;
 }
 
-bool httpResponseSetContentChunked(struct HttpResponse *pRes, bool bChunked) {
-	pRes->bChunked = bChunked;
-	if(bChunked == true) {
-		if(pRes->pContent != NULL) {
-			free(pRes->pContent);
-			pRes->pContent = NULL;
-		}
-
-		if(pRes->nContentsLength != 0) {
-			pRes->nContentsLength = 0;
-		}
-	}
-
-	return true;
-}
-
 bool httpResponseSetContentHtml(struct HttpResponse *pRes, const char *pszMsg) {
 	char szContent[1024];
 
@@ -169,6 +153,22 @@ bool httpResponseSetContentHtml(struct HttpResponse *pRes, const char *pszMsg) {
 	//szContent[sizeof(szContent)-1] = '\0';
 
 	return httpResponseSetContent(pRes, "text/html", szContent, strlen(szContent));
+}
+
+bool httpResponseSetContentChunked(struct HttpResponse *pRes, bool bChunked) {
+	pRes->bChunked = bChunked;
+	if(bChunked == true) {
+		if(pRes->pContent != NULL) {
+			free(pRes->pContent);
+			pRes->pContent = NULL;
+		}
+
+		if(pRes->nContentsLength != 0) {
+			pRes->nContentsLength = 0;
+		}
+	}
+
+	return true;
 }
 
 bool httpResponseSetAuthRequired(struct HttpResponse *pRes, enum HttpAuthT nAuthType, const char *pszRealm) {

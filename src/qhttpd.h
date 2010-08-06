@@ -513,7 +513,7 @@ extern int		g_loglevel;
 // DEFINITION FUNCTIONS
 //
 #define	CONST_STRLEN(x)		(sizeof(x) - 1)
-#define IS_EMPTY_STRING(x)	(x == NULL || (x[0] == '\0') ? true : false )
+#define IS_EMPTY_STRING(x)	( (x == NULL || x[0] == '\0') ? true : false )
 
 #define	DYNAMIC_VSPRINTF(s, f)								\
 do {											\
