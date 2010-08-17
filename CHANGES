@@ -1,6 +1,17 @@
 qHttpd Changes
 --------------
 
+[v1.2.8]
+o Close loger fd before termination
+o Change getopt arg 'v' -> 'V'.
+o Adjust to print out informational messages to stdout.
+o Add response200()
+o change local time format to GMT time format.
+o add lua script function: boolean response:setCode().
+o improve that response-hook is always called before sending response.
+o some prototype changes in http_response.c
+o improve connection-ignoring handler
+
 [v1.2.6]
 o Support HTTP Basic Authentication Programming Module (refer http_auth.c)
 o Support Virtual Host (refer hook.c)
