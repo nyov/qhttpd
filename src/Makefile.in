@@ -24,6 +24,7 @@
 ## $Id: Makefile 140 2010-03-30 01:38:56Z wolkykim $
 
 prefix		= @prefix@
+exec_prefix	= @exec_prefix@
 
 ## Compiler arguments
 CC	= @CC@
