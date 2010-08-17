@@ -60,7 +60,7 @@
 //
 #define PRG_INFO				"The qDecoder Project"
 #define PRG_NAME				"qhttpd"
-#define PRG_VERSION				"1.2.8"
+#define PRG_VERSION				"1.2.9"
 
 #define DEF_CONFIG				"/usr/local/qhttpd/conf/qhttpd.conf"
 
