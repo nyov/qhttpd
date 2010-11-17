@@ -224,6 +224,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 				if(pReq->nContentsLength != nReaded) {
 					DEBUG("Connection is closed before request completion.");
 					free(pReq->pContents);
+					pReq->pContents = NULL;
 					pReq->nContentsLength = -1;
 					return pReq;
 				}
