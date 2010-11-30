@@ -94,11 +94,12 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 				size_t nChunkSize = obXml->getSize(obXml);
 				if(nChunkSize >= CHUNK_SIZE) {
 					void *pChunk = obXml->getFinal(obXml, NULL);
-					httpResponseOutChunk(pReq->nSockFd, pChunk, nChunkSize);
+					bool bRet = httpResponseOutChunk(pReq->nSockFd, pChunk, nChunkSize);
 					DEBUG("[TX-CHUNK] %s", (char*) pChunk);
 					free(pChunk);
 					obXml->free(obXml);
 					obXml = qObstack();
+					if(bRet == false) break;
 				}
 
 				// generate request path

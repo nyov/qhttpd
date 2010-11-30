@@ -369,7 +369,7 @@ extern	bool		httpResponseSetContentHtml(struct HttpResponse *pRes, const char *p
 extern	bool		httpResponseSetContentChunked(struct HttpResponse *pRes, bool bChunked);
 extern	bool		httpResponseSetAuthRequired(struct HttpResponse *pRes, enum HttpAuthT nAuthType, const char *pszRealm);
 extern	bool		httpResponseOut(struct HttpResponse *pRes, int nSockFd);
-extern	int		httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize);
+extern	bool		httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize);
 extern	bool		httpResponseReset(struct HttpResponse *pRes);
 extern	void		httpResponseFree(struct HttpResponse *pRes);
 extern	const char*	httpResponseGetMsg(int nResCode);
@@ -442,7 +442,7 @@ extern	ssize_t		streamPrintf(int nSockFd, const char *format, ...);
 extern	ssize_t		streamPuts(int nSockFd, const char *pszStr);
 extern	ssize_t		streamStackOut(int nSockFd, Q_OBSTACK *obstack);
 extern	ssize_t		streamWrite(int nSockFd, const void *pszBuffer, size_t nSize, int nTimeoutMs);
-extern	ssize_t		streamWritev(int nSockFd,  const struct iovec *pVector, int nCount);
+extern	ssize_t		streamWritev(int nSockFd,  const struct iovec *pVector, int nCount, int nTimeoutMs);
 extern	off_t		streamSend(int nSockFd, int nFd, off_t nSize, int nTimeoutMs);
 
 // util.c

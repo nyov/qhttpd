@@ -285,9 +285,10 @@ bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
  *
  * @return	a number of octets sent (do not include bytes which are sent for chunk boundary string)
  */
-int httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize) {
+bool httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize) {
 	struct iovec vectors[3];
 	int nVecCnt = 0;
+	ssize_t nTotSize = 0;
 
 	char szChunkSizeHead[16 + CONST_STRLEN(CRLF) + 1];
 	snprintf(szChunkSizeHead, sizeof(szChunkSizeHead), "%x" CRLF, (unsigned int)nSize);
@@ -295,25 +296,28 @@ int httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize) {
 	// add to vector
 	vectors[nVecCnt].iov_base = szChunkSizeHead;
 	vectors[nVecCnt].iov_len = strlen(szChunkSizeHead);
+	nTotSize += vectors[nVecCnt].iov_len;
 	nVecCnt++;
 
-	int nSent = 0;
 	if(nSize > 0) {
 		// add to vector
 		vectors[nVecCnt].iov_base = (void *)pData;
 		vectors[nVecCnt].iov_len = nSize;
+		nTotSize += vectors[nVecCnt].iov_len;
 		nVecCnt++;
 	}
 
 	// add to vector
 	vectors[nVecCnt].iov_base = CRLF;
 	vectors[nVecCnt].iov_len = CONST_STRLEN(CRLF);
+	nTotSize += vectors[nVecCnt].iov_len;
 	nVecCnt++;
 
 	// print out
-	streamWritev(nSockFd, vectors, nVecCnt);
+	ssize_t nTotSent = streamWritev(nSockFd, vectors, nVecCnt, g_conf.nConnectionTimeout * 1000);
 
-	return nSent;
+	if(nTotSize == nTotSent) return true;
+	return false;
 }
 
 bool httpResponseReset(struct HttpResponse *pRes) {

@@ -106,8 +106,19 @@ ssize_t streamWrite(int nSockFd, const void *pszBuffer, size_t nSize, int nTimeo
 	return nWritten;
 }
 
-ssize_t streamWritev(int nSockFd,  const struct iovec *pVector, int nCount) {
+ssize_t streamWritev(int nSockFd,  const struct iovec *pVector, int nCount, int nTimeoutMs) {
+	ssize_t nWritten = 0;
+	int i;
+	for(i = 0; i < nCount; i++) {
+		ssize_t nSent = streamWrite(nSockFd, pVector[i].iov_base, pVector[i].iov_len, nTimeoutMs);
+		if(nSent <= 0) break;
+		nWritten += nSent;
+	}
+
+	/*
 	ssize_t nWritten = writev(nSockFd, pVector, nCount);
+	*/
+
 	DEBUG("[TX] (binary, written=%zd bytes, %d vectors)", nWritten, nCount);
 
 	return nWritten;
