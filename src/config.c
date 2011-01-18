@@ -30,7 +30,7 @@
 #define fetch2Str(e, d, n)	do {				\
 	const char *t = e->getStr(e, n, false);			\
 	if(t == NULL) {						\
-		DEBUG("No such entry : %s", n);			\
+		DEBUG("No such key : %s", n);			\
 		e->free(e);					\
 		return false;					\
 	}							\
@@ -42,7 +42,7 @@
 do {								\
 	const char *t = e->getStr(e, n, false);			\
 	if(t == NULL) {						\
-		DEBUG("No such entry : %s", n);			\
+		DEBUG("No such key : %s", n);			\
 		e->free(e);					\
 		return false;					\
 	}							\
@@ -53,7 +53,7 @@ do {								\
 do {								\
 	const char *t = e->getStr(e, n, false);			\
 	if(t == NULL) {						\
-		DEBUG("No such entry : %s", n);			\
+		DEBUG("No such key : %s", n);			\
 		e->free(e);					\
 		return false;					\
 	}							\
@@ -74,8 +74,8 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	}
 
 	// parse configuration file
-	Q_ENTRY *entry = qConfigParseFile(NULL, pszFilePath, '=');
-	if (entry == NULL) {
+	Q_LISTTBL *conflist = qConfigParseFile(NULL, pszFilePath, '=');
+	if (conflist == NULL) {
 		DEBUG("Can't open file %s", pszFilePath);
 		return false;
 	}
@@ -83,46 +83,46 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	// copy to structure
 	qStrCpy(pConf->szConfigFile, sizeof(pConf->szConfigFile), pszFilePath);
 
-	fetch2Str(entry, pConf->szPidFile, "PidFile");
-	fetch2Str(entry, pConf->szMimeFile, "MimeFile");
+	fetch2Str(conflist, pConf->szPidFile, "PidFile");
+	fetch2Str(conflist, pConf->szMimeFile, "MimeFile");
 
-	fetch2Int(entry, pConf->nPort, "Port");
+	fetch2Int(conflist, pConf->nPort, "Port");
 
-	fetch2Int(entry, pConf->nStartServers, "StartServers");
-	fetch2Int(entry, pConf->nMinSpareServers, "MinSpareServers");
-	fetch2Int(entry, pConf->nMaxSpareServers, "MaxSpareServers");
-	fetch2Int(entry, pConf->nMaxIdleSeconds, "MaxIdleSeconds");
-	fetch2Int(entry, pConf->nMaxClients, "MaxClients");
-	fetch2Int(entry, pConf->nMaxRequestsPerChild, "MaxRequestsPerChild");
+	fetch2Int(conflist, pConf->nStartServers, "StartServers");
+	fetch2Int(conflist, pConf->nMinSpareServers, "MinSpareServers");
+	fetch2Int(conflist, pConf->nMaxSpareServers, "MaxSpareServers");
+	fetch2Int(conflist, pConf->nMaxIdleSeconds, "MaxIdleSeconds");
+	fetch2Int(conflist, pConf->nMaxClients, "MaxClients");
+	fetch2Int(conflist, pConf->nMaxRequestsPerChild, "MaxRequestsPerChild");
 
-	fetch2Bool(entry, pConf->bEnableKeepAlive, "EnableKeepAlive");
-	fetch2Int(entry, pConf->nMaxKeepAliveRequests, "MaxKeepAliveRequests");
+	fetch2Bool(conflist, pConf->bEnableKeepAlive, "EnableKeepAlive");
+	fetch2Int(conflist, pConf->nMaxKeepAliveRequests, "MaxKeepAliveRequests");
 
-	fetch2Int(entry, pConf->nConnectionTimeout, "ConnectionTimeout");
-	fetch2Bool(entry, pConf->bIgnoreOverConnection, "IgnoreOverConnection");
-	fetch2Int(entry, pConf->nResponseExpires, "ResponseExpires");
+	fetch2Int(conflist, pConf->nConnectionTimeout, "ConnectionTimeout");
+	fetch2Bool(conflist, pConf->bIgnoreOverConnection, "IgnoreOverConnection");
+	fetch2Int(conflist, pConf->nResponseExpires, "ResponseExpires");
 
-	fetch2Str(entry, pConf->szDocumentRoot, "DocumentRoot");
+	fetch2Str(conflist, pConf->szDocumentRoot, "DocumentRoot");
 
-	fetch2Str(entry, pConf->szAllowedMethods, "AllowedMethods");
+	fetch2Str(conflist, pConf->szAllowedMethods, "AllowedMethods");
 
-	fetch2Str(entry, pConf->szDirectoryIndex, "DirectoryIndex");
+	fetch2Str(conflist, pConf->szDirectoryIndex, "DirectoryIndex");
 
-	fetch2Bool(entry, pConf->bEnableLua, "EnableLua");
-	fetch2Str(entry, pConf->szLuaScript, "LuaScript");
+	fetch2Bool(conflist, pConf->bEnableLua, "EnableLua");
+	fetch2Str(conflist, pConf->szLuaScript, "LuaScript");
 
-	fetch2Bool(entry, pConf->bEnableStatus, "EnableStatus");
-	fetch2Str(entry, pConf->szStatusUrl, "StatusUrl");
+	fetch2Bool(conflist, pConf->bEnableStatus, "EnableStatus");
+	fetch2Str(conflist, pConf->szStatusUrl, "StatusUrl");
 
-	fetch2Str(entry, pConf->szErrorLog, "ErrorLog");
-	fetch2Str(entry, pConf->szAccessLog, "AccessLog");
-	fetch2Int(entry, pConf->nLogRotate, "LogRotate");
-	fetch2Int(entry, pConf->nLogLevel, "LogLevel");
+	fetch2Str(conflist, pConf->szErrorLog, "ErrorLog");
+	fetch2Str(conflist, pConf->szAccessLog, "AccessLog");
+	fetch2Int(conflist, pConf->nLogRotate, "LogRotate");
+	fetch2Int(conflist, pConf->nLogLevel, "LogLevel");
 
 	//
 	// free resources
 	//
-	entry->free(entry);
+	conflist->free(conflist);
 
 	return true;
 }

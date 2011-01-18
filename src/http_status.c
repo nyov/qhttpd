@@ -30,11 +30,11 @@
 int httpStatusResponse(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	if(pReq == NULL || pRes == NULL) return 0;
 
-	Q_OBSTACK *obHtml = httpGetStatusHtml();
+	Q_VECTOR *obHtml = httpGetStatusHtml();
 	if(obHtml == NULL) return response500(pRes);
 
 	// get size
-	size_t nHtmlSize = obHtml->getSize(obHtml);
+	size_t nHtmlSize = obHtml->size(obHtml);
 
 	// set response
 	httpResponseSetCode(pRes, HTTP_CODE_OK, true);
@@ -44,7 +44,7 @@ int httpStatusResponse(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	httpResponseOut(pRes, pReq->nSockFd);
 
 	// print out contents
-	streamStackOut(pReq->nSockFd, obHtml);
+	streamStackOut(pReq->nSockFd, obHtml, g_conf.nConnectionTimeout * 1000);
 
 	// free
 	obHtml->free(obHtml);
@@ -52,7 +52,7 @@ int httpStatusResponse(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	return HTTP_CODE_OK;
 }
 
-Q_OBSTACK *httpGetStatusHtml(void) {
+Q_VECTOR *httpGetStatusHtml(void) {
 	struct SharedData *pShm = NULL;
 	pShm = poolGetShm();
 	if(pShm == NULL) return NULL;
@@ -62,59 +62,59 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 	pszBuildMode = "DEBUG";
 #endif
 
-	Q_OBSTACK *obHtml = qObstack();
-	obHtml->growStr(obHtml, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">" CRLF);
-	obHtml->growStr(obHtml, "<html>" CRLF);
-	obHtml->growStr(obHtml, "<head>" CRLF);
-	obHtml->growStrf(obHtml,"  <title>%s/%s Status</title>" CRLF, g_prgname, g_prgversion);
-	obHtml->growStr(obHtml, "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />" CRLF);
-	obHtml->growStr(obHtml, "  <style type=\"text/css\">" CRLF);
-	obHtml->growStr(obHtml, "    body,td,th { font-size:14px; }" CRLF);
-	obHtml->growStr(obHtml, "  </style>" CRLF);
-	obHtml->growStr(obHtml, "</head>" CRLF);
-	obHtml->growStr(obHtml, "<body>" CRLF);
+	Q_VECTOR *obHtml = qVector();
+	obHtml->addStr(obHtml, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">" CRLF);
+	obHtml->addStr(obHtml, "<html>" CRLF);
+	obHtml->addStr(obHtml, "<head>" CRLF);
+	obHtml->addStrf(obHtml,"  <title>%s/%s Status</title>" CRLF, g_prgname, g_prgversion);
+	obHtml->addStr(obHtml, "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />" CRLF);
+	obHtml->addStr(obHtml, "  <style type=\"text/css\">" CRLF);
+	obHtml->addStr(obHtml, "    body,td,th { font-size:14px; }" CRLF);
+	obHtml->addStr(obHtml, "  </style>" CRLF);
+	obHtml->addStr(obHtml, "</head>" CRLF);
+	obHtml->addStr(obHtml, "<body>" CRLF);
 
-	obHtml->growStrf(obHtml,"<h1>%s/%s Status</h1>" CRLF, g_prgname, g_prgversion);
-	obHtml->growStr(obHtml, "<dl>" CRLF);
-	obHtml->growStrf(obHtml,"  <dt>Server Version: %s v%s (%s; %s; %s)</dt>" CRLF, g_prgname, g_prgversion, __DATE__, __TIME__, pszBuildMode);
-	obHtml->growStrf(obHtml,"  <dt>Current Time: %s" CRLF, qTimeGetGmtStaticStr(0));
-	obHtml->growStrf(obHtml,"  , Start Time: %s</dt>" CRLF, qTimeGetGmtStaticStr(pShm->nStartTime));
-	obHtml->growStrf(obHtml,"  <dt>Total Connections : %d" CRLF, pShm->nTotalConnected);
-	obHtml->growStrf(obHtml,"  , Total Requests : %d</dt>" CRLF, pShm->nTotalRequests);
-	obHtml->growStrf(obHtml,"  , Total Launched: %d" CRLF, pShm->nTotalLaunched);
-	obHtml->growStrf(obHtml,"  , Running Servers: %d</dt>" CRLF, pShm->nRunningChilds);
-	obHtml->growStrf(obHtml,"  , Working Servers: %d</dt>" CRLF, pShm->nWorkingChilds);
-	obHtml->growStrf(obHtml,"  <dt>Start Servers: %d" CRLF, g_conf.nStartServers);
-	obHtml->growStrf(obHtml,"  , Min Spare Servers: %d" CRLF, g_conf.nMinSpareServers);
-	obHtml->growStrf(obHtml,"  , Max Spare Servers: %d" CRLF, g_conf.nMaxSpareServers);
-	obHtml->growStrf(obHtml,"  , Max Clients: %d</dt>" CRLF, g_conf.nMaxClients);
-	obHtml->growStr(obHtml, "</dl>" CRLF);
+	obHtml->addStrf(obHtml,"<h1>%s/%s Status</h1>" CRLF, g_prgname, g_prgversion);
+	obHtml->addStr(obHtml, "<dl>" CRLF);
+	obHtml->addStrf(obHtml,"  <dt>Server Version: %s v%s (%s; %s; %s)</dt>" CRLF, g_prgname, g_prgversion, __DATE__, __TIME__, pszBuildMode);
+	obHtml->addStrf(obHtml,"  <dt>Current Time: %s" CRLF, qTimeGetGmtStaticStr(0));
+	obHtml->addStrf(obHtml,"  , Start Time: %s</dt>" CRLF, qTimeGetGmtStaticStr(pShm->nStartTime));
+	obHtml->addStrf(obHtml,"  <dt>Total Connections : %d" CRLF, pShm->nTotalConnected);
+	obHtml->addStrf(obHtml,"  , Total Requests : %d</dt>" CRLF, pShm->nTotalRequests);
+	obHtml->addStrf(obHtml,"  , Total Launched: %d" CRLF, pShm->nTotalLaunched);
+	obHtml->addStrf(obHtml,"  , Running Servers: %d</dt>" CRLF, pShm->nRunningChilds);
+	obHtml->addStrf(obHtml,"  , Working Servers: %d</dt>" CRLF, pShm->nWorkingChilds);
+	obHtml->addStrf(obHtml,"  <dt>Start Servers: %d" CRLF, g_conf.nStartServers);
+	obHtml->addStrf(obHtml,"  , Min Spare Servers: %d" CRLF, g_conf.nMinSpareServers);
+	obHtml->addStrf(obHtml,"  , Max Spare Servers: %d" CRLF, g_conf.nMaxSpareServers);
+	obHtml->addStrf(obHtml,"  , Max Clients: %d</dt>" CRLF, g_conf.nMaxClients);
+	obHtml->addStr(obHtml, "</dl>" CRLF);
 
-	obHtml->growStr(obHtml, "<table width='100%%' border=1 cellpadding=1 cellspacing=0>" CRLF);
-	obHtml->growStr(obHtml, "  <tr>" CRLF);
-	obHtml->growStr(obHtml, "    <th colspan=5>Server Information</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th colspan=5>Current Connection</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th colspan=4>Request Information</th>" CRLF);
-	obHtml->growStr(obHtml, "  </tr>" CRLF);
+	obHtml->addStr(obHtml, "<table width='100%%' border=1 cellpadding=1 cellspacing=0>" CRLF);
+	obHtml->addStr(obHtml, "  <tr>" CRLF);
+	obHtml->addStr(obHtml, "    <th colspan=5>Server Information</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th colspan=5>Current Connection</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th colspan=4>Request Information</th>" CRLF);
+	obHtml->addStr(obHtml, "  </tr>" CRLF);
 
-	obHtml->growStr(obHtml, "  <tr>" CRLF);
-	obHtml->growStr(obHtml, "    <th>SNO</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th>PID</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th>Started</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th>Conns</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th>Reqs</th>" CRLF);
+	obHtml->addStr(obHtml, "  <tr>" CRLF);
+	obHtml->addStr(obHtml, "    <th>SNO</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th>PID</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th>Started</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th>Conns</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th>Reqs</th>" CRLF);
 
-	obHtml->growStr(obHtml, "    <th>Status</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th>Client IP</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th>Conn Time</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th>Runs</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th>Reqs</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th>Status</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th>Client IP</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th>Conn Time</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th>Runs</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th>Reqs</th>" CRLF);
 
-	obHtml->growStr(obHtml, "    <th>Request Information</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th>Res</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th>Req Time</th>" CRLF);
-	obHtml->growStr(obHtml, "    <th>Runs</th>" CRLF);
-	obHtml->growStr(obHtml, "  </tr>" CRLF);
+	obHtml->addStr(obHtml, "    <th>Request Information</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th>Res</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th>Req Time</th>" CRLF);
+	obHtml->addStr(obHtml, "    <th>Runs</th>" CRLF);
+	obHtml->addStr(obHtml, "  </tr>" CRLF);
 
 	int i, j;
 	for(i = j = 0; i <  g_conf.nMaxClients; i++) {
@@ -137,32 +137,32 @@ Q_OBSTACK *httpGetStatusHtml(void) {
 		else nReqRuns = getDiffTimeval(&pShm->child[i].conn.tvResTime, &pShm->child[i].conn.tvReqTime);
 
 		char szTimeStr[sizeof(char) * (CONST_STRLEN("YYYYMMDDhhmmss")+1)];
-		obHtml->growStr(obHtml, "  <tr align=center>" CRLF);
-		obHtml->growStrf(obHtml,"    <td>%d</td>" CRLF, j);
-		obHtml->growStrf(obHtml,"    <td>%u</td>" CRLF, (unsigned int)pShm->child[i].nPid);
-		obHtml->growStrf(obHtml,"    <td>%s</td>" CRLF, qTimeGetGmtStrf(szTimeStr, sizeof(szTimeStr), pShm->child[i].nStartTime, "%Y%m%d%H%M%S"));
-		obHtml->growStrf(obHtml,"    <td align=right>%d</td>" CRLF, pShm->child[i].nTotalConnected);
-		obHtml->growStrf(obHtml,"    <td align=right>%d</td>" CRLF, pShm->child[i].nTotalRequests);
+		obHtml->addStr(obHtml, "  <tr align=center>" CRLF);
+		obHtml->addStrf(obHtml,"    <td>%d</td>" CRLF, j);
+		obHtml->addStrf(obHtml,"    <td>%u</td>" CRLF, (unsigned int)pShm->child[i].nPid);
+		obHtml->addStrf(obHtml,"    <td>%s</td>" CRLF, qTimeGetGmtStrf(szTimeStr, sizeof(szTimeStr), pShm->child[i].nStartTime, "%Y%m%d%H%M%S"));
+		obHtml->addStrf(obHtml,"    <td align=right>%d</td>" CRLF, pShm->child[i].nTotalConnected);
+		obHtml->addStrf(obHtml,"    <td align=right>%d</td>" CRLF, pShm->child[i].nTotalRequests);
 
-		obHtml->growStrf(obHtml,"    <td>%s</td>" CRLF, pszStatus);
-		obHtml->growStrf(obHtml,"    <td align=left>%s:%d</td>" CRLF, pShm->child[i].conn.szAddr, pShm->child[i].conn.nPort);
-		obHtml->growStrf(obHtml,"    <td>%s</td>" CRLF, (pShm->child[i].conn.nStartTime > 0) ? qTimeGetGmtStrf(szTimeStr, sizeof(szTimeStr), pShm->child[i].conn.nStartTime, "%Y%m%d%H%M%S") : "&nbsp;");
-		obHtml->growStrf(obHtml,"    <td align=right>%ds</td>" CRLF, nConnRuns);
-		obHtml->growStrf(obHtml,"    <td align=right>%d</td>" CRLF, pShm->child[i].conn.nTotalRequests);
+		obHtml->addStrf(obHtml,"    <td>%s</td>" CRLF, pszStatus);
+		obHtml->addStrf(obHtml,"    <td align=left>%s:%d</td>" CRLF, pShm->child[i].conn.szAddr, pShm->child[i].conn.nPort);
+		obHtml->addStrf(obHtml,"    <td>%s</td>" CRLF, (pShm->child[i].conn.nStartTime > 0) ? qTimeGetGmtStrf(szTimeStr, sizeof(szTimeStr), pShm->child[i].conn.nStartTime, "%Y%m%d%H%M%S") : "&nbsp;");
+		obHtml->addStrf(obHtml,"    <td align=right>%ds</td>" CRLF, nConnRuns);
+		obHtml->addStrf(obHtml,"    <td align=right>%d</td>" CRLF, pShm->child[i].conn.nTotalRequests);
 
-		obHtml->growStrf(obHtml,"    <td align=left>%s&nbsp;</td>" CRLF, pShm->child[i].conn.szReqInfo);
-		if(pShm->child[i].conn.nResponseCode == 0) obHtml->growStr(obHtml,"    <td>&nbsp;</td>" CRLF);
-		else obHtml->growStrf(obHtml,"    <td>%d</td>" CRLF, pShm->child[i].conn.nResponseCode);
-		obHtml->growStrf(obHtml,"    <td>%s</td>" CRLF, (pShm->child[i].conn.tvReqTime.tv_sec > 0) ? qTimeGetGmtStrf(szTimeStr, sizeof(szTimeStr), pShm->child[i].conn.tvReqTime.tv_sec, "%Y%m%d%H%M%S") : "&nbsp;");
-		obHtml->growStrf(obHtml,"    <td align=right>%.1fms</td>" CRLF, (nReqRuns * 1000));
-		obHtml->growStr(obHtml, "  </tr>" CRLF);
+		obHtml->addStrf(obHtml,"    <td align=left>%s&nbsp;</td>" CRLF, pShm->child[i].conn.szReqInfo);
+		if(pShm->child[i].conn.nResponseCode == 0) obHtml->addStr(obHtml,"    <td>&nbsp;</td>" CRLF);
+		else obHtml->addStrf(obHtml,"    <td>%d</td>" CRLF, pShm->child[i].conn.nResponseCode);
+		obHtml->addStrf(obHtml,"    <td>%s</td>" CRLF, (pShm->child[i].conn.tvReqTime.tv_sec > 0) ? qTimeGetGmtStrf(szTimeStr, sizeof(szTimeStr), pShm->child[i].conn.tvReqTime.tv_sec, "%Y%m%d%H%M%S") : "&nbsp;");
+		obHtml->addStrf(obHtml,"    <td align=right>%.1fms</td>" CRLF, (nReqRuns * 1000));
+		obHtml->addStr(obHtml, "  </tr>" CRLF);
 	}
-	obHtml->growStr(obHtml, "</table>" CRLF);
+	obHtml->addStr(obHtml, "</table>" CRLF);
 
-	obHtml->growStr(obHtml, "<hr>" CRLF);
-	obHtml->growStrf(obHtml,"%s v%s, %s" CRLF, g_prgname, g_prgversion, g_prginfo);
-	obHtml->growStr(obHtml, "</body>" CRLF);
-	obHtml->growStr(obHtml, "</html>" CRLF);
+	obHtml->addStr(obHtml, "<hr>" CRLF);
+	obHtml->addStrf(obHtml,"%s v%s, %s" CRLF, g_prgname, g_prgversion, g_prginfo);
+	obHtml->addStr(obHtml, "</body>" CRLF);
+	obHtml->addStr(obHtml, "</html>" CRLF);
 
 	return obHtml;
 }

@@ -53,7 +53,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
-#include "qDecoder.h"
+#include "qlibc.h"
 
 //
 // PROGRAM SPECIFIC DEFINITIONS
@@ -271,7 +271,7 @@ struct HttpRequest {
 	char*	pszQueryString;		// query string			ex) query=the%20value
 
 	// request header
-	Q_ENTRY *pHeaders;		// request headers
+	Q_LISTTBL *pHeaders;		// request headers
 
 	// contents
 	off_t	nContentsLength;	// contents length 0:no contents, n>0:has contents
@@ -285,7 +285,7 @@ struct HttpResponse {
 	char*	pszHttpVersion;		// response protocol
 	int	nResponseCode;		// response code
 
-	Q_ENTRY* pHeaders;		// response headers
+	Q_LISTTBL* pHeaders;		// response headers
 
 	char	*pszContentType;	// contents mime type
 	off_t	nContentsLength;	// contents length
@@ -389,14 +389,14 @@ extern	const char*	httpResponseGetMsg(int nResCode);
 #define response503(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_SERVICE_UNAVAILABLE, true, httpResponseGetMsg(HTTP_CODE_SERVICE_UNAVAILABLE))
 
 // http_header.c
-extern	const char*	httpHeaderGetStr(Q_ENTRY *entries, const char *pszName);
-extern	int		httpHeaderGetInt(Q_ENTRY *entries, const char *pszName);
-extern	bool		httpHeaderSetStr(Q_ENTRY *entries, const char *pszName, const char *pszValue);
-extern	bool		httpHeaderSetStrf(Q_ENTRY *entries, const char *pszName, const char *pszformat, ...);
-extern	bool		httpHeaderRemove(Q_ENTRY *entries, const char *pszName);
-extern	bool		httpHeaderHasStr(Q_ENTRY *entries, const char *pszName, const char *pszValue);
+extern	const char*	httpHeaderGetStr(Q_LISTTBL *entries, const char *pszName);
+extern	int		httpHeaderGetInt(Q_LISTTBL *entries, const char *pszName);
+extern	bool		httpHeaderSetStr(Q_LISTTBL *entries, const char *pszName, const char *pszValue);
+extern	bool		httpHeaderSetStrf(Q_LISTTBL *entries, const char *pszName, const char *pszformat, ...);
+extern	bool		httpHeaderRemove(Q_LISTTBL *entries, const char *pszName);
+extern	bool		httpHeaderHasStr(Q_LISTTBL *entries, const char *pszName, const char *pszValue);
 extern	bool		httpHeaderParseRange(const char *pszRangeHeader, off_t nFilesize, off_t *pnRangeOffset1, off_t *pnRangeOffset2, off_t *pnRangeSize);
-extern	bool		httpHeaderSetExpire(Q_ENTRY *entries, int nExpire);
+extern	bool		httpHeaderSetExpire(Q_LISTTBL *entries, int nExpire);
 
 // http_auth.c
 extern	struct HttpUser* httpAuthParse(struct HttpRequest *pReq);
@@ -422,7 +422,7 @@ extern	int		httpMethodUnlock(struct HttpRequest *pReq, struct HttpResponse *pRes
 
 // http_status.c
 extern	int		httpStatusResponse(struct HttpRequest *pReq, struct HttpResponse *pRes);
-extern	Q_OBSTACK*	httpGetStatusHtml(void);
+extern	Q_VECTOR*	httpGetStatusHtml(void);
 
 // http_accesslog.c
 extern	bool		httpAccessLog(struct HttpRequest *pReq, struct HttpResponse *pRes);
@@ -440,7 +440,7 @@ extern	ssize_t		streamGetb(char *pszBuffer, int nSockFd, size_t nSize, int nTime
 extern	off_t		streamSave(int nFd, int nSockFd, off_t nSize, int nTimeoutMs);
 extern	ssize_t		streamPrintf(int nSockFd, const char *format, ...);
 extern	ssize_t		streamPuts(int nSockFd, const char *pszStr);
-extern	ssize_t		streamStackOut(int nSockFd, Q_OBSTACK *obstack);
+extern	ssize_t		streamStackOut(int nSockFd, Q_VECTOR *vector, int nTimeoutMs);
 extern	ssize_t		streamWrite(int nSockFd, const void *pszBuffer, size_t nSize, int nTimeoutMs);
 extern	ssize_t		streamWritev(int nSockFd,  const struct iovec *pVector, int nCount, int nTimeoutMs);
 extern	off_t		streamSend(int nSockFd, int nFd, off_t nSize, int nTimeoutMs);

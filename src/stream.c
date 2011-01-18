@@ -82,19 +82,15 @@ ssize_t streamPuts(int nSockFd, const char *pszStr) {
 	return nSent;
 }
 
-ssize_t streamStackOut(int nSockFd, Q_OBSTACK *obstack) {
-	ssize_t nWritten = obstack->writeFinal(obstack, nSockFd);
+ssize_t streamStackOut(int nSockFd, Q_VECTOR *vector, int nTimeoutMs) {
+	size_t nSize;
+	char *pData = (char *)vector->toArray(vector, &nSize);
 
-#ifdef BUILD_DEBUG
-	if(g_debug) {
-		char *pszStr = (char *)obstack->getFinal(obstack, NULL);
-		if(pszStr != NULL) {
-			if(nWritten > 0) DEBUG("[TX] %s", pszStr);
-			else DEBUG("[TX-ERR] %s", pszStr);
-			free(pszStr);
-		}
+	ssize_t nWritten = 0;
+	if(pData != NULL) {
+		nWritten = streamWrite(nSockFd, pData, nSize, nTimeoutMs);
+		free(pData);
 	}
-#endif
 
 	return nWritten;
 }

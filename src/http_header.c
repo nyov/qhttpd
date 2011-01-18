@@ -27,22 +27,22 @@
 
 #include "qhttpd.h"
 
-const char *httpHeaderGetStr(Q_ENTRY *entries, const char *pszName) {
-	return (char*)entries->getStrCase(entries, pszName, false);
+const char *httpHeaderGetStr(Q_LISTTBL *entries, const char *pszName) {
+	return (char*)entries->getCaseStr(entries, pszName, false);
 }
 
-int httpHeaderGetInt(Q_ENTRY *entries, const char *pszName) {
-	return entries->getIntCase(entries, pszName);
+int httpHeaderGetInt(Q_LISTTBL *entries, const char *pszName) {
+	return entries->getCaseInt(entries, pszName);
 }
 
-bool httpHeaderSetStr(Q_ENTRY *entries, const char *pszName, const char *pszValue) {
+bool httpHeaderSetStr(Q_LISTTBL *entries, const char *pszName, const char *pszValue) {
 	if(pszValue != NULL) entries->putStr(entries, pszName, pszValue, true);
 	else entries->remove(entries, pszName);
 
 	return true;
 }
 
-bool httpHeaderSetStrf(Q_ENTRY *entries, const char *pszName, const char *pszFormat, ...) {
+bool httpHeaderSetStrf(Q_LISTTBL *entries, const char *pszName, const char *pszFormat, ...) {
 	char *pszValue;
 	DYNAMIC_VSPRINTF(pszValue, pszFormat);
 	if(pszValue == NULL) return false;
@@ -53,13 +53,13 @@ bool httpHeaderSetStrf(Q_ENTRY *entries, const char *pszName, const char *pszFor
 	return bRet;
 }
 
-bool httpHeaderRemove(Q_ENTRY *entries, const char *pszName) {
+bool httpHeaderRemove(Q_LISTTBL *entries, const char *pszName) {
 	if(entries->remove(entries, pszName) > 0) return true;
 	return false;
 }
 
-bool httpHeaderHasStr(Q_ENTRY *entries, const char *pszName, const char *pszValue) {
-	const char *pszVal = entries->getStrCase(entries, pszName, false);
+bool httpHeaderHasStr(Q_LISTTBL *entries, const char *pszName, const char *pszValue) {
+	const char *pszVal = entries->getCaseStr(entries, pszName, false);
 	if(pszVal == NULL) return false;
 
 	if(strcasestr(pszVal, pszValue) != NULL) return true;
@@ -106,7 +106,7 @@ bool httpHeaderParseRange(const char *pszRangeHeader, off_t nFilesize, off_t *pn
 	return true;
 }
 
-bool httpHeaderSetExpire(Q_ENTRY *entries, int nExpire) {
+bool httpHeaderSetExpire(Q_LISTTBL *entries, int nExpire) {
 	// cache control
 	if(nExpire > 0) {
 		httpHeaderSetStrf(entries, "Cache-Control", "max-age=%d", nExpire);

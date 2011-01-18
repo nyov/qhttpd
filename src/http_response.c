@@ -34,7 +34,7 @@ struct HttpResponse *httpResponseCreate(struct HttpRequest *pReq) {
 	pRes = (struct HttpResponse *)malloc(sizeof(struct HttpResponse));
 	if(pRes == NULL) return NULL;
 
-	Q_ENTRY *pHeaders = qEntry();
+	Q_LISTTBL *pHeaders = qListtbl();
 	if(pHeaders == NULL) {
 		free(pRes);
 		return NULL;
@@ -241,31 +241,31 @@ bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
 	// Print out
 	//
 
-	Q_OBSTACK *outBuf = qObstack();
+	Q_VECTOR *outBuf = qVector();
 	if(outBuf == NULL) return false;
 
 	// first line is response code
-	outBuf->growStrf(outBuf, "%s %d %s" CRLF,
+	outBuf->addStrf(outBuf, "%s %d %s" CRLF,
 		pRes->pszHttpVersion,
 		pRes->nResponseCode,
 		httpResponseGetMsg(pRes->nResponseCode)
 	);
 
 	// print out headers
-	Q_ENTRY *tbl = pRes->pHeaders;
-	Q_NLOBJ_T obj;
+	Q_LISTTBL *tbl = pRes->pHeaders;
+	Q_NDLOBJ_T obj;
 	memset((void*)&obj, 0, sizeof(obj)); // must be cleared before call
 	tbl->lock(tbl);
 	while(tbl->getNext(tbl, &obj, NULL, false) == true) {
-		outBuf->growStrf(outBuf, "%s: %s" CRLF, obj.name, (char*)obj.data);
+		outBuf->addStrf(outBuf, "%s: %s" CRLF, obj.name, (char*)obj.data);
 	}
 	tbl->unlock(tbl);
 
 	// end of headers
-	outBuf->growStr(outBuf, CRLF);
+	outBuf->addStr(outBuf, CRLF);
 
 	// buf flush
-	streamStackOut(nSockFd, outBuf);
+	streamStackOut(nSockFd, outBuf, g_conf.nConnectionTimeout * 1000);
 
 	// free buf
 	outBuf->free(outBuf);
@@ -324,7 +324,7 @@ bool httpResponseReset(struct HttpResponse *pRes) {
 	if(pRes == NULL || pRes->bOut == true) return false;
 
 	// allocate Q_ENTRY for
-	Q_ENTRY *pHeaders = qEntry();
+	Q_LISTTBL *pHeaders = qListtbl();
 	if(pHeaders == NULL) return false;
 
 	if(pRes->pszHttpVersion != NULL) free(pRes->pszHttpVersion);

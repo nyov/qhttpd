@@ -27,13 +27,13 @@
 
 #include "qhttpd.h"
 
-static bool _addXmlResponseStart(Q_OBSTACK *obXml);
-static bool _addXmlResponseFile(Q_OBSTACK *obXml, const char *pszUriPath, struct stat *pFileStat);
-static bool _addXmlResponseFileHead(Q_OBSTACK *obXml, const char *pszUriPath, struct stat *pFileStat);
-static bool _addXmlResponseFileInfo(Q_OBSTACK *obXml, const char *pszUriPath, struct stat *pFileStat);
-static bool _addXmlResponseFileProp(Q_OBSTACK *obXml, struct stat *pFileStat);
-static bool _addXmlResponseFileTail(Q_OBSTACK *obXml);
-static bool _addXmlResponseEnd(Q_OBSTACK *obXml);
+static bool _addXmlResponseStart(Q_VECTOR *obXml);
+static bool _addXmlResponseFile(Q_VECTOR *obXml, const char *pszUriPath, struct stat *pFileStat);
+static bool _addXmlResponseFileHead(Q_VECTOR *obXml, const char *pszUriPath, struct stat *pFileStat);
+static bool _addXmlResponseFileInfo(Q_VECTOR *obXml, const char *pszUriPath, struct stat *pFileStat);
+static bool _addXmlResponseFileProp(Q_VECTOR *obXml, struct stat *pFileStat);
+static bool _addXmlResponseFileTail(Q_VECTOR *obXml);
+static bool _addXmlResponseEnd(Q_VECTOR *obXml);
 static char *_getXmlEntry(char *pszXml, char *pszEntryName);
 
 /*
@@ -76,7 +76,7 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	httpResponseOut(pRes, pReq->nSockFd);
 
 	// init xml buffer
-	Q_OBSTACK *obXml = qObstack();
+	Q_VECTOR *obXml = qVector();
 	_addXmlResponseStart(obXml);
 
 	// locate requested file info at the beginning
@@ -91,14 +91,14 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 				if(!strcmp(pFile->d_name, ".") || !strcmp(pFile->d_name, "..")) continue;
 
 				// flush buffer if buffered xml is large than max chunk size
-				size_t nChunkSize = obXml->getSize(obXml);
+				size_t nChunkSize = obXml->size(obXml);
 				if(nChunkSize >= CHUNK_SIZE) {
-					void *pChunk = obXml->getFinal(obXml, NULL);
+					void *pChunk = obXml->toArray(obXml, NULL);
 					bool bRet = httpResponseOutChunk(pReq->nSockFd, pChunk, nChunkSize);
 					DEBUG("[TX-CHUNK] %s", (char*) pChunk);
 					free(pChunk);
 					obXml->free(obXml);
-					obXml = qObstack();
+					obXml = qVector();
 					if(bRet == false) break;
 				}
 
@@ -126,9 +126,9 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	_addXmlResponseEnd(obXml);
 
 	// flush buffer	if necessary
-	size_t nChunkSize = obXml->getSize(obXml);
+	size_t nChunkSize = obXml->size(obXml);
 	if(nChunkSize > 0) {
-		void *pChunk = obXml->getFinal(obXml, NULL);
+		void *pChunk = obXml->toArray(obXml, NULL);
 		httpResponseOutChunk(pReq->nSockFd, pChunk, nChunkSize);
 		DEBUG("[TX-CHUNK] %s", (char*) pChunk);
 		free(pChunk);
@@ -160,7 +160,7 @@ int httpMethodProppatch(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	//
 	// create XML response
 	//
-	Q_OBSTACK *obXml = qObstack();
+	Q_VECTOR *obXml = qVector();
 	_addXmlResponseStart(obXml);
 	_addXmlResponseFileHead(obXml, pReq->pszRequestPath, &filestat);
 	_addXmlResponseFileProp(obXml, &filestat);
@@ -169,7 +169,7 @@ int httpMethodProppatch(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 
 	// set response
 	size_t nXmlSize;
-	char *pszXmlData = (char*)obXml->getFinal(obXml, &nXmlSize);
+	char *pszXmlData = (char*)obXml->toArray(obXml, &nXmlSize);
 
 	httpResponseSetCode(pRes, HTTP_CODE_MULTI_STATUS, true);
 	httpResponseSetContent(pRes, "text/xml; charset=\"utf-8\"", pszXmlData, nXmlSize);
@@ -298,30 +298,30 @@ int httpMethodLock(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	qStrCpy(szToken, sizeof(szToken), pszUnique);
 	free(pszUnique);
 
-	Q_OBSTACK *obXml = qObstack();
-	obXml->growStr(obXml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>" CRLF);
-	obXml->growStr(obXml, "<D:prop xmlns:D=\"DAV:\">" CRLF);
-	obXml->growStr(obXml, "  <D:lockdiscovery>" CRLF);
-	obXml->growStr(obXml, "    <D:activelock>" CRLF);
+	Q_VECTOR *obXml = qVector();
+	obXml->addStr(obXml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>" CRLF);
+	obXml->addStr(obXml, "<D:prop xmlns:D=\"DAV:\">" CRLF);
+	obXml->addStr(obXml, "  <D:lockdiscovery>" CRLF);
+	obXml->addStr(obXml, "    <D:activelock>" CRLF);
 
 	if(pszLocktype != NULL)
-	obXml->growStrf(obXml,"      <D:locktype><D:%s/></D:locktype>" CRLF, pszLocktype);
+	obXml->addStrf(obXml,"      <D:locktype><D:%s/></D:locktype>" CRLF, pszLocktype);
 	if(pszLockscope != NULL)
-	obXml->growStrf(obXml,"      <D:lockscope><D:%s/></D:lockscope>" CRLF, pszLockscope);
+	obXml->addStrf(obXml,"      <D:lockscope><D:%s/></D:lockscope>" CRLF, pszLockscope);
 	if(pszOwner != NULL)
-	obXml->growStrf(obXml,"      <D:owner>%s</D:owner>" CRLF, pszOwner);
+	obXml->addStrf(obXml,"      <D:owner>%s</D:owner>" CRLF, pszOwner);
 	if(pszTimeout != NULL)
-	obXml->growStrf(obXml,"      <D:timeout>%s</D:timeout>" CRLF, pszTimeout);
+	obXml->addStrf(obXml,"      <D:timeout>%s</D:timeout>" CRLF, pszTimeout);
 
-	obXml->growStr(obXml, "      <D:depth>0</D:depth>" CRLF);
-	obXml->growStrf(obXml,"      <D:locktoken><D:href>opaquelocktoken:%s</D:href></D:locktoken>" CRLF, szToken);
-	obXml->growStr(obXml, "    </D:activelock>" CRLF);
-	obXml->growStr(obXml, "  </D:lockdiscovery>" CRLF);
-	obXml->growStr(obXml, "</D:prop>" CRLF);
+	obXml->addStr(obXml, "      <D:depth>0</D:depth>" CRLF);
+	obXml->addStrf(obXml,"      <D:locktoken><D:href>opaquelocktoken:%s</D:href></D:locktoken>" CRLF, szToken);
+	obXml->addStr(obXml, "    </D:activelock>" CRLF);
+	obXml->addStr(obXml, "  </D:lockdiscovery>" CRLF);
+	obXml->addStr(obXml, "</D:prop>" CRLF);
 
 	// set response
 	size_t nXmlSize;
-	char *pszXmlData = (char*)obXml->getFinal(obXml, &nXmlSize);
+	char *pszXmlData = (char*)obXml->toArray(obXml, &nXmlSize);
 
 	httpResponseSetCode(pRes, HTTP_CODE_OK, true);
 	httpHeaderSetStrf(pRes->pHeaders, "Lock-Token", "<opaquelocktoken:%s>", szToken);
@@ -351,36 +351,36 @@ int httpMethodUnlock(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 // internal static functions
 //
 
-static bool _addXmlResponseStart(Q_OBSTACK *obXml) {
-	obXml->growStr(obXml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>" CRLF);
-	obXml->growStr(obXml, "<D:multistatus xmlns:D=\"DAV:\">" CRLF);
+static bool _addXmlResponseStart(Q_VECTOR *obXml) {
+	obXml->addStr(obXml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>" CRLF);
+	obXml->addStr(obXml, "<D:multistatus xmlns:D=\"DAV:\">" CRLF);
 
 	return true;
 }
 
-static bool _addXmlResponseFile(Q_OBSTACK *obXml, const char *pszUriPath, struct stat *pFileStat) {
+static bool _addXmlResponseFile(Q_VECTOR *obXml, const char *pszUriPath, struct stat *pFileStat) {
 	_addXmlResponseFileHead(obXml, pszUriPath, pFileStat);
 	_addXmlResponseFileInfo(obXml, pszUriPath, pFileStat);
 	_addXmlResponseFileTail(obXml);
 	return true;
 }
 
-static bool _addXmlResponseFileHead(Q_OBSTACK *obXml, const char *pszUriPath, struct stat *pFileStat) {
+static bool _addXmlResponseFileHead(Q_VECTOR *obXml, const char *pszUriPath, struct stat *pFileStat) {
 	char *pszEncPath = qUrlEncode(pszUriPath, strlen(pszUriPath));
 
 	char *pszTailSlash = "";
 	if(S_ISDIR(pFileStat->st_mode) && strcmp(pszUriPath, "/")) pszTailSlash = "/";
 
-	obXml->growStr(obXml, "  <D:response xmlns:ns0=\"DAV:\" xmlns:ns1=\"urn:schemas-microsoft-com:\">" CRLF);
-	obXml->growStrf(obXml,"    <D:href>%s%s</D:href>" CRLF, pszEncPath, pszTailSlash);
-	obXml->growStr(obXml, "    <D:propstat>" CRLF);
-	obXml->growStr(obXml, "      <D:prop>" CRLF);
+	obXml->addStr(obXml, "  <D:response xmlns:ns0=\"DAV:\" xmlns:ns1=\"urn:schemas-microsoft-com:\">" CRLF);
+	obXml->addStrf(obXml,"    <D:href>%s%s</D:href>" CRLF, pszEncPath, pszTailSlash);
+	obXml->addStr(obXml, "    <D:propstat>" CRLF);
+	obXml->addStr(obXml, "      <D:prop>" CRLF);
 
 	free(pszEncPath);
 	return true;
 }
 
-static bool _addXmlResponseFileInfo(Q_OBSTACK *obXml, const char *pszUriPath, struct stat *pFileStat) {
+static bool _addXmlResponseFileInfo(Q_VECTOR *obXml, const char *pszUriPath, struct stat *pFileStat) {
 	// resource type
 	const char *pszResourceType;
 	const char *pszContentType;
@@ -401,52 +401,52 @@ static bool _addXmlResponseFileInfo(Q_OBSTACK *obXml, const char *pszUriPath, st
 	getEtag(szEtag, sizeof(szEtag), pszUriPath, pFileStat);
 
 	// out
-	obXml->growStrf(obXml,"        <ns0:resourcetype>%s</ns0:resourcetype>" CRLF, pszResourceType);
+	obXml->addStrf(obXml,"        <ns0:resourcetype>%s</ns0:resourcetype>" CRLF, pszResourceType);
 
-	obXml->growStrf(obXml,"        <ns0:getcontentlength>%jd</ns0:getcontentlength>" CRLF, pFileStat->st_size);
-	obXml->growStrf(obXml,"        <ns0:creationdate>%s</ns0:creationdate>" CRLF, szLastModified);
-	obXml->growStrf(obXml,"        <ns0:getlastmodified>%s</ns0:getlastmodified>" CRLF, qTimeGetGmtStaticStr(pFileStat->st_mtime));
-	obXml->growStrf(obXml,"        <ns0:getetag>\"%s\"</ns0:getetag>" CRLF, szEtag);
+	obXml->addStrf(obXml,"        <ns0:getcontentlength>%jd</ns0:getcontentlength>" CRLF, pFileStat->st_size);
+	obXml->addStrf(obXml,"        <ns0:creationdate>%s</ns0:creationdate>" CRLF, szLastModified);
+	obXml->addStrf(obXml,"        <ns0:getlastmodified>%s</ns0:getlastmodified>" CRLF, qTimeGetGmtStaticStr(pFileStat->st_mtime));
+	obXml->addStrf(obXml,"        <ns0:getetag>\"%s\"</ns0:getetag>" CRLF, szEtag);
 
-	obXml->growStr(obXml, "        <D:supportedlock>" CRLF);
-	obXml->growStr(obXml, "          <D:lockentry>" CRLF);
-	obXml->growStr(obXml, "            <D:lockscope><D:exclusive/></D:lockscope>" CRLF);
-	obXml->growStr(obXml, "            <D:locktype><D:write/></D:locktype>" CRLF);
-	obXml->growStr(obXml, "          </D:lockentry>" CRLF);
-	obXml->growStr(obXml, "          <D:lockentry>" CRLF);
-	obXml->growStr(obXml, "            <D:lockscope><D:shared/></D:lockscope>" CRLF);
-	obXml->growStr(obXml, "            <D:locktype><D:write/></D:locktype>" CRLF);
-	obXml->growStr(obXml, "          </D:lockentry>" CRLF);
-	obXml->growStr(obXml, "        </D:supportedlock>" CRLF);
+	obXml->addStr(obXml, "        <D:supportedlock>" CRLF);
+	obXml->addStr(obXml, "          <D:lockentry>" CRLF);
+	obXml->addStr(obXml, "            <D:lockscope><D:exclusive/></D:lockscope>" CRLF);
+	obXml->addStr(obXml, "            <D:locktype><D:write/></D:locktype>" CRLF);
+	obXml->addStr(obXml, "          </D:lockentry>" CRLF);
+	obXml->addStr(obXml, "          <D:lockentry>" CRLF);
+	obXml->addStr(obXml, "            <D:lockscope><D:shared/></D:lockscope>" CRLF);
+	obXml->addStr(obXml, "            <D:locktype><D:write/></D:locktype>" CRLF);
+	obXml->addStr(obXml, "          </D:lockentry>" CRLF);
+	obXml->addStr(obXml, "        </D:supportedlock>" CRLF);
 
-	obXml->growStr(obXml, "        <D:lockdiscovery></D:lockdiscovery>" CRLF);
-	obXml->growStrf(obXml,"        <D:getcontenttype>%s</D:getcontenttype>" CRLF, pszContentType);
-
-	return true;
-}
-
-static bool _addXmlResponseFileProp(Q_OBSTACK *obXml, struct stat *pFileStat) {
-	//obXml->growStr(obXml, "      <ns1:Win32LastModifiedTime/>" CRLF);
-	//obXml->growStr(obXml, "      <ns1:Win32FileAttributes/>" CRLF);
-	obXml->growStrf(obXml,"        <ns1:Win32CreationTime>%s</ns1:Win32CreationTime>" CRLF, qTimeGetGmtStaticStr(pFileStat->st_mtime));
-	obXml->growStrf(obXml,"        <ns1:Win32LastAccessTime>%s</ns1:Win32LastAccessTime>" CRLF, qTimeGetGmtStaticStr(pFileStat->st_atime));
-	obXml->growStrf(obXml,"        <ns1:Win32LastModifiedTime>%s</ns1:Win32LastModifiedTime>" CRLF, qTimeGetGmtStaticStr(pFileStat->st_mtime));
-	obXml->growStr(obXml,"         <ns1:Win32FileAttributes>00000020</ns1:Win32FileAttributes>" CRLF);
+	obXml->addStr(obXml, "        <D:lockdiscovery></D:lockdiscovery>" CRLF);
+	obXml->addStrf(obXml,"        <D:getcontenttype>%s</D:getcontenttype>" CRLF, pszContentType);
 
 	return true;
 }
 
-static bool _addXmlResponseFileTail(Q_OBSTACK *obXml) {
-	obXml->growStr(obXml, "      </D:prop>" CRLF);
-	obXml->growStrf(obXml,"      <D:status>%s %d %s</D:status>" CRLF, HTTP_PROTOCOL_11, HTTP_CODE_OK, httpResponseGetMsg(HTTP_CODE_OK));
-	obXml->growStr(obXml, "    </D:propstat>" CRLF);
-	obXml->growStr(obXml, "  </D:response>" CRLF);
+static bool _addXmlResponseFileProp(Q_VECTOR *obXml, struct stat *pFileStat) {
+	//obXml->addStr(obXml, "      <ns1:Win32LastModifiedTime/>" CRLF);
+	//obXml->addStr(obXml, "      <ns1:Win32FileAttributes/>" CRLF);
+	obXml->addStrf(obXml,"        <ns1:Win32CreationTime>%s</ns1:Win32CreationTime>" CRLF, qTimeGetGmtStaticStr(pFileStat->st_mtime));
+	obXml->addStrf(obXml,"        <ns1:Win32LastAccessTime>%s</ns1:Win32LastAccessTime>" CRLF, qTimeGetGmtStaticStr(pFileStat->st_atime));
+	obXml->addStrf(obXml,"        <ns1:Win32LastModifiedTime>%s</ns1:Win32LastModifiedTime>" CRLF, qTimeGetGmtStaticStr(pFileStat->st_mtime));
+	obXml->addStr(obXml,"         <ns1:Win32FileAttributes>00000020</ns1:Win32FileAttributes>" CRLF);
 
 	return true;
 }
 
-static bool _addXmlResponseEnd(Q_OBSTACK *obXml) {
-	obXml->growStr(obXml, "</D:multistatus>" CRLF);
+static bool _addXmlResponseFileTail(Q_VECTOR *obXml) {
+	obXml->addStr(obXml, "      </D:prop>" CRLF);
+	obXml->addStrf(obXml,"      <D:status>%s %d %s</D:status>" CRLF, HTTP_PROTOCOL_11, HTTP_CODE_OK, httpResponseGetMsg(HTTP_CODE_OK));
+	obXml->addStr(obXml, "    </D:propstat>" CRLF);
+	obXml->addStr(obXml, "  </D:response>" CRLF);
+
+	return true;
+}
+
+static bool _addXmlResponseEnd(Q_VECTOR *obXml) {
+	obXml->addStr(obXml, "</D:multistatus>" CRLF);
 	return true;
 }
 

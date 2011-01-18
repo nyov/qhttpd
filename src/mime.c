@@ -31,7 +31,7 @@
 #define DEF_MIME_ENTRY	"_DEF_"
 #define DEF_MIME_TYPE	"application/octet-stream"
 
-Q_ENTRY *m_mimelist = NULL;
+Q_LISTTBL *m_mimelist = NULL;
 
 bool mimeInit(const char *pszFilepath) {
 	if(m_mimelist != NULL) return false;
@@ -53,7 +53,7 @@ const char *mimeDetect(const char *pszFilename) {
 	if(pszFilename == NULL || m_mimelist == NULL) return DEF_MIME_TYPE;
 
 	char *pszExt = qFileGetExt(pszFilename);
-	char *pszMimetype = (char *)m_mimelist->getStrCase(m_mimelist, pszExt, false);
+	char *pszMimetype = (char *)m_mimelist->getCaseStr(m_mimelist, pszExt, false);
 	free(pszExt);
 
 	if(pszMimetype == NULL) pszMimetype = (char*)m_mimelist->getStr(m_mimelist, DEF_MIME_ENTRY, false);

@@ -55,7 +55,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	pReq->nReqStatus = 0;
 	pReq->nContentsLength = -1;
 
-	pReq->pHeaders = qEntry();
+	pReq->pHeaders = qListtbl();
 	if(pReq->pHeaders == NULL) return pReq;
 
 	//

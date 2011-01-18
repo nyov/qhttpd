@@ -89,7 +89,7 @@ AC_PROG_CC
 if test $ac_compiler_gnu = yes; then
 	CFLAGS="-Wall"
 #else
-#	AC_MSG_FAILURE([GCC is required to compile qDecoder.])
+#	AC_MSG_FAILURE([GCC is required to compile qHttpd.])
 fi
 
 AC_PROG_INSTALL
@@ -113,8 +113,8 @@ AC_TYPE_OFF_T
 OPT_OBJS=""
 
 ## Checks for 3rd libraries.
-AC_CHECK_HEADER([qDecoder.h], [], AC_MSG_ERROR([qDecoder library 10.1.6 or above must be installed.]))
-AC_CHECK_LIB([qDecoder], [main], [], AC_MSG_ERROR([qDecoder library 10.1.6 or above must be installed.]))
+AC_CHECK_HEADER([qlibc.h], [], AC_MSG_ERROR([qLibc library 1.0.2 or above must be installed. http://www.qdecoder.org]))
+AC_CHECK_LIB([qlibc], [main], [], AC_MSG_ERROR([qLibc library 1.0.2 or above must be installed. http://www.qdecoder.org]))
 
 Q_ARG_ENABLE([lfs], [enable large file supports], [-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64])
 
