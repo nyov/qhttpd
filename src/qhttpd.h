@@ -382,11 +382,11 @@ extern	const char*	httpResponseGetMsg(int nResCode);
 #define response403(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_FORBIDDEN, true, httpResponseGetMsg(HTTP_CODE_FORBIDDEN))
 #define response404(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_NOT_FOUND, true, httpResponseGetMsg(HTTP_CODE_NOT_FOUND))
 #define response404nc(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_NOT_FOUND, true, NULL)
-#define response405(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_METHOD_NOT_ALLOWED, true, httpResponseGetMsg(HTTP_CODE_METHOD_NOT_ALLOWED))
-#define response414(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_REQUEST_URI_TOO_LONG, true, httpResponseGetMsg(HTTP_CODE_REQUEST_URI_TOO_LONG))
+#define response405(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_METHOD_NOT_ALLOWED, false, httpResponseGetMsg(HTTP_CODE_METHOD_NOT_ALLOWED))
+#define response414(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_REQUEST_URI_TOO_LONG, false, httpResponseGetMsg(HTTP_CODE_REQUEST_URI_TOO_LONG))
 #define response500(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_INTERNAL_SERVER_ERROR, false, httpResponseGetMsg(HTTP_CODE_INTERNAL_SERVER_ERROR))
 #define response501(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_NOT_IMPLEMENTED, false, httpResponseGetMsg(HTTP_CODE_NOT_IMPLEMENTED))
-#define response503(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_SERVICE_UNAVAILABLE, true, httpResponseGetMsg(HTTP_CODE_SERVICE_UNAVAILABLE))
+#define response503(pRes)	httpResponseSetSimple(pRes, HTTP_CODE_SERVICE_UNAVAILABLE, false, httpResponseGetMsg(HTTP_CODE_SERVICE_UNAVAILABLE))
 
 // http_header.c
 extern	const char*	httpHeaderGetStr(Q_LISTTBL *entries, const char *pszName);
