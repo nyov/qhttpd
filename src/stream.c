@@ -29,7 +29,7 @@
 
 ssize_t streamRead(void *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs) {
 	ssize_t nReaded = qIoRead(pszBuffer, nSockFd, nSize, nTimeoutMs);
-#ifdef BUILD_DEBUG
+#ifdef ENABLE_DEBUG
 	if(nReaded > 0) DEBUG("[RX] (binary, readed %zd bytes)", nReaded);
 #endif
 	return nReaded;
@@ -37,7 +37,7 @@ ssize_t streamRead(void *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs) {
 
 ssize_t streamGets(char *pszStr, size_t nSize, int nSockFd, int nTimeoutMs) {
 	ssize_t nReaded = qIoGets(pszStr, nSize, nSockFd, nTimeoutMs);
-#ifdef BUILD_DEBUG
+#ifdef ENABLE_DEBUG
 	if(nReaded > 0) DEBUG("[RX] %s", pszStr);
 #endif
 	return nReaded;
@@ -62,7 +62,7 @@ ssize_t streamPrintf(int nSockFd, const char *format, ...) {
 
 	ssize_t nSent = qIoWrite(nSockFd, pszBuf, strlen(pszBuf), 0);
 
-#ifdef BUILD_DEBUG
+#ifdef ENABLE_DEBUG
 	if(nSent > 0) DEBUG("[TX] %s", pszBuf);
 	else DEBUG("[TX-ERR] %s", pszBuf);
 #endif
@@ -74,7 +74,7 @@ ssize_t streamPrintf(int nSockFd, const char *format, ...) {
 ssize_t streamPuts(int nSockFd, const char *pszStr) {
 	ssize_t nSent = qIoPuts(nSockFd, pszStr, 0);
 
-#ifdef BUILD_DEBUG
+#ifdef ENABLE_DEBUG
 	if(nSent > 0) DEBUG("[TX] %s", pszStr);
 	else DEBUG("[TX-ERR] %s", pszStr);
 #endif
@@ -90,7 +90,7 @@ ssize_t streamStackOut(int nSockFd, Q_VECTOR *vector, int nTimeoutMs) {
 	if(pData != NULL) {
 		nWritten = qIoWrite(nSockFd, pData, nSize, nTimeoutMs);
 
-#ifdef BUILD_DEBUG
+#ifdef ENABLE_DEBUG
 	if(g_debug) {
 		if(nWritten > 0) DEBUG("[TX] %s", pData);
 		else DEBUG("[TX-ERR] %s", pData);

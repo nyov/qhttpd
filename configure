@@ -3896,7 +3896,7 @@ fi;
 	if test "$enableval" = yes; then
 		{ echo "$as_me:$LINENO: 'lfs' feature is enabled" >&5
 echo "$as_me: 'lfs' feature is enabled" >&6;}
-		CPPFLAGS="$CPPFLAGS -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+		CPPFLAGS="$CPPFLAGS -DENABLE_LFS -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 		OPT_OBJS="$OPT_OBJS "
 	fi
 
@@ -4305,7 +4305,7 @@ echo "$as_me: 'debug' feature is disabled" >&6;}
 
 if test "$enableval" = yes; then
 	CFLAGS="$CFLAGS -g -O2"
-	CPPFLAGS="$CPPFLAGS -DBUILD_DEBUG"
+	CPPFLAGS="$CPPFLAGS -DENABLE_DEBUG"
 else
 	CFLAGS="$CFLAGS -O2"
 fi

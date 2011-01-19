@@ -309,6 +309,7 @@ extern	int		main(int argc, char *argv[]);
 // version.c
 extern	void		printUsages(void);
 extern	void		printVersion(void);
+extern	char*		getVersion(void);
 
 // config.c
 extern	bool		loadConfig(struct ServerConfig *pConf, char *pszFilePath);
@@ -584,7 +585,7 @@ do {											\
 #undef DEBUG
 #endif
 
-#ifdef BUILD_DEBUG
+#ifdef ENABLE_DEBUG
 
 //
 // DEBUG build
@@ -600,6 +601,6 @@ do {											\
 //
 #define DEBUG(fms, args...)
 
-#endif // BUILD_DEBUG
+#endif // ENABLE_DEBUG
 
 #endif	// _QHTTPD_H

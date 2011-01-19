@@ -69,8 +69,8 @@ int main(int argc, char *argv[]) {
 	while ((nOpt = getopt(argc, argv, "dDc:Vh")) != -1) {
 		switch (nOpt) {
 			case 'd': {
-				#ifndef BUILD_DEBUG
-				fprintf(stderr, "ERROR: Sorry, does not support debugging mode. Please re-compile with -DBUILD_DEBUG\n");
+				#ifndef ENABLE_DEBUG
+				fprintf(stderr, "ERROR: Debug mode has not been enabled at compile time.\n");
 				return EXIT_FAILURE;
 				#endif
 

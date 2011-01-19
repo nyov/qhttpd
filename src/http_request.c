@@ -326,7 +326,7 @@ static char *_readRequest(int nSockFd, size_t *nRequestSize, int nTimeout) {
 		}
 	} while(bEndOfHeader == false);
 
-#ifdef BUILD_DEBUG
+#ifdef ENABLE_DEBUG
 	if(pszReqBuf != NULL) {
 		pszReqBuf[nTotal] = '\0';
 		if(bEndOfHeader == true) DEBUG("[RX] %s", pszReqBuf);

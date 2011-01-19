@@ -116,7 +116,7 @@ OPT_OBJS=""
 AC_CHECK_HEADER([qlibc.h], [], AC_MSG_ERROR([qLibc library 1.0.2 or above must be installed. http://www.qdecoder.org]))
 AC_CHECK_LIB([qlibc], [main], [], AC_MSG_ERROR([qLibc library 1.0.2 or above must be installed. http://www.qdecoder.org]))
 
-Q_ARG_ENABLE([lfs], [enable large file supports], [-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64])
+Q_ARG_ENABLE([lfs], [enable large file supports], [-DENABLE_LFS -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64])
 
 Q_ARG_ENABLE([lua], [enable LUA script engine], [-DENABLE_LUA], [luascript.o])
 if test "$enableval" = yes; then
@@ -131,7 +131,7 @@ Q_ARG_ENABLE([hook], [enable hook support - compile with hook.c], [-DENABLE_HOOK
 Q_ARG_DISABLE([debug], [disable debug build - take off all debugging codes])
 if test "$enableval" = yes; then
 	CFLAGS="$CFLAGS -g -O2"
-	CPPFLAGS="$CPPFLAGS -DBUILD_DEBUG"
+	CPPFLAGS="$CPPFLAGS -DENABLE_DEBUG"
 else
 	CFLAGS="$CFLAGS -O2"
 fi

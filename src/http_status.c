@@ -57,10 +57,7 @@ Q_VECTOR *httpGetStatusHtml(void) {
 	pShm = poolGetShm();
 	if(pShm == NULL) return NULL;
 
-	char *pszBuildMode = "RELEASE";
-#ifdef BUILD_DEBUG
-	pszBuildMode = "DEBUG";
-#endif
+	char *pszVersionStr = getVersion();
 
 	Q_VECTOR *obHtml = qVector();
 	obHtml->addStr(obHtml, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">" CRLF);
@@ -76,7 +73,7 @@ Q_VECTOR *httpGetStatusHtml(void) {
 
 	obHtml->addStrf(obHtml,"<h1>%s/%s Status</h1>" CRLF, g_prgname, g_prgversion);
 	obHtml->addStr(obHtml, "<dl>" CRLF);
-	obHtml->addStrf(obHtml,"  <dt>Server Version: %s v%s (%s; %s; %s)</dt>" CRLF, g_prgname, g_prgversion, __DATE__, __TIME__, pszBuildMode);
+	obHtml->addStrf(obHtml,"  <dt>Server Version: %s</dt>" CRLF, pszVersionStr);
 	obHtml->addStrf(obHtml,"  <dt>Current Time: %s" CRLF, qTimeGetGmtStaticStr(0));
 	obHtml->addStrf(obHtml,"  , Start Time: %s</dt>" CRLF, qTimeGetGmtStaticStr(pShm->nStartTime));
 	obHtml->addStrf(obHtml,"  <dt>Total Connections : %d" CRLF, pShm->nTotalConnected);
@@ -89,6 +86,8 @@ Q_VECTOR *httpGetStatusHtml(void) {
 	obHtml->addStrf(obHtml,"  , Max Spare Servers: %d" CRLF, g_conf.nMaxSpareServers);
 	obHtml->addStrf(obHtml,"  , Max Clients: %d</dt>" CRLF, g_conf.nMaxClients);
 	obHtml->addStr(obHtml, "</dl>" CRLF);
+
+	free(pszVersionStr);
 
 	obHtml->addStr(obHtml, "<table width='100%%' border=1 cellpadding=1 cellspacing=0>" CRLF);
 	obHtml->addStr(obHtml, "  <tr>" CRLF);

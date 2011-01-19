@@ -38,30 +38,39 @@ void printUsages(void) {
 }
 
 void printVersion(void) {
-#ifdef BUILD_DEBUG
-#define	MSG_BUILD	"DEBUG"
+	char *verstr = getVersion();
+	fprintf(stderr, "%s\n", verstr);
+	free(verstr);
+}
+
+char *getVersion(void) {
+	Q_VECTOR *ver = qVector();
+
+	ver->addStrf(ver, "%s v%s", g_prgname, g_prgversion);
+	ver->addStrf(ver, " (%s %s;", __DATE__, __TIME__);
+
+#ifdef ENABLE_DEBUG
+	ver->addStr(ver, " DEBUG");
 #else
-#define	MSG_BUILD	"RELEASE"
+	ver->addStr(ver, " RELEASE");
 #endif
 
-#ifdef _LARGEFILE_SOURCE
-#define	MSG_LFS		" --enable-lfs"
-#else
-#define	MSG_LFS		""
+#ifdef ENABLE_LFS
+	ver->addStr(ver, " --enable-lfs");
 #endif
 
 #ifdef ENABLE_LUA
-#define	MSG_LUA		" --enable-lua"
-#else
-#define	MSG_LUA		""
+	ver->addStr(ver, " --enable-lua");
 #endif
 
 #ifdef ENABLE_HOOK
-#define	MSG_HOOK	" --enable-hook"
-#else
-#define	MSG_HOOK	""
+	ver->addStr(ver, " --enable-hook");
 #endif
 
-	fprintf(stderr, "%s v%s (%s; %s; " MSG_BUILD ";" MSG_LFS MSG_LUA MSG_HOOK ")\n",
-	    g_prgname, g_prgversion, __DATE__, __TIME__);
+	ver->addStr(ver, ")");
+
+	char *final = ver->toString(ver);
+	ver->free(ver);
+
+	return final;
 }
