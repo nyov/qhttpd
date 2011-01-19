@@ -39,7 +39,7 @@ static char *_getXmlEntry(char *pszXml, char *pszEntryName);
 /*
  * WebDAV method - PROPFIND
  */
-#define	CHUNK_SIZE			(10 * 1024)
+#define	FLUSH_CHUNK_IF_EXCEED_SIZE	(10 * 1024)
 int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	if(g_conf.methods.bPropfind == false) return response405(pRes);
 
@@ -91,9 +91,9 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 				if(!strcmp(pFile->d_name, ".") || !strcmp(pFile->d_name, "..")) continue;
 
 				// flush buffer if buffered xml is large than max chunk size
-				size_t nChunkSize = obXml->size(obXml);
-				if(nChunkSize >= CHUNK_SIZE) {
-					void *pChunk = obXml->toArray(obXml, NULL);
+				if(obXml->list->datasize(obXml->list) >= FLUSH_CHUNK_IF_EXCEED_SIZE) {
+					size_t nChunkSize;
+					void *pChunk = obXml->toArray(obXml, &nChunkSize);
 					bool bRet = httpResponseOutChunk(pReq->nSockFd, pChunk, nChunkSize);
 					DEBUG("[TX-CHUNK] %s", (char*) pChunk);
 					free(pChunk);
@@ -126,9 +126,9 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	_addXmlResponseEnd(obXml);
 
 	// flush buffer	if necessary
-	size_t nChunkSize = obXml->size(obXml);
-	if(nChunkSize > 0) {
-		void *pChunk = obXml->toArray(obXml, NULL);
+	if(obXml->size(obXml) > 0) {
+		size_t nChunkSize;
+		void *pChunk = obXml->toArray(obXml, &nChunkSize);
 		httpResponseOutChunk(pReq->nSockFd, pChunk, nChunkSize);
 		DEBUG("[TX-CHUNK] %s", (char*) pChunk);
 		free(pChunk);

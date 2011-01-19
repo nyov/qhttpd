@@ -34,7 +34,7 @@ int httpStatusResponse(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	if(obHtml == NULL) return response500(pRes);
 
 	// get size
-	size_t nHtmlSize = obHtml->size(obHtml);
+	size_t nHtmlSize = obHtml->list->datasize(obHtml->list);
 
 	// set response
 	httpResponseSetCode(pRes, HTTP_CODE_OK, true);

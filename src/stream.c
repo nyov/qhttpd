@@ -88,7 +88,17 @@ ssize_t streamStackOut(int nSockFd, Q_VECTOR *vector, int nTimeoutMs) {
 
 	ssize_t nWritten = 0;
 	if(pData != NULL) {
-		nWritten = streamWrite(nSockFd, pData, nSize, nTimeoutMs);
+		nWritten = qIoWrite(nSockFd, pData, nSize, nTimeoutMs);
+
+#ifdef BUILD_DEBUG
+	if(g_debug) {
+		if(nWritten > 0) DEBUG("[TX] %s", pData);
+		else DEBUG("[TX-ERR] %s", pData);
+	}
+#endif
+
+		DEBUG("============== %d ===========", (int)nWritten);
+
 		free(pData);
 	}
 
