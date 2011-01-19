@@ -47,13 +47,14 @@ char *getVersion(void) {
 	Q_VECTOR *ver = qVector();
 
 	ver->addStrf(ver, "%s v%s", g_prgname, g_prgversion);
-	ver->addStrf(ver, " (%s %s;", __DATE__, __TIME__);
 
 #ifdef ENABLE_DEBUG
-	ver->addStr(ver, " DEBUG");
+	ver->addStr(ver, " (DEBUG;");
 #else
-	ver->addStr(ver, " RELEASE");
+	ver->addStr(ver, " (RELEASE;");
 #endif
+
+	ver->addStrf(ver, " %s %s;", __DATE__, __TIME__);
 
 #ifdef ENABLE_LFS
 	ver->addStr(ver, " --enable-lfs");
