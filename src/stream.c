@@ -97,8 +97,6 @@ ssize_t streamStackOut(int nSockFd, Q_VECTOR *vector, int nTimeoutMs) {
 	}
 #endif
 
-		DEBUG("============== %d ===========", (int)nWritten);
-
 		free(pData);
 	}
 

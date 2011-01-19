@@ -62,7 +62,8 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 		}
 	} else if(nDepth > 1) {
 		// not supported
-		return response400(pRes);
+		DEBUG("Depth(%d) more than 1 is not supported.", nDepth);
+		return response501(pRes);
 	}
 
 	//

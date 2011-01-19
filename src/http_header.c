@@ -28,11 +28,13 @@
 #include "qhttpd.h"
 
 const char *httpHeaderGetStr(Q_LISTTBL *entries, const char *pszName) {
-	return (char*)entries->getCaseStr(entries, pszName, false);
+	return entries->getCaseStr(entries, pszName, false);
 }
 
 int httpHeaderGetInt(Q_LISTTBL *entries, const char *pszName) {
-	return entries->getCaseInt(entries, pszName);
+	char *value = entries->getCaseStr(entries, pszName, false);
+	if(value == NULL) return 0;
+	return atoi(value);
 }
 
 bool httpHeaderSetStr(Q_LISTTBL *entries, const char *pszName, const char *pszValue) {
