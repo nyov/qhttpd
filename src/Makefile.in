@@ -41,7 +41,6 @@ all:	qhttpd
 
 qhttpd: ${OBJS}
 	${CC} ${CFLAGS} ${CPPFLAGS} ${OBJS} ${LDFLAGS} ${LIBS} -o qhttpd
-	install -m 0755 qhttpd ../sbin/
 
 reall: clean all
 
