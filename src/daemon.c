@@ -552,4 +552,3 @@ static bool ignoreConnection(int nSockFd, long int nTimeoutMs) {
 
 	return true;
 }
-

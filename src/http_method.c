@@ -325,4 +325,3 @@ int httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd) {
 int httpMethodNotImplemented(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	return response501(pRes);
 }
-

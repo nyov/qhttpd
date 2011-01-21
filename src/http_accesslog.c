@@ -44,4 +44,3 @@ bool httpAccessLog(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 
 	return true;
 }
-

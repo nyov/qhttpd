@@ -183,4 +183,3 @@ int httpSpecialRequestHandler(struct HttpRequest *pReq, struct HttpResponse *pRe
 
 	return nResCode;
 }
-

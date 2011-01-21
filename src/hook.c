@@ -176,4 +176,3 @@ bool hookResponseHandler(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 }
 
 #endif
-

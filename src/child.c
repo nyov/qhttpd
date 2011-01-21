@@ -282,4 +282,3 @@ static void setClientSocketOption(int nSockFd) {
 	fcntl(nSockFd, F_SETFL, nSockFlags | O_NONBLOCK);
 	*/
 }
-

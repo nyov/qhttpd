@@ -482,4 +482,3 @@ static int poolFindSlot(int nPid) {
 
 	return -1;
 }
-
