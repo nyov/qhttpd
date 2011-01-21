@@ -89,5 +89,3 @@ ErrorLog		= ${LogDir}/qhttpd-%Y%m%d.err
 AccessLog		= ${LogDir}/qhttpd-%Y%m%d.log
 LogRotate		= 86400
 LogLevel		= 2
-
-
