@@ -70,3 +70,4 @@ struct dirent *sysReaddir(DIR *pDir) {
 int sysClosedir(DIR *pDir) {
 	return closedir(pDir);
 }
+

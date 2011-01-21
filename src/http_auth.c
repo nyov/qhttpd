@@ -70,3 +70,4 @@ struct HttpUser *httpAuthParse(struct HttpRequest *pReq) {
 	// not supported auth type
 	return NULL;
 }
+
