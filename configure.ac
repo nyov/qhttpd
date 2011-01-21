@@ -21,7 +21,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 ## THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## $Id: configure.ac 554 2010-03-11 05:21:43Z wolkykim $
+## $Id$
 
 AC_COPYRIGHT([
 =============================================================================
