@@ -41,10 +41,10 @@ int httpStatusResponse(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	httpResponseSetContent(pRes, "text/html; charset=\"utf-8\"", NULL, nHtmlSize);
 
 	// print out header
-	httpResponseOut(pRes, pReq->nSockFd);
+	httpResponseOut(pRes);
 
 	// print out contents
-	streamStackOut(pReq->nSockFd, obHtml, g_conf.nConnectionTimeout * 1000);
+	streamStackOut(pReq->nSockFd, obHtml, pReq->nTimeout * 1000);
 
 	// free
 	obHtml->free(obHtml);

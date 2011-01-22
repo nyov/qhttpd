@@ -201,7 +201,7 @@ int httpRealGet(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd, st
 	}
 
 	// print out headers
-	httpResponseOut(pRes, pReq->nSockFd);
+	httpResponseOut(pRes);
 
 	//
 	// print out data

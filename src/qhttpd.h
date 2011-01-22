@@ -369,8 +369,8 @@ extern	bool		httpResponseSetContent(struct HttpResponse *pRes, const char *pszCo
 extern	bool		httpResponseSetContentHtml(struct HttpResponse *pRes, const char *pszMsg);
 extern	bool		httpResponseSetContentChunked(struct HttpResponse *pRes, bool bChunked);
 extern	bool		httpResponseSetAuthRequired(struct HttpResponse *pRes, enum HttpAuthT nAuthType, const char *pszRealm);
-extern	bool		httpResponseOut(struct HttpResponse *pRes, int nSockFd);
-extern	bool		httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize);
+extern	bool		httpResponseOut(struct HttpResponse *pRes);
+extern	bool		httpResponseOutChunk(struct HttpResponse *pRes, const void *pData, size_t nSize);
 extern	bool		httpResponseReset(struct HttpResponse *pRes);
 extern	void		httpResponseFree(struct HttpResponse *pRes);
 extern	const char*	httpResponseGetMsg(int nResCode);

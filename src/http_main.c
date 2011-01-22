@@ -104,7 +104,7 @@ int httpMain(int nSockFd) {
 			// serialize & stream out
 			//   hook will be handled inside of httpResponseOut().
 			//   keep-alive header may be adjusted
-			httpResponseOut(pRes, nSockFd);
+			httpResponseOut(pRes);
 
 			// logging
 			httpAccessLog(pReq, pRes);

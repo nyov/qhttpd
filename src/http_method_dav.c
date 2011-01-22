@@ -74,7 +74,7 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	httpResponseSetCode(pRes, HTTP_CODE_MULTI_STATUS, true);
 	httpResponseSetContent(pRes, "text/xml; charset=\"utf-8\"", NULL, 0);
 	httpResponseSetContentChunked(pRes, true); // set transfer-encoding to chunked
-	httpResponseOut(pRes, pReq->nSockFd);
+	httpResponseOut(pRes);
 
 	// init xml buffer
 	Q_VECTOR *obXml = qVector();
@@ -95,7 +95,7 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 				if(obXml->list->datasize(obXml->list) >= FLUSH_CHUNK_IF_EXCEED_SIZE) {
 					size_t nChunkSize;
 					void *pChunk = obXml->toArray(obXml, &nChunkSize);
-					bool bRet = httpResponseOutChunk(pReq->nSockFd, pChunk, nChunkSize);
+					bool bRet = httpResponseOutChunk(pRes, pChunk, nChunkSize);
 					DEBUG("[TX-CHUNK] %s", (char*) pChunk);
 					free(pChunk);
 					obXml->free(obXml);
@@ -130,14 +130,14 @@ int httpMethodPropfind(struct HttpRequest *pReq, struct HttpResponse *pRes) {
 	if(obXml->size(obXml) > 0) {
 		size_t nChunkSize;
 		void *pChunk = obXml->toArray(obXml, &nChunkSize);
-		httpResponseOutChunk(pReq->nSockFd, pChunk, nChunkSize);
+		httpResponseOutChunk(pRes, pChunk, nChunkSize);
 		DEBUG("[TX-CHUNK] %s", (char*) pChunk);
 		free(pChunk);
 	}
 	obXml->free(obXml);
 
 	// end of chunk
-	httpResponseOutChunk(pReq->nSockFd, NULL, 0);
+	httpResponseOutChunk(pRes, NULL, 0);
 
 	return HTTP_CODE_MULTI_STATUS;
 }

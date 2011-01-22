@@ -186,14 +186,16 @@ bool httpResponseSetAuthRequired(struct HttpResponse *pRes, enum HttpAuthT nAuth
 	return false;
 }
 
-bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
+bool httpResponseOut(struct HttpResponse *pRes) {
 	if(pRes->bOut == true) return false;
+
+	struct HttpRequest *pReq = pRes->pReq;
 
 	//
 	// hook handling
 	//
 #ifdef ENABLE_HOOK
-	if(hookResponseHandler(pRes->pReq, pRes) == false) {
+	if(hookResponseHandler(pReq, pRes) == false) {
 		LOG_WARN("An error occured while processing hookResponseHandler().");
 	}
 #endif
@@ -265,14 +267,14 @@ bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
 	outBuf->addStr(outBuf, CRLF);
 
 	// buf flush
-	streamStackOut(nSockFd, outBuf, g_conf.nConnectionTimeout * 1000);
+	streamStackOut(pReq->nSockFd, outBuf, pReq->nTimeout * 1000);
 
 	// free buf
 	outBuf->free(outBuf);
 
 	// print out contents binary
 	if(pRes->nContentsLength > 0 && pRes->pContent != NULL) {
-		streamWrite(nSockFd, pRes->pContent, pRes->nContentsLength, g_conf.nConnectionTimeout * 1000);
+		streamWrite(pReq->nSockFd, pRes->pContent, pRes->nContentsLength, pReq->nTimeout * 1000);
 		//streamPrintf(nSockFd, "%s", CRLF);
 	}
 
@@ -285,7 +287,9 @@ bool httpResponseOut(struct HttpResponse *pRes, int nSockFd) {
  *
  * @return	a number of octets sent (do not include bytes which are sent for chunk boundary string)
  */
-bool httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize) {
+bool httpResponseOutChunk(struct HttpResponse *pRes, const void *pData, size_t nSize) {
+	struct HttpRequest *pReq = pRes->pReq;
+
 	struct iovec vectors[3];
 	int nVecCnt = 0;
 	ssize_t nTotSize = 0;
@@ -314,7 +318,7 @@ bool httpResponseOutChunk(int nSockFd, const void *pData, size_t nSize) {
 	nVecCnt++;
 
 	// print out
-	ssize_t nTotSent = streamWritev(nSockFd, vectors, nVecCnt, g_conf.nConnectionTimeout * 1000);
+	ssize_t nTotSent = streamWritev(pReq->nSockFd, vectors, nVecCnt, pReq->nTimeout * 1000);
 
 	if(nTotSize == nTotSent) return true;
 	return false;

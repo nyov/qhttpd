@@ -538,7 +538,7 @@ static bool ignoreConnection(int nSockFd, long int nTimeoutMs) {
 	httpHeaderSetStr(pRes->pHeaders, "Connection", "close");
 
 	// serialize & stream out
-	httpResponseOut(pRes, nSockFd);
+	httpResponseOut(pRes);
 
 	// logging
 	httpAccessLog(pReq, pRes);
