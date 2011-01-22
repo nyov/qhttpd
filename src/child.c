@@ -66,7 +66,7 @@ void childStart(int nSockFd) {
 #endif
 
 	// init random
-        srandom((unsigned)(time(NULL) + getpid() + nSockFd));
+        srand((unsigned)(time(NULL) + getpid() + nSockFd));
 
 	int nIdleCnt = 0;
         while (true) {
