@@ -435,9 +435,9 @@ extern	const char*	mimeDetect(const char *pszFilename);
 
 // stream.c
 extern	int		streamWaitReadable(int nSockFd, int nTimeoutMs);
-extern	ssize_t		streamRead(void *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs);
-extern	ssize_t		streamGets(char *pszStr, size_t nSize, int nSockFd, int nTimeoutMs);
-extern	ssize_t		streamGetb(char *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs);
+extern	ssize_t		streamRead(int nSockFd, void *pszBuffer, size_t nSize, int nTimeoutMs);
+extern	ssize_t		streamGets(int nSockFd, char *pszStr, size_t nSize, int nTimeoutMs);
+extern	ssize_t		streamGetb(int nSockFd, char *pszBuffer, size_t nSize, int nTimeoutMs);
 extern	off_t		streamSave(int nFd, int nSockFd, off_t nSize, int nTimeoutMs);
 extern	ssize_t		streamPrintf(int nSockFd, const char *format, ...);
 extern	ssize_t		streamPuts(int nSockFd, const char *pszStr);

@@ -281,7 +281,7 @@ int httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd) {
 		do {
 			// read chunk size
 			char szLineBuf[64];
-			if(streamGets(szLineBuf, sizeof(szLineBuf), pReq->nSockFd, pReq->nTimeout * 1000) <= 0) break;
+			if(streamGets(pReq->nSockFd, szLineBuf, sizeof(szLineBuf), pReq->nTimeout * 1000) <= 0) break;
 
 			// parse chunk size
 			int nChunkSize = 0;
@@ -302,7 +302,7 @@ int httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd) {
 			}
 
 			// read tailing CRLF
-			if(streamGets(szLineBuf, sizeof(szLineBuf), pReq->nSockFd, pReq->nTimeout * 1000) <= 0) break;
+			if(streamGets(pReq->nSockFd, szLineBuf, sizeof(szLineBuf), pReq->nTimeout * 1000) <= 0) break;
 		} while(bCompleted == false);
 
 		if(bCompleted == false) {

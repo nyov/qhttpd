@@ -217,7 +217,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 				}
 
 				// save into memory
-				int nReaded = streamGetb(pReq->pContents, nSockFd, pReq->nContentsLength, pReq->nTimeout * 1000);
+				int nReaded = streamGetb(nSockFd, pReq->pContents, pReq->nContentsLength, pReq->nTimeout * 1000);
 				if(nReaded >= 0) pReq->pContents[nReaded] = '\0';
 				DEBUG("%s", pReq->pContents);
 

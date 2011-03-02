@@ -32,7 +32,7 @@ int closeSocket(int nSockFd) {
 	if(shutdown(nSockFd, SHUT_WR) == 0) {
 		char szDummyBuf[1024];
 		while(true) {
-			ssize_t nDummyRead = streamRead(szDummyBuf, nSockFd, sizeof(szDummyBuf), MAX_SHUTDOWN_WAIT);
+			ssize_t nDummyRead = streamRead(nSockFd, szDummyBuf, sizeof(szDummyBuf), MAX_SHUTDOWN_WAIT);
 			if(nDummyRead <= 0) break;
 			DEBUG("Throw %zu bytes from dummy input stream.", nDummyRead);
 		}

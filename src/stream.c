@@ -27,24 +27,24 @@
 
 #include "qhttpd.h"
 
-ssize_t streamRead(void *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs) {
-	ssize_t nReaded = qIoRead(pszBuffer, nSockFd, nSize, nTimeoutMs);
+ssize_t streamRead(int nSockFd, void *pszBuffer, size_t nSize, int nTimeoutMs) {
+	ssize_t nReaded = qIoRead(nSockFd, pszBuffer, nSize, nTimeoutMs);
 #ifdef ENABLE_DEBUG
 	if(nReaded > 0) DEBUG("[RX] (binary, readed %zd bytes)", nReaded);
 #endif
 	return nReaded;
 }
 
-ssize_t streamGets(char *pszStr, size_t nSize, int nSockFd, int nTimeoutMs) {
-	ssize_t nReaded = qIoGets(pszStr, nSize, nSockFd, nTimeoutMs);
+ssize_t streamGets(int nSockFd, char *pszStr, size_t nSize, int nTimeoutMs) {
+	ssize_t nReaded = qIoGets(nSockFd, pszStr, nSize, nTimeoutMs);
 #ifdef ENABLE_DEBUG
 	if(nReaded > 0) DEBUG("[RX] %s", pszStr);
 #endif
 	return nReaded;
 }
 
-ssize_t streamGetb(char *pszBuffer, int nSockFd, size_t nSize, int nTimeoutMs) {
-	ssize_t nReaded = qIoRead(pszBuffer, nSockFd, nSize, nTimeoutMs);
+ssize_t streamGetb(int nSockFd, char *pszBuffer, size_t nSize, int nTimeoutMs) {
+	ssize_t nReaded = qIoRead(nSockFd, pszBuffer, nSize, nTimeoutMs);
 	DEBUG("[RX] (binary, readed/request=%zd/%zu bytes)", nReaded, nSize);
 	return nReaded;
 }
