@@ -112,7 +112,7 @@ int httpMain(int nSockFd) {
 			// check keep-alive
 			if(httpHeaderHasStr(pRes->pHeaders, "CONNECTION", "KEEP-ALIVE") == true) bKeepAlive = true;
 		} else { // timeout or connection closed
-			DEBUG("Connection timeout.");
+			DEBUG("Connection closed or timed out.");
 		}
 
 		/////////////////////////////////////////////////////////

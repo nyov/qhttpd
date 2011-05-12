@@ -92,6 +92,7 @@ ssize_t streamStackOut(int nSockFd, Q_VECTOR *vector, int nTimeoutMs) {
 
 #ifdef ENABLE_DEBUG
 	if(g_debug) {
+		pData[nSize - 1] = '\0';
 		if(nWritten > 0) DEBUG("[TX] %s", pData);
 		else DEBUG("[TX-ERR] %s", pData);
 	}

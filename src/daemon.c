@@ -446,32 +446,40 @@ static void daemonSignalHandler(void) {
 		struct ServerConfig newconf;
 		memset((void*)&newconf, 0, sizeof(newconf));
 		bool bConfigLoadStatus = loadConfig(&newconf, g_conf.szConfigFile);
+
 #ifdef ENABLE_HOOK
 		bConfigLoadStatus = hookAfterConfigLoaded(&newconf, bConfigLoadStatus);
-#endif
 		if(bConfigLoadStatus == true) {
+			if(checkConfig(&newconf) == false) {
+				LOG_ERR("Failed to verify configuration.");
+				bConfigLoadStatus = false;
+			}
+		}
+#endif
+
+		if(bConfigLoadStatus == true) {
+			// copy new config
 			g_conf = newconf;
+
+			// reload mime
+			mimeFree();
+			if(mimeInit(g_conf.szMimeFile) == false) {
+				LOG_WARN("Failed to load mimetypes from %s", g_conf.szMimeFile);
+			}
+
+#ifdef ENABLE_HOOK
+			// hup hook
+			if(hookAfterDaemonSIGHUP() == false) {
+				LOG_ERR("Hook failed.");
+			}
+#endif
+			// re-launch childs
+			poolSetExitReqeustAll();
+
 			LOG_INFO("Configuration re-loaded.");
 		} else {
 			LOG_ERR("Can't reload configuration.");
 		}
-
-		// reload mime
-		mimeFree();
-		if(mimeInit(g_conf.szMimeFile) == false) {
-			LOG_ERR("Can't load mimetypes from %s", g_conf.szMimeFile);
-		}
-
-#ifdef ENABLE_HOOK
-		// hup hook
-		if(hookAfterDaemonSIGHUP() == false) {
-			LOG_ERR("Hook failed.");
-		}
-#endif
-		// re-launch childs
-		poolSetExitReqeustAll();
-
-		LOG_SYS("Reloaded.");
 	} else if(sigismember(&g_sigflags, SIGTERM)) {
 		sigdelset(&g_sigflags, SIGTERM);
 		LOG_INFO("Caughted SIGTERM");

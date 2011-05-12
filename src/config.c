@@ -119,6 +119,9 @@ bool loadConfig(struct ServerConfig *pConf, char *pszFilePath) {
 	fetch2Int(conflist, pConf->nLogRotate, "LogRotate");
 	fetch2Int(conflist, pConf->nLogLevel, "LogLevel");
 
+	// check config
+	checkConfig(pConf);
+
 	//
 	// free resources
 	//

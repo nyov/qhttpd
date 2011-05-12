@@ -63,7 +63,7 @@ struct HttpRequest *httpRequestParse(int nSockFd, int nTimeout) {
 	//
 	pReq->pszRequestBody = _readRequest(nSockFd, &pReq->nRequestSize, pReq->nTimeout * 1000);
 	if(pReq->pszRequestBody == NULL) {
-		DEBUG("Connection is closed before request completion.");
+		DEBUG("Connection is closed by peer.");
 		pReq->nReqStatus = -1;
 		return pReq;
 	}
@@ -303,6 +303,7 @@ static char *_readRequest(int nSockFd, size_t *nRequestSize, int nTimeout) {
 
 		if(qIoWaitReadable(nSockFd, nTimeout) <= 0) break;
 		ssize_t nRead = read(nSockFd, pszReqBuf + nTotal, (nBlockRead > 0) ? nMaxRead : 1);
+		//ssize_t nRead = streamRead(pszReqBuf + nTotal, nSockFd, (nBlockRead > 0) ? nMaxRead : 1, nTimeout);
 
 		if(nRead <= 0) break;
 		nTotal += nRead;
