@@ -3806,8 +3806,8 @@ fi
 if test $ac_cv_header_qlibc_h = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: qLibc library 1.0.2 or above must be installed. http://www.qdecoder.org" >&5
-echo "$as_me: error: qLibc library 1.0.2 or above must be installed. http://www.qdecoder.org" >&2;}
+  { { echo "$as_me:$LINENO: error: qLibc library 1.0.6 or above must be installed. http://www.qdecoder.org" >&5
+echo "$as_me: error: qLibc library 1.0.6 or above must be installed. http://www.qdecoder.org" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -3879,8 +3879,8 @@ _ACEOF
   LIBS="-lqlibc $LIBS"
 
 else
-  { { echo "$as_me:$LINENO: error: qLibc library 1.0.2 or above must be installed. http://www.qdecoder.org" >&5
-echo "$as_me: error: qLibc library 1.0.2 or above must be installed. http://www.qdecoder.org" >&2;}
+  { { echo "$as_me:$LINENO: error: qLibc library 1.0.6 or above must be installed. http://www.qdecoder.org" >&5
+echo "$as_me: error: qLibc library 1.0.6 or above must be installed. http://www.qdecoder.org" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
