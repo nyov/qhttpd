@@ -133,9 +133,7 @@ bool httpResponseSetContent(struct HttpResponse *pRes, const char *pszContentTyp
 }
 
 bool httpResponseSetContentHtml(struct HttpResponse *pRes, const char *pszMsg) {
-	char szContent[1024];
-
-	snprintf(szContent, sizeof(szContent)-1,
+	char *pszContent = qStrDupf(
 		"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">" CRLF
 		"<html>" CRLF
 		"<head><title>%d %s</title></head>" CRLF
@@ -150,9 +148,14 @@ bool httpResponseSetContentHtml(struct HttpResponse *pRes, const char *pszMsg) {
 		pszMsg,
 		g_prginfo, g_prgname, g_prgversion
 	);
-	//szContent[sizeof(szContent)-1] = '\0';
 
-	return httpResponseSetContent(pRes, "text/html", szContent, strlen(szContent));
+	bool bRet = false;
+	if(pszContent != NULL) {
+		bRet = httpResponseSetContent(pRes, "text/html", pszContent, strlen(pszContent));
+		free(pszContent);
+	}
+
+	return bRet;
 }
 
 bool httpResponseSetContentChunked(struct HttpResponse *pRes, bool bChunked) {
