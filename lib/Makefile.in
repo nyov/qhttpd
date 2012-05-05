@@ -52,4 +52,6 @@ distclean-qlibc:
 		(cd qlibc; make distclean);				\
 	fi
 	rm -f Makefile
+	rm -f qlibc.patch
+	rm -rf qlibc_new
 
