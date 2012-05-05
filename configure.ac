@@ -1,52 +1,60 @@
-## Copyright 2000-2010 The qDecoder Project. All rights reserved.
+################################################################################
+## qHttpd - http://www.qdecoder.org
+##
+## Copyright (c) 2008-2012 Seungyoung Kim.
+## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions
-## are met:
+## modification, are permitted provided that the following conditions are met:
 ##
-## 1. Redistributions of source code must retain the above copyright
-##    notice, this list of conditions and the following disclaimer.
-## 2. Redistributions in binary form must reproduce the above copyright
-##    notice, this list of conditions and the following disclaimer in the
-##    documentation and/or other materials provided with the distribution.
+## 1. Redistributions of source code must retain the above copyright notice,
+##    this list of conditions and the following disclaimer.
+## 2. Redistributions in binary form must reproduce the above copyright notice,
+##    this list of conditions and the following disclaimer in the documentation
+##    and/or other materials provided with the distribution.
 ##
-## THIS SOFTWARE IS PROVIDED BY THE QDECODER PROJECT ``AS IS'' AND ANY
-## EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-## WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-## DISCLAIMED. IN NO EVENT SHALL THE QDECODER PROJECT BE LIABLE FOR ANY
-## DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-## (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-## LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-## ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-## THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+## POSSIBILITY OF SUCH DAMAGE.
+################################################################################
 ## $Id$
+################################################################################
 
 AC_COPYRIGHT([
 =============================================================================
-Copyright 2000-2010 The qDecoder Project. All rights reserved.
+ qHttpd - http://www.qdecoder.org
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
+ Copyright (c) 2008-2012 Seungyoung Kim.
+ All rights reserved.
 
-1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
 
-THIS SOFTWARE IS PROVIDED BY THE QDECODER PROJECT ``AS IS'' AND ANY
-EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE QDECODER PROJECT BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 1. Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 ])
 
@@ -72,11 +80,13 @@ AC_DEFUN([Q_ARG_DISABLE], [
 AC_INIT([qHttpd], [1 RELEASE], [http://www.qdecoder.org/])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADER([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile lib/Makefile src/Makefile])
 
 ## Set path
 PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
-CPPFLAGS="$CPPFLAGS -I/usr/include -I/usr/local/include -I./ -D_GNU_SOURCE"
+CPPFLAGS="$CPPFLAGS -I./ -I/usr/include -I/usr/local/include"
+CPPFLAGS="$CPPFLAGS -D_GNU_SOURCE"
+CPPFLAGS="$CPPFLAGS -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 LDFLAGS="$LDFLAGS -L/usr/lib -L/usr/local/lib"
 
 ## Set autoconf setting
@@ -89,7 +99,11 @@ AC_PROG_CC
 if test $ac_compiler_gnu = yes; then
 	CFLAGS="-Wall"
 #else
-#	AC_MSG_FAILURE([GCC is required to compile qHttpd.])
+#	AC_MSG_FAILURE([GCC is required.])
+fi
+AC_PROG_CC_C99
+if test $ac_cv_prog_cc_c99 = no; then
+        AC_MSG_FAILURE([Compiler does not support C99 mode.])
 fi
 
 AC_PROG_INSTALL
@@ -101,9 +115,19 @@ AC_HEADER_STDC
 AC_HEADER_STDBOOL
 AC_HEADER_STAT
 AC_HEADER_DIRENT
+AC_CHECK_HEADER([inttypes.h])
 
 ## Checks for typedefs, structures, and compiler characteristics.
+AC_TYPE_INT8_T
+AC_TYPE_INT16_T
+AC_TYPE_INT32_T
+AC_TYPE_INT64_T
+AC_TYPE_UINT8_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
 AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
 AC_TYPE_OFF_T
 
 ## Checks for library functions.
@@ -111,12 +135,6 @@ AC_TYPE_OFF_T
 
 ## Set additional arguments
 OPT_OBJS=""
-
-## Checks for 3rd libraries.
-AC_CHECK_HEADER([qlibc.h], [], AC_MSG_ERROR([qLibc library 1.0.6 or above must be installed. http://www.qdecoder.org]))
-AC_CHECK_LIB([qlibc], [main], [], AC_MSG_ERROR([qLibc library 1.0.6 or above must be installed. http://www.qdecoder.org]))
-
-Q_ARG_ENABLE([lfs], [enable large file supports], [-DENABLE_LFS -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64])
 
 Q_ARG_ENABLE([lua], [enable LUA script engine], [-DENABLE_LUA], [luascript.o])
 if test "$enableval" = yes; then
@@ -130,10 +148,8 @@ Q_ARG_ENABLE([hook], [enable hook support - compile with hook.c], [-DENABLE_HOOK
 
 Q_ARG_DISABLE([debug], [disable debug build - take off all debugging codes])
 if test "$enableval" = yes; then
-	CFLAGS="$CFLAGS -g -O2"
+	CFLAGS="$CFLAGS -g"
 	CPPFLAGS="$CPPFLAGS -DENABLE_DEBUG"
-else
-	CFLAGS="$CFLAGS -O2"
 fi
 
 ## Print out setting

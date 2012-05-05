@@ -1,137 +1,150 @@
-/*
- * Copyright 2008-2010 The qDecoder Project. All rights reserved.
+/******************************************************************************
+ * qHttpd - http://www.qdecoder.org
+ *
+ * Copyright (c) 2008-2012 Seungyoung Kim.
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE QDECODER PROJECT ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE QDECODER PROJECT BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ ******************************************************************************
  * $Id$
- */
+ ******************************************************************************/
 
 #include "qhttpd.h"
 
-ssize_t streamRead(int nSockFd, void *pszBuffer, size_t nSize, int nTimeoutMs) {
-	ssize_t nReaded = qIoRead(nSockFd, pszBuffer, nSize, nTimeoutMs);
+ssize_t streamRead(int nSockFd, void *pszBuffer, size_t nSize, int nTimeoutMs)
+{
+    ssize_t nReaded = qio_read(nSockFd, pszBuffer, nSize, nTimeoutMs);
 #ifdef ENABLE_DEBUG
-	if(nReaded > 0) DEBUG("[RX] (binary, readed %zd bytes)", nReaded);
+    if (nReaded > 0) DEBUG("[RX] (binary, readed %zd bytes)", nReaded);
 #endif
-	return nReaded;
+    return nReaded;
 }
 
-ssize_t streamGets(int nSockFd, char *pszStr, size_t nSize, int nTimeoutMs) {
-	ssize_t nReaded = qIoGets(nSockFd, pszStr, nSize, nTimeoutMs);
+ssize_t streamGets(int nSockFd, char *pszStr, size_t nSize, int nTimeoutMs)
+{
+    ssize_t nReaded = qio_gets(nSockFd, pszStr, nSize, nTimeoutMs);
 #ifdef ENABLE_DEBUG
-	if(nReaded > 0) DEBUG("[RX] %s", pszStr);
+    if (nReaded > 0) DEBUG("[RX] %s", pszStr);
 #endif
-	return nReaded;
+    return nReaded;
 }
 
-ssize_t streamGetb(int nSockFd, char *pszBuffer, size_t nSize, int nTimeoutMs) {
-	ssize_t nReaded = qIoRead(nSockFd, pszBuffer, nSize, nTimeoutMs);
-	DEBUG("[RX] (binary, readed/request=%zd/%zu bytes)", nReaded, nSize);
-	return nReaded;
+ssize_t streamGetb(int nSockFd, char *pszBuffer, size_t nSize, int nTimeoutMs)
+{
+    ssize_t nReaded = qio_read(nSockFd, pszBuffer, nSize, nTimeoutMs);
+    DEBUG("[RX] (binary, readed/request=%zd/%zu bytes)", nReaded, nSize);
+    return nReaded;
 }
 
-off_t streamSave(int nFd, int nSockFd, off_t nSize, int nTimeoutMs) {
-	off_t nSaved = qIoSend(nFd, nSockFd, nSize, nTimeoutMs);
-	DEBUG("[RX] (save %jd/%jd bytes)", nSaved, nSize);
-	return nSaved;
+off_t streamSave(int nFd, int nSockFd, off_t nSize, int nTimeoutMs)
+{
+    off_t nSaved = qio_send(nFd, nSockFd, nSize, nTimeoutMs);
+    DEBUG("[RX] (save %jd/%jd bytes)", nSaved, nSize);
+    return nSaved;
 }
 
-ssize_t streamPrintf(int nSockFd, const char *format, ...) {
-        char *pszBuf;
-        DYNAMIC_VSPRINTF(pszBuf, format);
-        if(pszBuf == NULL) return -1;
+ssize_t streamPrintf(int nSockFd, const char *format, ...)
+{
+    char *pszBuf;
+    DYNAMIC_VSPRINTF(pszBuf, format);
+    if (pszBuf == NULL) return -1;
 
-	ssize_t nSent = qIoWrite(nSockFd, pszBuf, strlen(pszBuf), 0);
-
-#ifdef ENABLE_DEBUG
-	if(nSent > 0) DEBUG("[TX] %s", pszBuf);
-	else DEBUG("[TX-ERR] %s", pszBuf);
-#endif
-        free(pszBuf);
-
-	return nSent;
-}
-
-ssize_t streamPuts(int nSockFd, const char *pszStr) {
-	ssize_t nSent = qIoPuts(nSockFd, pszStr, 0);
+    ssize_t nSent = qio_write(nSockFd, pszBuf, strlen(pszBuf), 0);
 
 #ifdef ENABLE_DEBUG
-	if(nSent > 0) DEBUG("[TX] %s", pszStr);
-	else DEBUG("[TX-ERR] %s", pszStr);
+    if (nSent > 0) DEBUG("[TX] %s", pszBuf);
+    else DEBUG("[TX-ERR] %s", pszBuf);
 #endif
+    free(pszBuf);
 
-	return nSent;
+    return nSent;
 }
 
-ssize_t streamStackOut(int nSockFd, Q_VECTOR *vector, int nTimeoutMs) {
-	size_t nSize;
-	char *pData = (char *)vector->toArray(vector, &nSize);
-
-	ssize_t nWritten = 0;
-	if(pData != NULL) {
-		nWritten = qIoWrite(nSockFd, pData, nSize, nTimeoutMs);
+ssize_t streamPuts(int nSockFd, const char *pszStr)
+{
+    ssize_t nSent = qio_puts(nSockFd, pszStr, 0);
 
 #ifdef ENABLE_DEBUG
-	if(g_debug) {
-		pData[nSize - 1] = '\0';
-		if(nWritten > 0) DEBUG("[TX] %s", pData);
-		else DEBUG("[TX-ERR] %s", pData);
-	}
+    if (nSent > 0) DEBUG("[TX] %s", pszStr);
+    else DEBUG("[TX-ERR] %s", pszStr);
 #endif
 
-		free(pData);
-	}
-
-	return nWritten;
+    return nSent;
 }
 
-ssize_t streamWrite(int nSockFd, const void *pszBuffer, size_t nSize, int nTimeoutMs) {
-	ssize_t nWritten = qIoWrite(nSockFd, pszBuffer, nSize, nTimeoutMs);
-	DEBUG("[TX] (binary, written/request=%zd/%zu bytes)", nWritten, nSize);
+ssize_t streamStackOut(int nSockFd, qvector_t *vector, int nTimeoutMs)
+{
+    size_t nSize;
+    char *pData = (char *)vector->toarray(vector, &nSize);
 
-	return nWritten;
+    ssize_t nWritten = 0;
+    if (pData != NULL) {
+        nWritten = qio_write(nSockFd, pData, nSize, nTimeoutMs);
+
+#ifdef ENABLE_DEBUG
+        if (g_debug) {
+            pData[nSize - 1] = '\0';
+            if (nWritten > 0) DEBUG("[TX] %s", pData);
+            else DEBUG("[TX-ERR] %s", pData);
+        }
+#endif
+
+        free(pData);
+    }
+
+    return nWritten;
 }
 
-ssize_t streamWritev(int nSockFd,  const struct iovec *pVector, int nCount, int nTimeoutMs) {
-	ssize_t nWritten = 0;
-	int i;
-	for(i = 0; i < nCount; i++) {
-		ssize_t nSent = streamWrite(nSockFd, pVector[i].iov_base, pVector[i].iov_len, nTimeoutMs);
-		if(nSent <= 0) break;
-		nWritten += nSent;
-	}
+ssize_t streamWrite(int nSockFd, const void *pszBuffer, size_t nSize, int nTimeoutMs)
+{
+    ssize_t nWritten = qio_write(nSockFd, pszBuffer, nSize, nTimeoutMs);
+    DEBUG("[TX] (binary, written/request=%zd/%zu bytes)", nWritten, nSize);
 
-	/*
-	ssize_t nWritten = writev(nSockFd, pVector, nCount);
-	*/
-
-	DEBUG("[TX] (binary, written=%zd bytes, %d vectors)", nWritten, nCount);
-
-	return nWritten;
+    return nWritten;
 }
 
-off_t streamSend(int nSockFd, int nFd, off_t nSize, int nTimeoutMs) {
-	off_t nSent = qIoSend(nSockFd, nFd, nSize, nTimeoutMs);
-	DEBUG("[TX] (send %jd/%jd bytes)", nSent, nSize);
+ssize_t streamWritev(int nSockFd,  const struct iovec *pVector, int nCount, int nTimeoutMs)
+{
+    ssize_t nWritten = 0;
+    int i;
+    for (i = 0; i < nCount; i++) {
+        ssize_t nSent = streamWrite(nSockFd, pVector[i].iov_base, pVector[i].iov_len, nTimeoutMs);
+        if (nSent <= 0) break;
+        nWritten += nSent;
+    }
 
-	return nSent;
+    /*
+    ssize_t nWritten = writev(nSockFd, pVector, nCount);
+    */
+
+    DEBUG("[TX] (binary, written=%zd bytes, %d vectors)", nWritten, nCount);
+
+    return nWritten;
+}
+
+off_t streamSend(int nSockFd, int nFd, off_t nSize, int nTimeoutMs)
+{
+    off_t nSent = qio_send(nSockFd, nFd, nSize, nTimeoutMs);
+    DEBUG("[TX] (send %jd/%jd bytes)", nSent, nSize);
+
+    return nSent;
 }
