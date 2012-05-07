@@ -25,18 +25,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************
- * $Id: qdatabase.c 81 2012-04-12 01:01:34Z seungyoung.kim $
+ * $Id: qdatabase.c 107 2012-05-07 21:20:50Z seungyoung.kim $
  ******************************************************************************/
 
 /**
  * @file qdatabase.c Database interfacing object.
  *
- * Database header files should be included prior to qlibc.h in your source
+ * Database header files should be included prior to qlibcext.h in your source
  * codes like below.
  *
  * @code
  *   #include "mysql.h"
- *   #include "qlibc.h"
+ *   #include "qlibcext.h"
  * @endcode
  *
  * @code

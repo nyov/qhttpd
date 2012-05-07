@@ -68,7 +68,9 @@ typedef struct qlog_s qlog_t;
 extern qlog_t *qlog(const char *filepathfmt, mode_t mode, int rotateinterval,
                     bool flush);
 
-/* qlog_t details */
+/**
+ * qlog structure
+ */
 struct qlog_s {
     /* capsulated member functions */
     bool (*write) (qlog_t *log, const char *str);
@@ -104,7 +106,10 @@ typedef struct qhttpclient_s  qhttpclient_t;
 /* public functions */
 extern qhttpclient_t *qhttpclient(const char *hostname, int port);
 
-/* qhttpclient_t details */
+/**
+ * qhttpclient structure
+ */
+
 struct qhttpclient_s {
     /* capsulated member functions */
     bool (*setssl) (qhttpclient_t *client);
@@ -167,26 +172,22 @@ struct qhttpclient_s {
  * qdatabase.c
  ******************************************************************************/
 
-/**
- * qdb_t & qdbresult_t types and definitions.
- */
-typedef struct qdb_s qdb_t;
-typedef struct qdbresult_s qdbresult_t;
-
-/* Database Support*/
+/* database header files should be included before this header file. */
 #ifdef _mysql_h
 #define _Q_ENABLE_MYSQL  (1)
 #endif /* _mysql_h */
 
-/**
- * qdb_t constructor.
- */
+/* types */
+typedef struct qdb_s qdb_t;
+typedef struct qdbresult_s qdbresult_t;
+
+/* public functions */
 extern qdb_t *qdb(const char *dbtype,
                   const char *addr, int port, const char *database,
                   const char *username, const char *password, bool autocommit);
 
 /**
- * qdb_t details.
+ * qdb structure
  */
 struct qdb_s {
     /* capsulated member functions */
@@ -233,7 +234,7 @@ struct qdb_s {
 };
 
 /**
- * qdbresult_t details.
+ * qdbresult structure
  */
 struct qdbresult_s {
     /* capsulated member functions */

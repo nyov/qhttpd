@@ -25,7 +25,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************
- * $Id: qlibc.h 102 2012-05-05 00:22:27Z seungyoung.kim $
+ * $Id: qlibc.h 107 2012-05-07 21:20:50Z seungyoung.kim $
  ******************************************************************************/
 
 /**
@@ -38,7 +38,7 @@
 #define _QLIBC_H
 
 #define _Q_PRGNAME "qlibc"  /*!< qlibc human readable name */
-#define _Q_VERSION "2.0.3"  /*!< qlibc version number string */
+#define _Q_VERSION "2.0.4"  /*!< qlibc version number string */
 
 #ifdef __cplusplus
 extern "C" {
@@ -432,7 +432,7 @@ typedef struct qqueue_s qqueue_t;
 extern qqueue_t *qqueue();
 
 /**
- * qvector container.
+ * qqueue container
  */
 struct qqueue_s {
     /* capsulated member functions */
@@ -473,7 +473,7 @@ typedef struct qstack_s qstack_t;
 extern qstack_t *qstack();
 
 /**
- * Structure for array-based circular-queue data structure.
+ * qstack container
  */
 struct qstack_s {
     /* capsulated member functions */
