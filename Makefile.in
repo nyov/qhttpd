@@ -54,15 +54,10 @@ install: all
 deinstall: uninstall
 uninstall:
 	${RM} -f ${prefix}/sbin/qhttpd
-	rmdir ${prefix}/sbin
 	${RM} -f ${prefix}/conf/qhttpd.conf.dist
 	${RM} -f ${prefix}/conf/mimetypes.conf
 	${RM} -f ${prefix}/conf/qhttpd.lua.dist
-	rmdir ${prefix}/conf
 	${RM} -f ${prefix}/htdocs/index.html
-	rmdir ${prefix}/htdocs
-	rmdir ${prefix}/logs
-	rmdir ${prefix}
 
 clean:
 	@for DIR in lib src; do \
