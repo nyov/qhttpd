@@ -114,7 +114,7 @@ int httpMain(int nSockFd)
             httpAccessLog(pReq, pRes);
 
             // check keep-alive
-            if (httpHeaderHasCasestr(pRes->pHeaders, "CONNECTION", "KEEP-ALIVE") == true) bKeepAlive = true;
+            if (httpHeaderHasCasestr(pRes->pHeaders, "Connection", "Keep-Alive") == true) bKeepAlive = true;
         } else { // timeout or connection closed
             DEBUG("Connection closed or timed out.");
         }

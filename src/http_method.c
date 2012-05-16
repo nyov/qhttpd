@@ -236,7 +236,7 @@ int httpMethodPut(struct HttpRequest *pReq, struct HttpResponse *pRes)
 
     // check contents length or transfer-encoding
     if (pReq->nContentsLength < 0
-        && httpHeaderHasCasestr(pReq->pHeaders, "TRANSFER-ENCODING", "CHUNKED") == false) {
+        && httpHeaderHasCasestr(pReq->pHeaders, "Transfer-Encoding", "chunked") == false) {
         return response400(pRes);
     }
 
@@ -269,7 +269,7 @@ int httpMethodPut(struct HttpRequest *pReq, struct HttpResponse *pRes)
 int httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd)
 {
     // header check
-    if (httpHeaderHasCasestr(pReq->pHeaders, "EXPECT", "100-CONTINUE") == true) {
+    if (httpHeaderHasCasestr(pReq->pHeaders, "Expect", "100-continue") == true) {
         streamPrintf(pReq->nSockFd, "%s %d %s" CRLF CRLF, pReq->pszHttpVersion, HTTP_CODE_CONTINUE, httpResponseGetMsg(HTTP_CODE_CONTINUE));
     }
 
@@ -284,7 +284,7 @@ int httpRealPut(struct HttpRequest *pReq, struct HttpResponse *pRes, int nFd)
 
         DEBUG("File %s saved. (%jd/%jd)", pReq->pszRequestPath, nSaved, pReq->nContentsLength);
 
-    } else if (httpHeaderHasCasestr(pReq->pHeaders, "TRANSFER-ENCODING", "CHUNKED") == true) {
+    } else if (httpHeaderHasCasestr(pReq->pHeaders, "Transfer-encoding", "chunked") == true) {
         off_t nSaved = 0;
         bool bCompleted = false;
         do {

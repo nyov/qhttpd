@@ -64,7 +64,7 @@
 //
 #define PRG_INFO                "The qDecoder Project"
 #define PRG_NAME                "qhttpd"
-#define PRG_VERSION             "1.2.13"
+#define PRG_VERSION             "1.2.14"
 
 #define DEF_CONFIG              "/usr/local/qhttpd/conf/qhttpd.conf"
 
@@ -75,12 +75,12 @@
 #define MAX_CHILDS      (512)
 #define MAX_SEMAPHORES  (1+2)
 #define MAX_SEMAPHORES_LOCK_SECS (10)   // the maximum secondes which
-// semaphores can be locked
+                                        // semaphores can be locked
 #define MAX_HTTP_MEMORY_CONTENTS (1024*1024)  // if the contents size is less
-// than this, do not use temporary
-// file
+                                              // than this, do not use temporary
+                                              // file
 #define MAX_USERCOUNTER (10)    // the amount of custom counter in shared memory
-// for customizing purpose
+                                // for customizing purpose
 
 #define MAX_LOGLEVEL    (4)     // the maximum log level
 
@@ -90,7 +90,7 @@
 
 // TCP options
 #define MAX_LISTEN_BACKLOG      (5)     // the maximum length the queue of
-// pending connections may grow to
+                                        // pending connections may grow up to.
 #define SET_TCP_LINGER_TIMEOUT  (15)    // 0 for disable
 #define SET_TCP_NODELAY         (1)     // 0 for disable
 #define MAX_SHUTDOWN_WAIT       (5000)  // the maximum ms for waiting input
@@ -105,9 +105,9 @@
 #define MAX_PREFORK_AT_ONCE   (5)     // the maximum prefork servers at once
 #define PERIODIC_JOB_INTERVAL (2)     // periodic job interval
 #define KILL_IDLE_INTERVAL    (1000)  // the unit is ms, if idle servers are
-// more than max idle server, it will be
-// terminated by one in every interval.
-// This must be bigger than 1000.
+                                      // more than max idle server, it will be
+                                      // terminated by one in every interval.
+                                      // This must be bigger than 1000.
 
 //
 // HTTP PROTOCOL CODES

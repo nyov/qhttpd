@@ -87,12 +87,12 @@ bool httpResponseSetCode(struct HttpResponse *pRes, int nResCode, bool bKeepAliv
         bKeepAlive = false;
 
         if (!strcmp(pszHttpVer, HTTP_PROTOCOL_11)) {
-            if (httpHeaderHasCasestr(pReq->pHeaders, "CONNECTION", "CLOSE") == false) {
+            if (httpHeaderHasCasestr(pReq->pHeaders, "Connection", "close") == false) {
                 bKeepAlive = true;
             }
         } else {
-            if (httpHeaderHasCasestr(pReq->pHeaders, "CONNECTION", "KEEP-ALIVE") == true
-                || httpHeaderHasCasestr(pReq->pHeaders, "CONNECTION", "TE") == true) {
+            if (httpHeaderHasCasestr(pReq->pHeaders, "Connection", "Keep-Alive") == true
+                || httpHeaderHasCasestr(pReq->pHeaders, "Connection", "TE") == true) {
                 bKeepAlive = true;
             }
         }
