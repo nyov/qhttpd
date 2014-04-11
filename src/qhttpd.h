@@ -25,7 +25,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************
- * $Id$
+ * $Id: qhttpd.h 219 2012-05-16 21:57:53Z seungyoung.kim $
  ******************************************************************************/
 
 #ifndef _QHTTPD_H

@@ -3,7 +3,7 @@
 ## configuration directives that give the server its instructions.
 ## See <URL:http://www.qdecoder.org/> for detailed information.
 ##
-## $Id$
+## $Id: qhttpd.conf.dist 201 2011-01-21 03:31:22Z seungyoung.kim $
 
 ## These are variables and not configuration mandatory entries.
 BaseDir			= /usr/local/qhttpd

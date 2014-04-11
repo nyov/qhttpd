@@ -34,7 +34,7 @@
 -- * Data structure
 --   - request table = {requestMethod=, requestHost=, requestPath=, queryString= }
 --
--- $Id$
+-- $Id: qhttpd.lua.dist 201 2011-01-21 03:31:22Z seungyoung.kim $
 --=============================================================================
 
 --=============================================================================

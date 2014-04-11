@@ -25,7 +25,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************
- * $Id$
+ * $Id: luascript.c 214 2012-05-05 00:33:31Z seungyoung.kim $
  ******************************************************************************/
 
 #ifdef ENABLE_LUA
